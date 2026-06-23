@@ -1,0 +1,43 @@
+-- ============================================================
+-- 祈愿 · 天天开心 — Supabase 数据库初始化脚本
+-- ============================================================
+-- 使用方法:
+--   1. 登录 supabase.com → 进入你的项目 → SQL Editor
+--   2. 粘贴此文件全部内容 → 点击 Run
+-- ============================================================
+
+-- ── 心愿表 ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wishes (
+  id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  text      TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── 留言表 ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS messages (
+  id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  text      TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── 开启实时同步（Realtime） ────────────────────────────
+ALTER PUBLICATION supabase_realtime ADD TABLE wishes;
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
+-- ── 开启行级安全（RLS） ─────────────────────────────────
+ALTER TABLE wishes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- ── 公开读取 ────────────────────────────────────────────
+CREATE POLICY "允许任何人读取心愿" ON wishes
+  FOR SELECT USING (true);
+
+CREATE POLICY "允许任何人读取留言" ON messages
+  FOR SELECT USING (true);
+
+-- ── 公开写入 ────────────────────────────────────────────
+CREATE POLICY "允许任何人写入心愿" ON wishes
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "允许任何人写入留言" ON messages
+  FOR INSERT WITH CHECK (true);

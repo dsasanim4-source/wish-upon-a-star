@@ -80,7 +80,6 @@
       0 0 120px rgba(180, 150, 120, 0.12);
   }
 
-  /* Gradient border ring */
   .glass-card::before {
     content: '';
     position: absolute;
@@ -102,7 +101,6 @@
     pointer-events: none;
   }
 
-  /* ── Star Icon ────────────────────────── */
   .star-icon {
     display: inline-block;
     font-size: 28px;
@@ -116,7 +114,6 @@
     50% { transform: scale(1.25); opacity: 1; }
   }
 
-  /* ── Typography ───────────────────────── */
   .wish-label {
     font-size: clamp(13px, 1.8vw, 15px);
     font-weight: 400;
@@ -335,20 +332,446 @@
   }
 
   @keyframes wish-float-up {
-    0% {
-      transform: translateY(0);
-      opacity: 0;
-    }
-    8% {
-      opacity: 0.5;
-    }
-    60% {
-      opacity: 0.35;
-    }
-    100% {
-      transform: translateY(-105vh);
-      opacity: 0;
-    }
+    0% { transform: translateY(0); opacity: 0; }
+    8% { opacity: 0.5; }
+    60% { opacity: 0.35; }
+    100% { transform: translateY(-105vh); opacity: 0; }
+  }
+
+  /* ── Message Popup ────────────────────── */
+  .msg-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .msg-popup-overlay.show {
+    opacity: 1;
+  }
+
+  .msg-popup-overlay.hidden {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .msg-popup {
+    position: relative;
+    background: rgba(20, 18, 30, 0.85);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    padding: 36px 32px 28px;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    transform: translateY(20px) scale(0.92);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+      0 24px 64px rgba(0, 0, 0, 0.6),
+      0 0 80px rgba(240, 200, 140, 0.08);
+  }
+
+  .msg-popup-overlay.show .msg-popup {
+    transform: translateY(0) scale(1);
+  }
+
+  .msg-popup::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 28px;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(240, 200, 140, 0.2) 0%,
+      rgba(240, 200, 140, 0.04) 40%,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(240, 200, 140, 0.08) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .msg-popup-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    animation: star-pulse 2s ease-in-out infinite;
+  }
+
+  .msg-popup-title {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: rgba(240, 200, 150, 0.7);
+    margin-bottom: 14px;
+  }
+
+  .msg-popup-text {
+    font-size: 16px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: #f0e6dc;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+
+  .msg-popup-time {
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.08em;
+    margin-bottom: 18px;
+  }
+
+  .msg-popup-dismiss {
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    color: rgba(240, 200, 150, 0.5);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 8px 20px;
+    transition: color 0.3s;
+  }
+
+  .msg-popup-dismiss:hover {
+    color: rgba(240, 200, 150, 0.9);
+  }
+
+  /* ── Message Board Button ─────────────── */
+  .msg-board-btn {
+    position: fixed;
+    bottom: clamp(80px, 12vh, 110px);
+    right: clamp(20px, 4vw, 32px);
+    z-index: 5;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(20, 18, 30, 0.7);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    color: rgba(240, 200, 140, 0.7);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s ease;
+    pointer-events: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+  }
+
+  .msg-board-btn:hover {
+    border-color: rgba(240, 200, 140, 0.3);
+    color: rgba(240, 200, 140, 0.95);
+    box-shadow: 0 4px 24px rgba(240, 200, 140, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .msg-board-btn:active {
+    transform: scale(0.9);
+  }
+
+  .msg-board-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: rgba(240, 180, 100, 0.9);
+    color: #1a1a2e;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    transition: transform 0.3s ease;
+    line-height: 1;
+  }
+
+  .msg-board-badge:empty {
+    display: none;
+  }
+
+  /* ── Message Board Panel ──────────────── */
+  .msg-board-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 8;
+    width: 100%;
+    max-width: 400px;
+    height: 55vh;
+    max-height: 520px;
+    background: rgba(16, 14, 26, 0.92);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px 28px 0 0;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: auto;
+    box-shadow:
+      0 -8px 40px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  }
+
+  .msg-board-panel.open {
+    transform: translateY(0);
+  }
+
+  .msg-board-panel::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 28px 28px 0 0;
+    padding: 1px;
+    background: linear-gradient(
+      180deg,
+      rgba(240, 200, 140, 0.15) 0%,
+      rgba(240, 200, 140, 0.03) 30%,
+      rgba(255, 255, 255, 0) 70%,
+      rgba(240, 200, 140, 0.05) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .msg-board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+  }
+
+  .msg-board-title {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: rgba(240, 200, 150, 0.85);
+  }
+
+  .msg-board-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    font-family: inherit;
+    line-height: 1;
+  }
+
+  .msg-board-close:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .msg-board-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .msg-board-list::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  .msg-board-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .msg-board-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 1px;
+  }
+
+  .msg-board-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+
+  .msg-board-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 16px;
+    padding: 12px 16px;
+    animation: msg-item-in 0.4s ease-out;
+  }
+
+  @keyframes msg-item-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-board-item-text {
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: #e8dcc8;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .msg-board-item-time {
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.06em;
+    margin-top: 6px;
+  }
+
+  .msg-board-input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+  }
+
+  .msg-board-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 300;
+    color: #e8dcc8;
+    letter-spacing: 0.05em;
+    outline: none;
+    transition: border-color 0.3s;
+    min-width: 0;
+  }
+
+  .msg-board-input::placeholder {
+    color: rgba(255, 255, 255, 0.18);
+  }
+
+  .msg-board-input:focus {
+    border-color: rgba(240, 200, 140, 0.3);
+  }
+
+  .msg-board-send {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(240, 200, 140, 0.08);
+    color: rgba(240, 200, 140, 0.6);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    font-family: inherit;
+    line-height: 1;
+  }
+
+  .msg-board-send:hover {
+    background: rgba(240, 200, 140, 0.15);
+    border-color: rgba(240, 200, 140, 0.3);
+    color: rgba(240, 200, 140, 0.9);
+  }
+
+  .msg-board-send:active {
+    transform: scale(0.9);
+  }
+
+  /* ── Backdrop for message board ───────── */
+  .msg-board-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 7;
+    background: rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .msg-board-backdrop.show {
+    opacity: 1;
+  }
+
+  .msg-board-backdrop.hidden {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* ── Connection indicator ─────────────── */
+  .connection-dot {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+  }
+
+  .connection-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(100, 220, 140, 0.7);
+    box-shadow: 0 0 8px rgba(100, 220, 140, 0.4);
+    transition: background 0.5s, box-shadow 0.5s;
+  }
+
+  .connection-dot.offline::before {
+    background: rgba(220, 100, 100, 0.7);
+    box-shadow: 0 0 8px rgba(220, 100, 100, 0.4);
   }
 
   /* ── Responsive ───────────────────────── */
@@ -366,11 +789,23 @@
     .wish-input { font-size: 13px; }
     .wish-send-btn { width: 34px; height: 34px; font-size: 14px; }
     .floating-wish { font-size: 12px; }
+    .msg-popup { padding: 28px 24px 22px; border-radius: 22px; }
+    .msg-popup::before { border-radius: 22px; }
+    .msg-popup-text { font-size: 15px; }
+    .msg-board-panel { max-width: 100%; border-radius: 24px 24px 0 0; }
+    .msg-board-panel::before { border-radius: 24px 24px 0 0; }
+    .msg-board-btn { bottom: 70px; right: 16px; width: 42px; height: 42px; font-size: 18px; }
+    .msg-board-header { padding: 16px 18px 12px; }
+    .msg-board-list { padding: 10px 16px; }
+    .msg-board-input-area { padding: 10px 16px 16px; }
   }
 </style>
 </head>
 <body>
   <canvas id="starfield"></canvas>
+
+  <!-- Connection indicator -->
+  <div class="connection-dot" id="connectionDot">已连接</div>
 
   <!-- Floating wish messages in background -->
   <div class="floating-wishes" id="floatingWishes"></div>
@@ -405,21 +840,69 @@
 
   <p class="instruction" id="instruction">轻触屏幕 · 许下心愿</p>
 
+  <!-- ── Message Popup (shows previous message) ── -->
+  <div class="msg-popup-overlay hidden" id="msgPopupOverlay">
+    <div class="msg-popup">
+      <div class="msg-popup-icon">💌</div>
+      <div class="msg-popup-title" id="msgPopupTitle">上一个人的留言</div>
+      <div class="msg-popup-text" id="msgPopupText"></div>
+      <div class="msg-popup-time" id="msgPopupTime"></div>
+      <button class="msg-popup-dismiss" id="msgPopupDismiss">我知道了 ✨</button>
+    </div>
+  </div>
+
+  <!-- ── Message Board Backdrop ── -->
+  <div class="msg-board-backdrop hidden" id="msgBoardBackdrop"></div>
+
+  <!-- ── Message Board Panel ── -->
+  <div class="msg-board-panel" id="msgBoardPanel">
+    <div class="msg-board-header">
+      <span class="msg-board-title">💬 留言板</span>
+      <button class="msg-board-close" id="msgBoardClose">✕</button>
+    </div>
+    <div class="msg-board-list" id="msgBoardList">
+      <div class="msg-board-empty">还没有留言，来说点什么吧~</div>
+    </div>
+    <div class="msg-board-input-area">
+      <input
+        type="text"
+        class="msg-board-input"
+        id="msgBoardInput"
+        placeholder="写下留言…"
+        maxlength="200"
+        autocomplete="off"
+      >
+      <button class="msg-board-send" id="msgBoardSend" aria-label="发送留言">✧</button>
+    </div>
+  </div>
+
+  <!-- ── Message Board Toggle Button ── -->
+  <button class="msg-board-btn" id="msgBoardBtn" aria-label="留言板">
+    💬
+    <span class="msg-board-badge" id="msgBoardBadge"></span>
+  </button>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
   (function() {
     /* ═══════════════════════════════════════════════════════════════════════
        CONFIGURATION
-       ═══════════════════════════════════════════════════════════════════ */
+       ═══════════════════════════════════════════════════════════════════════ */
     const CONFIG = {
       bgStarCount: 220,
       nebulaCount: 3,
       maxLanterns: 12,
       maxParticles: 300,
       heartPoints: 150,
-      shootingStarInterval: [4000, 10000], // ms
+      shootingStarInterval: [4000, 10000],
       lanternRiseSpeed: 0.6,
       lanternWobble: 0.4,
       chimeVolume: 0.08,
+      // ⚠️ 替换为你的 Supabase 项目 URL 和 anon key
+      //    在 supabase.com → 你的项目 → Settings → API 中获取
+      supabaseUrl: 'YOUR_SUPABASE_URL',
+      supabaseKey: 'YOUR_SUPABASE_ANON_KEY',
     };
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -435,12 +918,31 @@
     const wishSendBtn = document.getElementById('wishSendBtn');
     const wishInputArea = document.getElementById('wishInputArea');
     const floatingWishes = document.getElementById('floatingWishes');
+    const connectionDot = document.getElementById('connectionDot');
+
+    // Message popup
+    const msgPopupOverlay = document.getElementById('msgPopupOverlay');
+    const msgPopupTitle = document.getElementById('msgPopupTitle');
+    const msgPopupText = document.getElementById('msgPopupText');
+    const msgPopupTime = document.getElementById('msgPopupTime');
+    const msgPopupDismiss = document.getElementById('msgPopupDismiss');
+
+    // Message board
+    const msgBoardBtn = document.getElementById('msgBoardBtn');
+    const msgBoardBadge = document.getElementById('msgBoardBadge');
+    const msgBoardPanel = document.getElementById('msgBoardPanel');
+    const msgBoardBackdrop = document.getElementById('msgBoardBackdrop');
+    const msgBoardClose = document.getElementById('msgBoardClose');
+    const msgBoardList = document.getElementById('msgBoardList');
+    const msgBoardInput = document.getElementById('msgBoardInput');
+    const msgBoardSend = document.getElementById('msgBoardSend');
 
     /* ═══════════════════════════════════════════════════════════════════════
        STATE
        ═══════════════════════════════════════════════════════════════════════ */
     let W = 0, H = 0;
     let totalWishes = 0;
+    let totalMessages = 0;
     let mouseX = 0, mouseY = 0;
     let targetMouseX = 0, targetMouseY = 0;
     let time = 0;
@@ -451,34 +953,278 @@
     let particles = [];
     let shootingStars = [];
     let nebulaBlobs = [];
-    let wishMessages = [];   // persisted wish texts
+    let wishMessages = [];
+    let messages = [];
     let audioCtx = null;
+    let lastWishCount = 0;
+    let lastMsgCount = 0;
+    let popupTimer = null;
 
     /* ═══════════════════════════════════════════════════════════════════════
-       LOCAL STORAGE
+       API HELPERS
        ═══════════════════════════════════════════════════════════════════════ */
-    const STORAGE_KEY = 'wish-messages';
+    let supabase = null;
+    let localInsertIds = new Set(); // track self-inserted items to avoid double-display
+    let realtimeChannel = null;
 
-    function loadWishes() {
+    function initSupabase() {
+      if (CONFIG.supabaseUrl.includes('YOUR_')) {
+        console.warn('⚠️ 请先配置 Supabase URL 和 Key');
+        return false;
+      }
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          wishMessages = JSON.parse(raw);
-          if (!Array.isArray(wishMessages)) wishMessages = [];
-        }
+        supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+        return true;
       } catch (e) {
-        wishMessages = [];
+        console.error('Supabase 初始化失败:', e);
+        return false;
       }
     }
 
-    function saveWish(text) {
-      wishMessages.push({ text, time: Date.now() });
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(wishMessages));
-      } catch (e) {
-        // storage full — ignore
+    /* ═══════════════════════════════════════════════════════════════════════
+       DATA LOADING
+       ═══════════════════════════════════════════════════════════════════════ */
+    async function loadFromSupabase() {
+      if (!supabase) return;
+
+      // Load wishes
+      const { data: wishesData } = await supabase
+        .from('wishes').select('*').order('created_at', { ascending: true });
+      if (wishesData) {
+        wishMessages = wishesData;
+        totalWishes = wishesData.length;
+        lastWishCount = wishesData.length;
+        wishCountEl.textContent = totalWishes;
+        connectionDot.classList.remove('offline');
+        connectionDot.textContent = '已连接';
+      }
+
+      // Load messages
+      const { data: msgsData } = await supabase
+        .from('messages').select('*').order('created_at', { ascending: true });
+      if (msgsData) {
+        messages = msgsData;
+        totalMessages = msgsData.length;
+        lastMsgCount = msgsData.length;
+        updateMsgBadge();
+        renderMessageBoard();
       }
     }
+
+    function setupRealtime() {
+      if (!supabase) return;
+
+      // Subscribe to new wishes
+      supabase
+        .channel('wishes-realtime')
+        .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'wishes' },
+          (payload) => {
+            const newWish = payload.new;
+            if (localInsertIds.has(newWish.id)) {
+              localInsertIds.delete(newWish.id);
+              return; // skip self-inserted
+            }
+            // New wish from another device!
+            wishMessages.push(newWish);
+            totalWishes = wishMessages.length;
+            lastWishCount = totalWishes;
+            wishCountEl.textContent = totalWishes;
+            spawnFloatingWish(newWish.text);
+            const rect = glassCard.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2 + (Math.random() - 0.5) * 200;
+            const cy = rect.top + rect.height / 2 + (Math.random() - 0.5) * 100;
+            createLantern(cx, cy, newWish.text);
+            if (totalWishes >= 3) {
+              instruction.style.opacity = '0';
+              instruction.style.transition = 'opacity 1s ease';
+            }
+          }
+        )
+        .subscribe();
+
+      // Subscribe to new messages
+      supabase
+        .channel('messages-realtime')
+        .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            const newMsg = payload.new;
+            if (localInsertIds.has(newMsg.id)) {
+              localInsertIds.delete(newMsg.id);
+              return; // skip self-inserted
+            }
+            // New message from another device!
+            messages.push(newMsg);
+            totalMessages = messages.length;
+            lastMsgCount = totalMessages;
+            updateMsgBadge();
+            if (msgBoardPanel.classList.contains('open')) {
+              renderMessageBoard();
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       MESSAGE POPUP
+       ═══════════════════════════════════════════════════════════════════════ */
+    function showMessagePopup(previousMessage) {
+      if (!previousMessage) return;
+
+      if (popupTimer) clearTimeout(popupTimer);
+
+      msgPopupTitle.textContent = '💌 上一个人的留言';
+      msgPopupText.textContent = previousMessage.text;
+      msgPopupTime.textContent = formatTime(previousMessage.time);
+      msgPopupOverlay.classList.remove('hidden');
+      // Force reflow then add show
+      void msgPopupOverlay.offsetWidth;
+      msgPopupOverlay.classList.add('show');
+
+      popupTimer = setTimeout(dismissPopup, 5000);
+    }
+
+    function dismissPopup() {
+      if (popupTimer) clearTimeout(popupTimer);
+      msgPopupOverlay.classList.remove('show');
+      msgPopupOverlay.addEventListener('transitionend', function handler() {
+        msgPopupOverlay.classList.add('hidden');
+        msgPopupOverlay.removeEventListener('transitionend', handler);
+      });
+    }
+
+    msgPopupDismiss.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissPopup();
+    });
+
+    msgPopupOverlay.addEventListener('click', (e) => {
+      if (e.target === msgPopupOverlay) dismissPopup();
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       MESSAGE BOARD
+       ═══════════════════════════════════════════════════════════════════════ */
+    function openMessageBoard() {
+      msgBoardPanel.classList.add('open');
+      msgBoardBackdrop.classList.remove('hidden');
+      void msgBoardBackdrop.offsetWidth;
+      msgBoardBackdrop.classList.add('show');
+      msgBoardBadge.textContent = '';
+      msgBoardBadge.style.display = 'none';
+      renderMessageBoard();
+      setTimeout(() => msgBoardInput.focus(), 400);
+    }
+
+    function closeMessageBoard() {
+      msgBoardPanel.classList.remove('open');
+      msgBoardBackdrop.classList.remove('show');
+      msgBoardBackdrop.addEventListener('transitionend', function handler() {
+        msgBoardBackdrop.classList.add('hidden');
+        msgBoardBackdrop.removeEventListener('transitionend', handler);
+      });
+    }
+
+    function updateMsgBadge() {
+      if (totalMessages > 0) {
+        msgBoardBadge.textContent = totalMessages > 99 ? '99+' : totalMessages;
+        msgBoardBadge.style.display = 'flex';
+      } else {
+        msgBoardBadge.style.display = 'none';
+      }
+    }
+
+    function renderMessageBoard() {
+      if (messages.length === 0) {
+        msgBoardList.innerHTML = '<div class="msg-board-empty">还没有留言，来说点什么吧~</div>';
+        return;
+      }
+
+      // Reverse chronological (newest first)
+      const reversed = [...messages].reverse();
+      msgBoardList.innerHTML = reversed.map(m => `
+        <div class="msg-board-item">
+          <div class="msg-board-item-text">${escapeHTML(m.text)}</div>
+          <div class="msg-board-item-time">${formatTime(m.time)}</div>
+        </div>
+      `).join('');
+
+      // Scroll to top to show newest
+      msgBoardList.scrollTop = 0;
+    }
+
+    async function submitMessage() {
+      const text = msgBoardInput.value.trim();
+      if (!text) return;
+      msgBoardInput.value = '';
+
+      if (!supabase) return;
+
+      const { data: inserted, error } = await supabase
+        .from('messages')
+        .insert({ text })
+        .select()
+        .single();
+
+      if (error || !inserted) {
+        console.warn('Supabase message insert error:', error);
+        return;
+      }
+
+      localInsertIds.add(inserted.id);
+      messages.push(inserted);
+      totalMessages = messages.length;
+      lastMsgCount = totalMessages;
+      updateMsgBadge();
+      renderMessageBoard();
+    }
+
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      const now = new Date();
+      const diff = now - d;
+      if (diff < 60000) return '刚刚';
+      if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+      if (diff < 172800000) return '昨天';
+      const month = d.getMonth() + 1;
+      const day = d.getDate();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${month}/${day} ${hours}:${minutes}`;
+    }
+
+    msgBoardBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMessageBoard();
+    });
+
+    msgBoardClose.addEventListener('click', () => closeMessageBoard());
+    msgBoardBackdrop.addEventListener('click', () => closeMessageBoard());
+
+    msgBoardInput.addEventListener('click', (e) => e.stopPropagation());
+    msgBoardInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitMessage();
+      }
+    });
+
+    msgBoardSend.addEventListener('click', (e) => {
+      e.stopPropagation();
+      submitMessage();
+    });
+
+    // Prevent message board clicks from triggering canvas wishes
+    msgBoardPanel.addEventListener('click', (e) => e.stopPropagation());
 
     /* ═══════════════════════════════════════════════════════════════════════
        RESIZE
@@ -489,7 +1235,6 @@
       initBgStars();
       initNebula();
       generateHeartPoints();
-      // Re-assign settled stars to nearest heart points
       settledStars.forEach((s, i) => {
         if (i < heartPoints.length) {
           s.x = heartPoints[i].x;
@@ -499,7 +1244,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       AUDIO — subtle chime using Web Audio API
+       AUDIO — subtle chime
        ═══════════════════════════════════════════════════════════════════════ */
     function initAudio() {
       if (audioCtx) return;
@@ -513,7 +1258,7 @@
     function playChime() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 — pentatonic subset
+      const notes = [523.25, 659.25, 783.99];
       notes.forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -530,15 +1275,15 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       NEBULA — large soft color blobs
+       NEBULA
        ═══════════════════════════════════════════════════════════════════════ */
     function initNebula() {
       nebulaBlobs = [];
       const colors = [
-        { h: 260, s: 40, l: 25 }, // deep purple
-        { h: 220, s: 30, l: 20 }, // navy
-        { h: 340, s: 30, l: 18 }, // dark rose
-        { h: 200, s: 25, l: 16 }, // teal
+        { h: 260, s: 40, l: 25 },
+        { h: 220, s: 30, l: 20 },
+        { h: 340, s: 30, l: 18 },
+        { h: 200, s: 25, l: 16 },
       ];
       for (let i = 0; i < CONFIG.nebulaCount; i++) {
         const c = colors[i % colors.length];
@@ -557,7 +1302,6 @@
 
     function drawNebula() {
       nebulaBlobs.forEach(b => {
-        // Slow drift
         b.x += b.dx;
         b.y += b.dy;
         if (b.x < -b.r) b.x = W + b.r;
@@ -622,7 +1366,6 @@
 
       for (let i = 0; i < CONFIG.heartPoints; i++) {
         const t = (i / CONFIG.heartPoints) * Math.PI * 2;
-        // Parametric heart curve
         const x = 16 * Math.pow(Math.sin(t), 3);
         const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
         heartPoints.push({
@@ -634,7 +1377,6 @@
     }
 
     function drawHeartConstellation() {
-      // Draw faint outline of heart
       if (heartPoints.length < 2) return;
 
       ctx.beginPath();
@@ -649,12 +1391,10 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Draw settled stars
       settledStars.forEach(s => {
         const pulse = 1 + Math.sin(time * 0.03 + s.pulseOffset) * 0.25;
         const alpha = 0.55 + Math.sin(time * 0.03 + s.pulseOffset) * 0.3;
 
-        // Outer glow
         const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 8 * pulse);
         glow.addColorStop(0, `rgba(240, 200, 140, ${alpha * 0.5})`);
         glow.addColorStop(0.5, `rgba(240, 180, 120, ${alpha * 0.12})`);
@@ -664,13 +1404,11 @@
         ctx.arc(s.x, s.y, s.r * 8 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * pulse, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 230, 190, ${alpha})`;
         ctx.fill();
 
-        // Bright center
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * 0.4 * pulse, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 245, 225, ${alpha + 0.2})`;
@@ -682,7 +1420,7 @@
        SHOOTING STARS
        ═══════════════════════════════════════════════════════════════════════ */
     function spawnShootingStar() {
-      const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.35; // downward-right-ish
+      const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.35;
       const speed = 6 + Math.random() * 10;
       const len = 60 + Math.random() * 100;
       const startX = Math.random() * W * 0.6;
@@ -725,7 +1463,6 @@
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // Head glow
         ctx.beginPath();
         ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${s.life})`;
@@ -745,7 +1482,6 @@
         tx = heartPoints[targetIdx].x;
         ty = heartPoints[targetIdx].y;
       } else {
-        // Overflow: scatter around the heart
         const cx = W * 0.5;
         const cy = H * 0.28;
         const spread = Math.min(W, H) * 0.2;
@@ -754,17 +1490,14 @@
       }
 
       lanterns.push({
-        x,
-        y,
-        tx,
-        ty,
+        x, y, tx, ty,
         message: message || '',
-        phase: 'rising', // 'rising' | 'settling' | 'settled'
+        phase: 'rising',
         progress: 0,
         wobbleOffset: Math.random() * Math.PI * 2,
         wobbleAmp: 0.3 + Math.random() * 0.5,
         createdAt: time,
-        settleDuration: 80 + Math.random() * 40, // frames
+        settleDuration: 80 + Math.random() * 40,
       });
     }
 
@@ -773,7 +1506,6 @@
         const l = lanterns[i];
 
         if (l.phase === 'rising') {
-          // Move upward toward target
           const dx = l.tx - l.x;
           const dy = l.ty - l.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -789,7 +1521,6 @@
             l.y += (dy / dist) * speed + wobY;
           }
 
-          // Emit trail particles
           if (Math.random() < 0.6) {
             particles.push({
               x: l.x + (Math.random() - 0.5) * 4,
@@ -806,8 +1537,6 @@
         if (l.phase === 'settling') {
           const elapsed = time - l.settleStart;
           const t = Math.min(elapsed / l.settleDuration, 1);
-          // Ease-out
-          const ease = 1 - Math.pow(1 - t, 3);
           l.x += (l.tx - l.x) * 0.12;
           l.y += (l.ty - l.y) * 0.12;
 
@@ -816,8 +1545,7 @@
             l.x = l.tx;
             l.y = l.ty;
             settledStars.push({
-              x: l.x,
-              y: l.y,
+              x: l.x, y: l.y,
               r: 1.2 + Math.random() * 1,
               pulseOffset: Math.random() * Math.PI * 2,
             });
@@ -826,7 +1554,6 @@
           }
         }
 
-        // Draw lantern glow
         const alpha = l.phase === 'settling' ? 0.8 : 0.9;
         const r = l.phase === 'settling' ? 3 : 4;
 
@@ -840,7 +1567,6 @@
         ctx.arc(l.x, l.y, r * 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Core
         ctx.beginPath();
         ctx.arc(l.x, l.y, r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 245, 220, ${alpha})`;
@@ -851,7 +1577,6 @@
         ctx.fillStyle = `rgba(255, 255, 245, 1)`;
         ctx.fill();
 
-        // Draw wish message text near lantern
         if (l.message) {
           const textAlpha = l.phase === 'settling' ? 0.45 : 0.7;
           ctx.save();
@@ -870,7 +1595,6 @@
        PARTICLES
        ═══════════════════════════════════════════════════════════════════════ */
     function drawParticles() {
-      // Limit total particles
       while (particles.length > CONFIG.maxParticles) {
         particles.shift();
       }
@@ -897,10 +1621,8 @@
        MAIN RENDER LOOP
        ═══════════════════════════════════════════════════════════════════════ */
     function draw() {
-      // Clear
       ctx.clearRect(0, 0, W, H);
 
-      // Background gradient
       const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
       bgGrad.addColorStop(0, '#0d0d22');
       bgGrad.addColorStop(0.5, '#08081a');
@@ -908,25 +1630,13 @@
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // Nebula
       drawNebula();
-
-      // Background stars
       drawBgStars();
-
-      // Heart constellation outline
       drawHeartConstellation();
-
-      // Shooting stars
       drawShootingStars();
-
-      // Particles
       drawParticles();
-
-      // Wish lanterns
       drawLanterns();
 
-      // Vignette overlay for depth
       const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.35, W * 0.5, H * 0.5, W * 0.75);
       vignette.addColorStop(0, 'transparent');
       vignette.addColorStop(1, 'rgba(2, 2, 8, 0.55)');
@@ -936,11 +1646,8 @@
 
     function loop(ts) {
       time = ts;
-
-      // Smooth mouse follow
       mouseX += (targetMouseX - mouseX) * 0.05;
       mouseY += (targetMouseY - mouseY) * 0.05;
-
       draw();
       requestAnimationFrame(loop);
     }
@@ -954,15 +1661,11 @@
 
       createLantern(ex, ey, message);
 
-      // Save message if present — only messaged wishes increment the counter
       if (message) {
-        saveWish(message);
         const isFirstWish = totalWishes === 0;
         totalWishes++;
         wishCountEl.textContent = totalWishes;
-        // Spawn a floating wish for this message
         spawnFloatingWish(message);
-        // Start the floating scheduler on first wish
         if (isFirstWish) {
           setTimeout(scheduleFloatingWishes, 3000);
         }
@@ -976,13 +1679,11 @@
         wishInputArea.classList.add('visible');
       }
 
-      // Fade instruction
       if (totalWishes >= 3) {
         instruction.style.opacity = '0';
         instruction.style.transition = 'opacity 1s ease';
       }
 
-      // Ripple effect
       const ripple = document.createElement('div');
       ripple.className = 'ripple';
       ripple.style.left = ex + 'px';
@@ -991,34 +1692,86 @@
       ripple.addEventListener('animationend', () => ripple.remove());
     }
 
-    // Submit wish from input
-    function submitWish() {
+    async function submitWish() {
       const text = wishInput.value.trim();
       if (!text) return;
       wishInput.value = '';
-      // Lantern rises from the center of the glass card
+
+      if (!supabase) {
+        // No Supabase configured — still show the lantern locally
+        const rect = glassCard.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        handleInteraction(cx, cy, text);
+        return;
+      }
+
+      // Fetch the latest message BEFORE inserting the wish
+      let previousMessage = null;
+      const { data: prevMsgs } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (prevMsgs && prevMsgs.length > 0) {
+        previousMessage = prevMsgs[0];
+      }
+
+      // Insert wish
+      const { data: inserted, error } = await supabase
+        .from('wishes')
+        .insert({ text })
+        .select()
+        .single();
+
+      if (error || !inserted) {
+        console.warn('Supabase insert error:', error);
+        // Fallback: show animation locally
+        const rect = glassCard.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        handleInteraction(cx, cy, text);
+        return;
+      }
+
+      localInsertIds.add(inserted.id);
+      wishMessages.push(inserted);
+      totalWishes = wishMessages.length;
+      lastWishCount = totalWishes;
+      wishCountEl.textContent = totalWishes;
+
       const rect = glassCard.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       handleInteraction(cx, cy, text);
+
+      // Show previous message popup
+      if (previousMessage) {
+        setTimeout(() => showMessagePopup(previousMessage), 800);
+      }
     }
 
-    // Click anywhere → silent wish (no message)
     document.addEventListener('click', (e) => {
-      // Don't trigger when clicking the input or button
+      // Don't trigger when clicking interactive elements
       if (e.target === wishInput || e.target === wishSendBtn) return;
+      if (e.target.closest('.msg-popup-overlay')) return;
+      if (e.target.closest('.msg-board-panel')) return;
+      if (e.target.closest('.msg-board-btn')) return;
+      if (e.target.closest('.msg-board-backdrop')) return;
       handleInteraction(e.clientX, e.clientY);
     });
 
-    // Touch anywhere → silent wish
     document.addEventListener('touchstart', (e) => {
       if (e.target === wishInput || e.target === wishSendBtn) return;
+      if (e.target.closest('.msg-popup-overlay')) return;
+      if (e.target.closest('.msg-board-panel')) return;
+      if (e.target.closest('.msg-board-btn')) return;
+      if (e.target.closest('.msg-board-backdrop')) return;
       if (e.touches.length === 1) {
         handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, { passive: true });
 
-    // Input: Enter key to submit
     wishInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1026,13 +1779,11 @@
       }
     });
 
-    // Send button click
     wishSendBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       submitWish();
     });
 
-    // Prevent click on input from triggering canvas wish
     wishInput.addEventListener('click', (e) => {
       e.stopPropagation();
     });
@@ -1056,10 +1807,8 @@
       const el = document.createElement('span');
       el.className = 'floating-wish';
       el.textContent = text;
-      // Random horizontal position (avoid edges)
-      const x = 8 + Math.random() * 84; // 8% ~ 92%
+      const x = 8 + Math.random() * 84;
       el.style.left = x + '%';
-      // Slight random variation in animation duration
       const dur = 8 + Math.random() * 5;
       el.style.animationDuration = dur + 's';
       floatingWishes.appendChild(el);
@@ -1068,10 +1817,8 @@
 
     function scheduleFloatingWishes() {
       if (wishMessages.length === 0) return;
-      // Pick a random wish
       const idx = Math.floor(Math.random() * wishMessages.length);
       spawnFloatingWish(wishMessages[idx].text);
-      // Schedule next
       const delay = 3000 + Math.random() * 5000;
       setTimeout(scheduleFloatingWishes, delay);
     }
@@ -1079,7 +1826,6 @@
     function burstFloatingWishes() {
       if (wishMessages.length === 0) return;
       const count = Math.min(5, wishMessages.length);
-      // Shuffle and pick `count` wishes
       const shuffled = [...wishMessages].sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, count);
       selected.forEach((wish, i) => {
@@ -1115,43 +1861,48 @@
     /* ═══════════════════════════════════════════════════════════════════════
        INIT
        ═══════════════════════════════════════════════════════════════════════ */
-    function init() {
+    async function init() {
       resize();
       window.addEventListener('resize', resize);
 
-      // Load persisted wishes
-      loadWishes();
+      // Initialize Supabase
+      const ok = initSupabase();
+      if (ok) {
+        // Load existing data
+        await loadFromSupabase();
+        // Setup realtime subscriptions for cross-device sync
+        setupRealtime();
+      } else {
+        connectionDot.classList.add('offline');
+        connectionDot.textContent = '未配置 Supabase';
+      }
 
       scheduleShootingStar();
       updateParallax();
       requestAnimationFrame(loop);
 
-      // Pre-populate some settled stars for visual appeal
+      // Pre-populate settled stars for visual appeal
       const initialStars = 8;
       for (let i = 0; i < initialStars && i < heartPoints.length; i++) {
         const idx = Math.floor((i / initialStars) * heartPoints.length);
         const p = heartPoints[idx];
         settledStars.push({
-          x: p.x,
-          y: p.y,
+          x: p.x, y: p.y,
           r: 1.2 + Math.random() * 1,
           pulseOffset: Math.random() * Math.PI * 2,
         });
       }
-      // Total wishes = only persisted messages (decorative stars don't count)
-      totalWishes = wishMessages.length;
+
       wishCountEl.textContent = totalWishes;
       wishCounter.classList.add('visible');
       wishInputArea.classList.add('visible');
+      updateMsgBadge();
 
-      // Burst: fly out up to 5 past wishes on open
       if (wishMessages.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
-        // Resume normal scheduler after burst finishes
         setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
       }
 
-      // Initial shooting star after a short delay
       setTimeout(() => spawnShootingStar(), 1500);
     }
 
