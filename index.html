@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>祈愿 · 天天开心</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #06060f;
+    --gold: #d4a574;
+    --gold-light: #f0d78c;
+    --text-primary: #f0e6dc;
+    --text-secondary: rgba(240, 230, 220, 0.55);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.07);
+  }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg-deep);
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif;
+    cursor: crosshair;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  canvas#starfield {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  /* ── Overlay ──────────────────────────── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    padding: 24px;
+  }
+
+  /* ── Glass Card ───────────────────────── */
+  .glass-card {
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    border: 1px solid var(--glass-border);
+    border-radius: 40px;
+    padding: clamp(40px, 6vw, 72px) clamp(36px, 8vw, 88px);
+    text-align: center;
+    pointer-events: auto;
+    transform: translate(var(--parallax-x, 0px), var(--parallax-y, 0px));
+    transition: box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+      0 8px 40px rgba(0, 0, 0, 0.4),
+      0 0 80px rgba(180, 150, 120, 0.06);
+    will-change: transform;
+  }
+
+  .glass-card:hover {
+    transform: translate(var(--parallax-x, 0px), calc(var(--parallax-y, 0px) - 6px));
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+      0 16px 56px rgba(0, 0, 0, 0.5),
+      0 0 120px rgba(180, 150, 120, 0.12);
+  }
+
+  /* Gradient border ring */
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 40px;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.02) 30%,
+      rgba(255, 255, 255, 0) 50%,
+      rgba(255, 255, 255, 0.02) 70%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── Star Icon ────────────────────────── */
+  .star-icon {
+    display: inline-block;
+    font-size: 28px;
+    margin-bottom: 20px;
+    animation: star-pulse 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 12px rgba(240, 200, 140, 0.5));
+  }
+
+  @keyframes star-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.25); opacity: 1; }
+  }
+
+  /* ── Typography ───────────────────────── */
+  .wish-label {
+    font-size: clamp(13px, 1.8vw, 15px);
+    font-weight: 400;
+    letter-spacing: 0.6em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .main-title {
+    font-size: clamp(40px, 7vw, 72px);
+    font-weight: 200;
+    letter-spacing: 0.12em;
+    color: var(--text-primary);
+    line-height: 1.3;
+    background: linear-gradient(180deg, #f8f0e8 0%, #d4b896 50%, #c4a078 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 24px rgba(200, 160, 120, 0.3));
+    animation: title-float 6s ease-in-out infinite;
+  }
+
+  @keyframes title-float {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-6px); }
+    75% { transform: translateY(4px); }
+  }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200, 160, 120, 0.5), transparent);
+    margin: 28px auto;
+  }
+
+  .sub-text {
+    font-size: clamp(13px, 1.5vw, 14px);
+    font-weight: 300;
+    letter-spacing: 0.25em;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  /* ── Wish Counter ─────────────────────── */
+  .wish-counter {
+    margin-top: 36px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .wish-counter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .wish-count {
+    font-size: 36px;
+    font-weight: 200;
+    color: var(--gold-light);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    text-shadow: 0 0 20px rgba(240, 200, 140, 0.4);
+  }
+
+  .wish-label-small {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    letter-spacing: 0.15em;
+  }
+
+  /* ── Instruction ──────────────────────── */
+  .instruction {
+    position: fixed;
+    bottom: clamp(32px, 5vh, 48px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.3);
+    z-index: 2;
+    pointer-events: none;
+    animation: fade-hint 4s ease-in-out infinite;
+  }
+
+  @keyframes fade-hint {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.55; }
+  }
+
+  /* ── Ripple ───────────────────────────── */
+  .ripple {
+    position: fixed;
+    border-radius: 50%;
+    border: 1px solid rgba(240, 200, 140, 0.4);
+    animation: ripple-out 1.2s ease-out forwards;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  @keyframes ripple-out {
+    0% { width: 0; height: 0; opacity: 0.8; }
+    100% { width: 160px; height: 160px; opacity: 0; margin-left: -80px; margin-top: -80px; }
+  }
+
+  /* ── Wish Input ──────────────────────── */
+  .wish-input-area {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+    padding: 6px 6px 6px 22px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1),
+                border-color 0.4s ease,
+                box-shadow 0.4s ease;
+    max-width: 360px;
+    width: 100%;
+  }
+
+  .wish-input-area:focus-within {
+    border-color: rgba(200, 150, 100, 0.3);
+    box-shadow: 0 0 20px rgba(200, 150, 100, 0.08);
+  }
+
+  .wish-input-area.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .wish-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 300;
+    color: #e8dcc8;
+    letter-spacing: 0.08em;
+    min-width: 0;
+  }
+
+  .wish-input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.08em;
+  }
+
+  .wish-input:focus::placeholder {
+    color: rgba(255, 255, 255, 0.1);
+  }
+
+  .wish-send-btn {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(240, 200, 140, 0.6);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    line-height: 1;
+  }
+
+  .wish-send-btn:hover {
+    background: rgba(240, 200, 140, 0.1);
+    border-color: rgba(240, 200, 140, 0.3);
+    color: rgba(240, 200, 140, 0.9);
+    box-shadow: 0 0 16px rgba(240, 200, 140, 0.15);
+  }
+
+  .wish-send-btn:active {
+    transform: scale(0.9);
+  }
+
+  /* ── Floating Wishes ────────────────── */
+  .floating-wishes {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .floating-wish {
+    position: absolute;
+    bottom: -30px;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: rgba(240, 200, 150, 0.45);
+    text-shadow: 0 0 10px rgba(240, 200, 140, 0.25);
+    animation: wish-float-up 10s ease-in forwards;
+    font-family: inherit;
+  }
+
+  @keyframes wish-float-up {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    8% {
+      opacity: 0.5;
+    }
+    60% {
+      opacity: 0.35;
+    }
+    100% {
+      transform: translateY(-105vh);
+      opacity: 0;
+    }
+  }
+
+  /* ── Responsive ───────────────────────── */
+  @media (max-width: 640px) {
+    .glass-card {
+      border-radius: 28px;
+      padding: 32px 28px;
+    }
+    .glass-card::before { border-radius: 28px; }
+    .star-icon { font-size: 22px; margin-bottom: 12px; }
+    .divider { margin: 20px auto; }
+    .wish-counter { margin-top: 24px; }
+    .wish-count { font-size: 28px; }
+    .wish-input-area { margin-top: 20px; max-width: 300px; padding: 5px 5px 5px 18px; }
+    .wish-input { font-size: 13px; }
+    .wish-send-btn { width: 34px; height: 34px; font-size: 14px; }
+    .floating-wish { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+
+  <!-- Floating wish messages in background -->
+  <div class="floating-wishes" id="floatingWishes"></div>
+
+  <div class="overlay">
+    <div class="glass-card" id="glassCard">
+      <div class="star-icon">✨</div>
+      <div class="wish-label">祈 愿</div>
+      <h1 class="main-title">天天开心</h1>
+      <div class="divider"></div>
+      <p class="sub-text">May every day be filled with joy</p>
+    </div>
+
+    <div class="wish-counter" id="wishCounter">
+      <span class="wish-count" id="wishCount">0</span>
+      <span class="wish-label-small">个心愿</span>
+    </div>
+
+    <!-- Wish message input -->
+    <div class="wish-input-area" id="wishInputArea">
+      <input
+        type="text"
+        class="wish-input"
+        id="wishInput"
+        placeholder="写下你的心愿…"
+        maxlength="50"
+        autocomplete="off"
+      >
+      <button class="wish-send-btn" id="wishSendBtn" aria-label="发送心愿">✧</button>
+    </div>
+  </div>
+
+  <p class="instruction" id="instruction">轻触屏幕 · 许下心愿</p>
+
+  <script>
+  (function() {
+    /* ═══════════════════════════════════════════════════════════════════════
+       CONFIGURATION
+       ═══════════════════════════════════════════════════════════════════ */
+    const CONFIG = {
+      bgStarCount: 220,
+      nebulaCount: 3,
+      maxLanterns: 12,
+      maxParticles: 300,
+      heartPoints: 150,
+      shootingStarInterval: [4000, 10000], // ms
+      lanternRiseSpeed: 0.6,
+      lanternWobble: 0.4,
+      chimeVolume: 0.08,
+    };
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       DOM ELEMENTS
+       ═══════════════════════════════════════════════════════════════════════ */
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    const wishCounter = document.getElementById('wishCounter');
+    const wishCountEl = document.getElementById('wishCount');
+    const instruction = document.getElementById('instruction');
+    const glassCard = document.getElementById('glassCard');
+    const wishInput = document.getElementById('wishInput');
+    const wishSendBtn = document.getElementById('wishSendBtn');
+    const wishInputArea = document.getElementById('wishInputArea');
+    const floatingWishes = document.getElementById('floatingWishes');
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════════════════════ */
+    let W = 0, H = 0;
+    let totalWishes = 0;
+    let mouseX = 0, mouseY = 0;
+    let targetMouseX = 0, targetMouseY = 0;
+    let time = 0;
+    let heartPoints = [];
+    let settledStars = [];
+    let bgStars = [];
+    let lanterns = [];
+    let particles = [];
+    let shootingStars = [];
+    let nebulaBlobs = [];
+    let wishMessages = [];   // persisted wish texts
+    let audioCtx = null;
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       LOCAL STORAGE
+       ═══════════════════════════════════════════════════════════════════════ */
+    const STORAGE_KEY = 'wish-messages';
+
+    function loadWishes() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          wishMessages = JSON.parse(raw);
+          if (!Array.isArray(wishMessages)) wishMessages = [];
+        }
+      } catch (e) {
+        wishMessages = [];
+      }
+    }
+
+    function saveWish(text) {
+      wishMessages.push({ text, time: Date.now() });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(wishMessages));
+      } catch (e) {
+        // storage full — ignore
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       RESIZE
+       ═══════════════════════════════════════════════════════════════════════ */
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      initBgStars();
+      initNebula();
+      generateHeartPoints();
+      // Re-assign settled stars to nearest heart points
+      settledStars.forEach((s, i) => {
+        if (i < heartPoints.length) {
+          s.x = heartPoints[i].x;
+          s.y = heartPoints[i].y;
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       AUDIO — subtle chime using Web Audio API
+       ═══════════════════════════════════════════════════════════════════════ */
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        audioCtx = null;
+      }
+    }
+
+    function playChime() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 — pentatonic subset
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, now + i * 0.06);
+        gain.gain.linearRampToValueAtTime(CONFIG.chimeVolume, now + i * 0.06 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.9);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.06);
+        osc.stop(now + i * 0.06 + 0.95);
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       NEBULA — large soft color blobs
+       ═══════════════════════════════════════════════════════════════════════ */
+    function initNebula() {
+      nebulaBlobs = [];
+      const colors = [
+        { h: 260, s: 40, l: 25 }, // deep purple
+        { h: 220, s: 30, l: 20 }, // navy
+        { h: 340, s: 30, l: 18 }, // dark rose
+        { h: 200, s: 25, l: 16 }, // teal
+      ];
+      for (let i = 0; i < CONFIG.nebulaCount; i++) {
+        const c = colors[i % colors.length];
+        nebulaBlobs.push({
+          x: W * (0.2 + Math.random() * 0.6),
+          y: H * (0.2 + Math.random() * 0.6),
+          r: Math.min(W, H) * (0.35 + Math.random() * 0.45),
+          dx: (Math.random() - 0.5) * 0.08,
+          dy: (Math.random() - 0.5) * 0.06,
+          h: c.h,
+          s: c.s,
+          l: c.l,
+        });
+      }
+    }
+
+    function drawNebula() {
+      nebulaBlobs.forEach(b => {
+        // Slow drift
+        b.x += b.dx;
+        b.y += b.dy;
+        if (b.x < -b.r) b.x = W + b.r;
+        if (b.x > W + b.r) b.x = -b.r;
+        if (b.y < -b.r) b.y = H + b.r;
+        if (b.y > H + b.r) b.y = -b.r;
+
+        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        grad.addColorStop(0, `hsla(${b.h}, ${b.s}%, ${b.l}%, 0.12)`);
+        grad.addColorStop(0.4, `hsla(${b.h}, ${b.s}%, ${b.l}%, 0.06)`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       BACKGROUND STARS
+       ═══════════════════════════════════════════════════════════════════════ */
+    function initBgStars() {
+      bgStars = [];
+      for (let i = 0; i < CONFIG.bgStarCount; i++) {
+        bgStars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.6 + 0.2,
+          baseAlpha: Math.random() * 0.45 + 0.15,
+          twinkleSpeed: Math.random() * 0.015 + 0.003,
+          twinkleOffset: Math.random() * Math.PI * 2,
+          hue: Math.random() < 0.08 ? 40 + Math.random() * 25 : 210 + Math.random() * 50,
+        });
+      }
+    }
+
+    function drawBgStars() {
+      bgStars.forEach(s => {
+        const alpha = s.baseAlpha + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25;
+        const a = Math.max(0.05, Math.min(0.9, alpha));
+
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${s.hue}, 20%, 78%, ${a})`;
+        ctx.fill();
+
+        if (s.r > 0.8) {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${s.hue}, 20%, 78%, ${a * 0.1})`;
+          ctx.fill();
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       HEART CONSTELLATION
+       ═══════════════════════════════════════════════════════════════════════ */
+    function generateHeartPoints() {
+      heartPoints = [];
+      const cx = W * 0.5;
+      const cy = H * 0.28;
+      const scale = Math.min(W, H) * 0.14;
+
+      for (let i = 0; i < CONFIG.heartPoints; i++) {
+        const t = (i / CONFIG.heartPoints) * Math.PI * 2;
+        // Parametric heart curve
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        heartPoints.push({
+          x: cx + x * scale * 0.55,
+          y: cy + y * scale * 0.55,
+          occupied: false,
+        });
+      }
+    }
+
+    function drawHeartConstellation() {
+      // Draw faint outline of heart
+      if (heartPoints.length < 2) return;
+
+      ctx.beginPath();
+      ctx.moveTo(heartPoints[0].x, heartPoints[0].y);
+      for (let i = 1; i < heartPoints.length; i++) {
+        ctx.lineTo(heartPoints[i].x, heartPoints[i].y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(200, 160, 120, 0.1)';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw settled stars
+      settledStars.forEach(s => {
+        const pulse = 1 + Math.sin(time * 0.03 + s.pulseOffset) * 0.25;
+        const alpha = 0.55 + Math.sin(time * 0.03 + s.pulseOffset) * 0.3;
+
+        // Outer glow
+        const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 8 * pulse);
+        glow.addColorStop(0, `rgba(240, 200, 140, ${alpha * 0.5})`);
+        glow.addColorStop(0.5, `rgba(240, 180, 120, ${alpha * 0.12})`);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 8 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 230, 190, ${alpha})`;
+        ctx.fill();
+
+        // Bright center
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 0.4 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 245, 225, ${alpha + 0.2})`;
+        ctx.fill();
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SHOOTING STARS
+       ═══════════════════════════════════════════════════════════════════════ */
+    function spawnShootingStar() {
+      const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.35; // downward-right-ish
+      const speed = 6 + Math.random() * 10;
+      const len = 60 + Math.random() * 100;
+      const startX = Math.random() * W * 0.6;
+      const startY = Math.random() * H * 0.4;
+      shootingStars.push({
+        x: startX,
+        y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        decay: 0.008 + Math.random() * 0.02,
+        len,
+      });
+    }
+
+    function drawShootingStars() {
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const s = shootingStars[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life -= s.decay;
+
+        if (s.life <= 0) {
+          shootingStars.splice(i, 1);
+          continue;
+        }
+
+        const tailX = s.x - s.vx * s.len * 0.06;
+        const tailY = s.y - s.vy * s.len * 0.06;
+
+        const grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${s.life})`);
+        grad.addColorStop(0.1, `rgba(255, 245, 220, ${s.life * 0.8})`);
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Head glow
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.life})`;
+        ctx.fill();
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       WISH LANTERNS
+       ═══════════════════════════════════════════════════════════════════════ */
+    function createLantern(x, y, message) {
+      if (lanterns.length >= CONFIG.maxLanterns) return;
+
+      const targetIdx = settledStars.length;
+      let tx, ty;
+      if (targetIdx < heartPoints.length) {
+        tx = heartPoints[targetIdx].x;
+        ty = heartPoints[targetIdx].y;
+      } else {
+        // Overflow: scatter around the heart
+        const cx = W * 0.5;
+        const cy = H * 0.28;
+        const spread = Math.min(W, H) * 0.2;
+        tx = cx + (Math.random() - 0.5) * spread * 2;
+        ty = cy + (Math.random() - 0.5) * spread * 1.5;
+      }
+
+      lanterns.push({
+        x,
+        y,
+        tx,
+        ty,
+        message: message || '',
+        phase: 'rising', // 'rising' | 'settling' | 'settled'
+        progress: 0,
+        wobbleOffset: Math.random() * Math.PI * 2,
+        wobbleAmp: 0.3 + Math.random() * 0.5,
+        createdAt: time,
+        settleDuration: 80 + Math.random() * 40, // frames
+      });
+    }
+
+    function drawLanterns() {
+      for (let i = lanterns.length - 1; i >= 0; i--) {
+        const l = lanterns[i];
+
+        if (l.phase === 'rising') {
+          // Move upward toward target
+          const dx = l.tx - l.x;
+          const dy = l.ty - l.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 15) {
+            l.phase = 'settling';
+            l.settleStart = time;
+          } else {
+            const speed = CONFIG.lanternRiseSpeed + dist * 0.002;
+            const wobX = Math.sin(time * 0.04 + l.wobbleOffset) * l.wobbleAmp;
+            const wobY = Math.cos(time * 0.035 + l.wobbleOffset) * l.wobbleAmp * 0.6;
+            l.x += (dx / dist) * speed + wobX;
+            l.y += (dy / dist) * speed + wobY;
+          }
+
+          // Emit trail particles
+          if (Math.random() < 0.6) {
+            particles.push({
+              x: l.x + (Math.random() - 0.5) * 4,
+              y: l.y + (Math.random() - 0.5) * 4,
+              vx: (Math.random() - 0.5) * 0.3,
+              vy: -Math.random() * 0.5 - 0.1,
+              life: 1,
+              decay: 0.02 + Math.random() * 0.04,
+              r: Math.random() * 1.5 + 0.3,
+            });
+          }
+        }
+
+        if (l.phase === 'settling') {
+          const elapsed = time - l.settleStart;
+          const t = Math.min(elapsed / l.settleDuration, 1);
+          // Ease-out
+          const ease = 1 - Math.pow(1 - t, 3);
+          l.x += (l.tx - l.x) * 0.12;
+          l.y += (l.ty - l.y) * 0.12;
+
+          if (t >= 1 || (Math.abs(l.x - l.tx) < 0.5 && Math.abs(l.y - l.ty) < 0.5)) {
+            l.phase = 'settled';
+            l.x = l.tx;
+            l.y = l.ty;
+            settledStars.push({
+              x: l.x,
+              y: l.y,
+              r: 1.2 + Math.random() * 1,
+              pulseOffset: Math.random() * Math.PI * 2,
+            });
+            lanterns.splice(i, 1);
+            continue;
+          }
+        }
+
+        // Draw lantern glow
+        const alpha = l.phase === 'settling' ? 0.8 : 0.9;
+        const r = l.phase === 'settling' ? 3 : 4;
+
+        const glow = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, r * 6);
+        glow.addColorStop(0, `rgba(255, 230, 170, ${alpha * 0.7})`);
+        glow.addColorStop(0.3, `rgba(240, 190, 120, ${alpha * 0.3})`);
+        glow.addColorStop(0.7, `rgba(200, 140, 80, ${alpha * 0.06})`);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, r * 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 245, 220, ${alpha})`;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 245, 1)`;
+        ctx.fill();
+
+        // Draw wish message text near lantern
+        if (l.message) {
+          const textAlpha = l.phase === 'settling' ? 0.45 : 0.7;
+          ctx.save();
+          ctx.font = '13px "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = `rgba(255, 235, 200, ${textAlpha})`;
+          ctx.shadowColor = `rgba(240, 200, 140, ${textAlpha * 0.6})`;
+          ctx.shadowBlur = 6;
+          ctx.fillText(l.message, l.x, l.y - 18);
+          ctx.restore();
+        }
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       PARTICLES
+       ═══════════════════════════════════════════════════════════════════════ */
+    function drawParticles() {
+      // Limit total particles
+      while (particles.length > CONFIG.maxParticles) {
+        particles.shift();
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(240, 200, 150, ${p.life * 0.6})`;
+        ctx.fill();
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       MAIN RENDER LOOP
+       ═══════════════════════════════════════════════════════════════════════ */
+    function draw() {
+      // Clear
+      ctx.clearRect(0, 0, W, H);
+
+      // Background gradient
+      const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
+      bgGrad.addColorStop(0, '#0d0d22');
+      bgGrad.addColorStop(0.5, '#08081a');
+      bgGrad.addColorStop(1, '#040410');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Nebula
+      drawNebula();
+
+      // Background stars
+      drawBgStars();
+
+      // Heart constellation outline
+      drawHeartConstellation();
+
+      // Shooting stars
+      drawShootingStars();
+
+      // Particles
+      drawParticles();
+
+      // Wish lanterns
+      drawLanterns();
+
+      // Vignette overlay for depth
+      const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.35, W * 0.5, H * 0.5, W * 0.75);
+      vignette.addColorStop(0, 'transparent');
+      vignette.addColorStop(1, 'rgba(2, 2, 8, 0.55)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function loop(ts) {
+      time = ts;
+
+      // Smooth mouse follow
+      mouseX += (targetMouseX - mouseX) * 0.05;
+      mouseY += (targetMouseY - mouseY) * 0.05;
+
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       EVENT HANDLERS
+       ═══════════════════════════════════════════════════════════════════════ */
+    function handleInteraction(ex, ey, message) {
+      initAudio();
+      playChime();
+
+      createLantern(ex, ey, message);
+
+      // Save message if present — only messaged wishes increment the counter
+      if (message) {
+        saveWish(message);
+        const isFirstWish = totalWishes === 0;
+        totalWishes++;
+        wishCountEl.textContent = totalWishes;
+        // Spawn a floating wish for this message
+        spawnFloatingWish(message);
+        // Start the floating scheduler on first wish
+        if (isFirstWish) {
+          setTimeout(scheduleFloatingWishes, 3000);
+        }
+      }
+
+      if (!wishCounter.classList.contains('visible')) {
+        wishCounter.classList.add('visible');
+      }
+
+      if (!wishInputArea.classList.contains('visible')) {
+        wishInputArea.classList.add('visible');
+      }
+
+      // Fade instruction
+      if (totalWishes >= 3) {
+        instruction.style.opacity = '0';
+        instruction.style.transition = 'opacity 1s ease';
+      }
+
+      // Ripple effect
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.left = ex + 'px';
+      ripple.style.top = ey + 'px';
+      document.body.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    }
+
+    // Submit wish from input
+    function submitWish() {
+      const text = wishInput.value.trim();
+      if (!text) return;
+      wishInput.value = '';
+      // Lantern rises from the center of the glass card
+      const rect = glassCard.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      handleInteraction(cx, cy, text);
+    }
+
+    // Click anywhere → silent wish (no message)
+    document.addEventListener('click', (e) => {
+      // Don't trigger when clicking the input or button
+      if (e.target === wishInput || e.target === wishSendBtn) return;
+      handleInteraction(e.clientX, e.clientY);
+    });
+
+    // Touch anywhere → silent wish
+    document.addEventListener('touchstart', (e) => {
+      if (e.target === wishInput || e.target === wishSendBtn) return;
+      if (e.touches.length === 1) {
+        handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    // Input: Enter key to submit
+    wishInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitWish();
+      }
+    });
+
+    // Send button click
+    wishSendBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      submitWish();
+    });
+
+    // Prevent click on input from triggering canvas wish
+    wishInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      targetMouseX = e.clientX;
+      targetMouseY = e.clientY;
+    });
+
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
+        targetMouseX = e.touches[0].clientX;
+        targetMouseY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       FLOATING WISH MESSAGES
+       ═══════════════════════════════════════════════════════════════════════ */
+    function spawnFloatingWish(text) {
+      const el = document.createElement('span');
+      el.className = 'floating-wish';
+      el.textContent = text;
+      // Random horizontal position (avoid edges)
+      const x = 8 + Math.random() * 84; // 8% ~ 92%
+      el.style.left = x + '%';
+      // Slight random variation in animation duration
+      const dur = 8 + Math.random() * 5;
+      el.style.animationDuration = dur + 's';
+      floatingWishes.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+
+    function scheduleFloatingWishes() {
+      if (wishMessages.length === 0) return;
+      // Pick a random wish
+      const idx = Math.floor(Math.random() * wishMessages.length);
+      spawnFloatingWish(wishMessages[idx].text);
+      // Schedule next
+      const delay = 3000 + Math.random() * 5000;
+      setTimeout(scheduleFloatingWishes, delay);
+    }
+
+    function burstFloatingWishes() {
+      if (wishMessages.length === 0) return;
+      const count = Math.min(5, wishMessages.length);
+      // Shuffle and pick `count` wishes
+      const shuffled = [...wishMessages].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, count);
+      selected.forEach((wish, i) => {
+        setTimeout(() => spawnFloatingWish(wish.text), i * 400);
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SHOOTING STAR SPAWNER
+       ═══════════════════════════════════════════════════════════════════════ */
+    function scheduleShootingStar() {
+      const delay = CONFIG.shootingStarInterval[0] +
+        Math.random() * (CONFIG.shootingStarInterval[1] - CONFIG.shootingStarInterval[0]);
+      setTimeout(() => {
+        spawnShootingStar();
+        scheduleShootingStar();
+      }, delay);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       PARALLAX ON GLASS CARD
+       ═══════════════════════════════════════════════════════════════════════ */
+    function updateParallax() {
+      const dx = (mouseX - W / 2) / W;
+      const dy = (mouseY - H / 2) / H;
+      glassCard.style.setProperty('--parallax-x', `${dx * 8}px`);
+      glassCard.style.setProperty('--parallax-y', `${dy * 8}px`);
+      requestAnimationFrame(() => {
+        updateParallax();
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       INIT
+       ═══════════════════════════════════════════════════════════════════════ */
+    function init() {
+      resize();
+      window.addEventListener('resize', resize);
+
+      // Load persisted wishes
+      loadWishes();
+
+      scheduleShootingStar();
+      updateParallax();
+      requestAnimationFrame(loop);
+
+      // Pre-populate some settled stars for visual appeal
+      const initialStars = 8;
+      for (let i = 0; i < initialStars && i < heartPoints.length; i++) {
+        const idx = Math.floor((i / initialStars) * heartPoints.length);
+        const p = heartPoints[idx];
+        settledStars.push({
+          x: p.x,
+          y: p.y,
+          r: 1.2 + Math.random() * 1,
+          pulseOffset: Math.random() * Math.PI * 2,
+        });
+      }
+      // Total wishes = only persisted messages (decorative stars don't count)
+      totalWishes = wishMessages.length;
+      wishCountEl.textContent = totalWishes;
+      wishCounter.classList.add('visible');
+      wishInputArea.classList.add('visible');
+
+      // Burst: fly out up to 5 past wishes on open
+      if (wishMessages.length > 0) {
+        setTimeout(burstFloatingWishes, 1500);
+        // Resume normal scheduler after burst finishes
+        setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
+      }
+
+      // Initial shooting star after a short delay
+      setTimeout(() => spawnShootingStar(), 1500);
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
