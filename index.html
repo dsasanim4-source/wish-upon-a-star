@@ -812,6 +812,194 @@
     box-shadow: 0 0 8px rgba(220, 100, 100, 0.4);
   }
 
+  /* ── Wish Wall ─────────────────────────── */
+  .wishwall-btn {
+    position: fixed;
+    bottom: 28px;
+    left: 20px;
+    z-index: 6;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    color: rgba(200, 180, 120, 0.7);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s;
+    font-family: inherit;
+    line-height: 1;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(200, 160, 80, 0.06);
+    pointer-events: auto;
+  }
+
+  .wishwall-btn:hover {
+    border-color: rgba(200, 160, 80, 0.3);
+    color: rgba(240, 200, 100, 0.9);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4), 0 0 40px rgba(200, 160, 80, 0.12);
+    transform: translateY(-3px);
+  }
+
+  .wishwall-btn:active {
+    transform: scale(0.9);
+  }
+
+  .wishwall-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    background: rgba(0, 0, 0, 0.45);
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .wishwall-backdrop.show {
+    opacity: 1;
+  }
+
+  .wishwall-backdrop.hidden {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .wishwall-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9;
+    max-height: 60vh;
+    background: rgba(10, 12, 28, 0.92);
+    backdrop-filter: blur(32px) saturate(120%);
+    -webkit-backdrop-filter: blur(32px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: none;
+    border-radius: 28px 28px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .wishwall-panel.show {
+    transform: translateY(0);
+  }
+
+  .wishwall-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+  }
+
+  .wishwall-title {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-primary);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .wishwall-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    line-height: 1;
+  }
+
+  .wishwall-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  .wishwall-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .wishwall-body::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .wishwall-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .wishwall-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+  }
+
+  .wish-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s;
+  }
+
+  .wish-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .wish-card-star {
+    font-size: 16px;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .wish-card-text {
+    flex: 1;
+    font-size: 14px;
+    color: rgba(200, 210, 230, 0.8);
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+  }
+
+  .wish-card-time {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .wishwall-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+
   /* ── Responsive ───────────────────────── */
   @media (max-width: 640px) {
     .glass-card {
@@ -833,6 +1021,7 @@
     .bottle-panel { max-width: 100%; border-radius: 24px 24px 0 0; }
     .bottle-panel::before { border-radius: 24px 24px 0 0; }
     .bottle-btn { bottom: 70px; right: 16px; width: 42px; height: 42px; font-size: 18px; }
+    .wishwall-btn { bottom: 70px; left: 14px; width: 42px; height: 42px; font-size: 17px; }
     .bottle-header { padding: 16px 18px 12px; }
     .bottle-body { padding: 16px 18px; }
     .bottle-input-area { gap: 6px; }
@@ -925,11 +1114,26 @@
     </div>
   </div>
 
+  <!-- ── Wish Wall ── -->
+  <div class="wishwall-backdrop hidden" id="wishwallBackdrop"></div>
+  <div class="wishwall-panel" id="wishwallPanel">
+    <div class="wishwall-header">
+      <span class="wishwall-title">🌟 心愿墙</span>
+      <button class="wishwall-close" id="wishwallClose">✕</button>
+    </div>
+    <div class="wishwall-body" id="wishwallBody">
+      <div class="wishwall-empty">还没有心愿，快来许一个吧 ✨</div>
+    </div>
+  </div>
+
   <!-- ── Bottle Toggle Button ── -->
   <button class="bottle-btn" id="bottleBtn" aria-label="漂流瓶">
     💌
     <span class="bottle-badge" id="bottleBadge"></span>
   </button>
+
+  <!-- ── Wish Wall Button ── -->
+  <button class="wishwall-btn" id="wishwallBtn" aria-label="心愿墙">🌟</button>
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -988,6 +1192,13 @@
     const bottleOpenBtn = document.getElementById('bottleOpenBtn');
     const bottleInput = document.getElementById('bottleInput');
     const bottleSendBtn = document.getElementById('bottleSendBtn');
+
+    // Wish wall
+    const wishwallBtn = document.getElementById('wishwallBtn');
+    const wishwallBackdrop = document.getElementById('wishwallBackdrop');
+    const wishwallPanel = document.getElementById('wishwallPanel');
+    const wishwallClose = document.getElementById('wishwallClose');
+    const wishwallBody = document.getElementById('wishwallBody');
 
     /* ═══════════════════════════════════════════════════════════════════════
        STATE
@@ -1091,6 +1302,7 @@
             const cx = rect.left + rect.width / 2 + (Math.random() - 0.5) * 200;
             const cy = rect.top + rect.height / 2 + (Math.random() - 0.5) * 100;
             createLantern(cx, cy, newWish.text);
+            if (wishwallPanel.classList.contains('show')) renderWishWall();
             if (totalWishes >= 3) {
               instruction.style.opacity = '0';
               instruction.style.transition = 'opacity 1s ease';
@@ -1326,6 +1538,62 @@
         submitBottleMessage();
       }
     });
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       WISH WALL
+       ═══════════════════════════════════════════════════════════════════════ */
+    function renderWishWall() {
+      wishwallBody.innerHTML = '';
+      if (wishMessages.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'wishwall-empty';
+        empty.textContent = '还没有心愿，快来许一个吧 ✨';
+        wishwallBody.appendChild(empty);
+        return;
+      }
+      // Show newest first
+      const sorted = [...wishMessages].reverse();
+      const stars = ['⭐', '🌟', '✨', '💫', '🌠', '⭐', '✨', '🌟', '💫', '🌠'];
+      sorted.forEach((wish, i) => {
+        const card = document.createElement('div');
+        card.className = 'wish-card';
+        const star = stars[i % stars.length];
+        const time = formatTime(wish.created_at);
+        card.innerHTML = `
+          <span class="wish-card-star">${star}</span>
+          <span class="wish-card-text">${escapeHTML(wish.text)}</span>
+          <span class="wish-card-time">${time}</span>
+        `;
+        wishwallBody.appendChild(card);
+      });
+    }
+
+    function openWishwall() {
+      renderWishWall();
+      wishwallPanel.classList.add('show');
+      wishwallBackdrop.classList.remove('hidden');
+      void wishwallBackdrop.offsetWidth;
+      wishwallBackdrop.classList.add('show');
+    }
+
+    function closeWishwall() {
+      wishwallPanel.classList.remove('show');
+      wishwallBackdrop.classList.remove('show');
+      wishwallBackdrop.addEventListener('transitionend', function handler() {
+        wishwallBackdrop.classList.add('hidden');
+        wishwallBackdrop.removeEventListener('transitionend', handler);
+      });
+    }
+
+    wishwallBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openWishwall();
+    });
+
+    wishwallClose.addEventListener('click', () => closeWishwall());
+    wishwallBackdrop.addEventListener('click', () => closeWishwall());
+
+    wishwallPanel.addEventListener('click', (e) => e.stopPropagation());
 
     bottleSendBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1834,6 +2102,7 @@
       totalWishes = wishMessages.length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
+      if (wishwallPanel.classList.contains('show')) renderWishWall();
 
       const rect = glassCard.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
@@ -1847,6 +2116,9 @@
       if (e.target.closest('.bottle-panel')) return;
       if (e.target.closest('.bottle-btn')) return;
       if (e.target.closest('.bottle-backdrop')) return;
+      if (e.target.closest('.wishwall-panel')) return;
+      if (e.target.closest('.wishwall-btn')) return;
+      if (e.target.closest('.wishwall-backdrop')) return;
       handleInteraction(e.clientX, e.clientY);
     });
 
@@ -1856,6 +2128,9 @@
       if (e.target.closest('.bottle-panel')) return;
       if (e.target.closest('.bottle-btn')) return;
       if (e.target.closest('.bottle-backdrop')) return;
+      if (e.target.closest('.wishwall-panel')) return;
+      if (e.target.closest('.wishwall-btn')) return;
+      if (e.target.closest('.wishwall-backdrop')) return;
       if (e.touches.length === 1) {
         handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
       }
