@@ -4,6 +4,7 @@
 -- 使用方法:
 --   1. 登录 supabase.com → 进入你的项目 → SQL Editor
 --   2. 粘贴此文件全部内容 → 点击 Run
+--   （可重复执行，不会报错）
 -- ============================================================
 
 -- ── 心愿表 ──────────────────────────────────────────────
@@ -21,13 +22,32 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ── 如果 messages 表已存在但没有 revealed 列，则添加 ────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS revealed BOOLEAN DEFAULT FALSE;
+
 -- ── 开启实时同步（Realtime） ────────────────────────────
-ALTER PUBLICATION supabase_realtime ADD TABLE wishes;
-ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE wishes;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+END $$;
 
 -- ── 开启行级安全（RLS） ─────────────────────────────────
 ALTER TABLE wishes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- ── 删除旧策略（如有）再重建 ────────────────────────────
+DROP POLICY IF EXISTS "允许任何人读取心愿" ON wishes;
+DROP POLICY IF EXISTS "允许任何人读取留言" ON messages;
+DROP POLICY IF EXISTS "允许任何人写入心愿" ON wishes;
+DROP POLICY IF EXISTS "允许任何人写入留言" ON messages;
+DROP POLICY IF EXISTS "允许任何人更新留言" ON messages;
 
 -- ── 公开读取 ────────────────────────────────────────────
 CREATE POLICY "允许任何人读取心愿" ON wishes
@@ -46,6 +66,3 @@ CREATE POLICY "允许任何人写入留言" ON messages
 -- ── 允许更新留言（标记已读） ──────────────────────────────
 CREATE POLICY "允许任何人更新留言" ON messages
   FOR UPDATE USING (true) WITH CHECK (true);
-
--- ── 如果 messages 表已存在，添加 revealed 列 ──────────────
--- ALTER TABLE messages ADD COLUMN IF NOT EXISTS revealed BOOLEAN DEFAULT FALSE;
