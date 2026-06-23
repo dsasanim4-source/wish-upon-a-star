@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS wishes (
 CREATE TABLE IF NOT EXISTS messages (
   id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   text      TEXT NOT NULL,
+  revealed  BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -41,3 +42,10 @@ CREATE POLICY "允许任何人写入心愿" ON wishes
 
 CREATE POLICY "允许任何人写入留言" ON messages
   FOR INSERT WITH CHECK (true);
+
+-- ── 允许更新留言（标记已读） ──────────────────────────────
+CREATE POLICY "允许任何人更新留言" ON messages
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ── 如果 messages 表已存在，添加 revealed 列 ──────────────
+-- ALTER TABLE messages ADD COLUMN IF NOT EXISTS revealed BOOLEAN DEFAULT FALSE;

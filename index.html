@@ -10,10 +10,10 @@
 
   :root {
     --bg-deep: #06060f;
-    --gold: #d4a574;
-    --gold-light: #f0d78c;
-    --text-primary: #f0e6dc;
-    --text-secondary: rgba(240, 230, 220, 0.55);
+    --blue: #5b9bd5;
+    --blue-light: #a0c4ff;
+    --text-primary: #e0e8f0;
+    --text-secondary: rgba(180, 200, 230, 0.55);
     --glass-bg: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.07);
   }
@@ -68,7 +68,7 @@
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.03) inset,
       0 8px 40px rgba(0, 0, 0, 0.4),
-      0 0 80px rgba(180, 150, 120, 0.06);
+      0 0 80px rgba(80, 140, 220, 0.06);
     will-change: transform;
   }
 
@@ -77,7 +77,7 @@
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.05) inset,
       0 16px 56px rgba(0, 0, 0, 0.5),
-      0 0 120px rgba(180, 150, 120, 0.12);
+      0 0 120px rgba(80, 140, 220, 0.12);
   }
 
   .glass-card::before {
@@ -106,7 +106,7 @@
     font-size: 28px;
     margin-bottom: 20px;
     animation: star-pulse 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px rgba(240, 200, 140, 0.5));
+    filter: drop-shadow(0 0 12px rgba(120, 170, 240, 0.5));
   }
 
   @keyframes star-pulse {
@@ -129,11 +129,11 @@
     letter-spacing: 0.12em;
     color: var(--text-primary);
     line-height: 1.3;
-    background: linear-gradient(180deg, #f8f0e8 0%, #d4b896 50%, #c4a078 100%);
+    background: linear-gradient(180deg, #e0e8f8 0%, #8ab4d8 50%, #5b8fc0 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 24px rgba(200, 160, 120, 0.3));
+    filter: drop-shadow(0 0 24px rgba(80, 140, 210, 0.3));
     animation: title-float 6s ease-in-out infinite;
   }
 
@@ -146,7 +146,7 @@
   .divider {
     width: 60px;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(200, 160, 120, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(100, 150, 210, 0.5), transparent);
     margin: 28px auto;
   }
 
@@ -178,10 +178,10 @@
   .wish-count {
     font-size: 36px;
     font-weight: 200;
-    color: var(--gold-light);
+    color: var(--blue-light);
     font-variant-numeric: tabular-nums;
     font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-    text-shadow: 0 0 20px rgba(240, 200, 140, 0.4);
+    text-shadow: 0 0 20px rgba(120, 180, 240, 0.4);
   }
 
   .wish-label-small {
@@ -215,7 +215,7 @@
   .ripple {
     position: fixed;
     border-radius: 50%;
-    border: 1px solid rgba(240, 200, 140, 0.4);
+    border: 1px solid rgba(120, 180, 240, 0.4);
     animation: ripple-out 1.2s ease-out forwards;
     pointer-events: none;
     z-index: 3;
@@ -249,8 +249,8 @@
   }
 
   .wish-input-area:focus-within {
-    border-color: rgba(200, 150, 100, 0.3);
-    box-shadow: 0 0 20px rgba(200, 150, 100, 0.08);
+    border-color: rgba(100, 160, 230, 0.3);
+    box-shadow: 0 0 20px rgba(100, 160, 230, 0.08);
   }
 
   .wish-input-area.visible {
@@ -266,7 +266,7 @@
     font-size: 14px;
     font-family: inherit;
     font-weight: 300;
-    color: #e8dcc8;
+    color: #c8d8f0;
     letter-spacing: 0.08em;
     min-width: 0;
   }
@@ -287,7 +287,7 @@
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
-    color: rgba(240, 200, 140, 0.6);
+    color: rgba(120, 180, 240, 0.6);
     font-size: 16px;
     cursor: pointer;
     display: flex;
@@ -299,10 +299,10 @@
   }
 
   .wish-send-btn:hover {
-    background: rgba(240, 200, 140, 0.1);
-    border-color: rgba(240, 200, 140, 0.3);
-    color: rgba(240, 200, 140, 0.9);
-    box-shadow: 0 0 16px rgba(240, 200, 140, 0.15);
+    background: rgba(100, 160, 240, 0.1);
+    border-color: rgba(100, 160, 240, 0.3);
+    color: rgba(140, 200, 255, 0.9);
+    box-shadow: 0 0 16px rgba(100, 160, 240, 0.15);
   }
 
   .wish-send-btn:active {
@@ -325,8 +325,8 @@
     font-size: 14px;
     font-weight: 300;
     letter-spacing: 0.1em;
-    color: rgba(240, 200, 150, 0.45);
-    text-shadow: 0 0 10px rgba(240, 200, 140, 0.25);
+    color: rgba(160, 200, 240, 0.45);
+    text-shadow: 0 0 10px rgba(120, 180, 240, 0.25);
     animation: wish-float-up 10s ease-in forwards;
     font-family: inherit;
   }
@@ -365,7 +365,7 @@
 
   .msg-popup {
     position: relative;
-    background: rgba(20, 18, 30, 0.85);
+    background: rgba(14, 16, 28, 0.88);
     backdrop-filter: blur(30px) saturate(140%);
     -webkit-backdrop-filter: blur(30px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -379,7 +379,7 @@
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.03) inset,
       0 24px 64px rgba(0, 0, 0, 0.6),
-      0 0 80px rgba(240, 200, 140, 0.08);
+      0 0 80px rgba(80, 140, 220, 0.08);
   }
 
   .msg-popup-overlay.show .msg-popup {
@@ -394,10 +394,10 @@
     padding: 1px;
     background: linear-gradient(
       135deg,
-      rgba(240, 200, 140, 0.2) 0%,
-      rgba(240, 200, 140, 0.04) 40%,
+      rgba(120, 180, 240, 0.2) 0%,
+      rgba(120, 180, 240, 0.04) 40%,
       rgba(255, 255, 255, 0) 60%,
-      rgba(240, 200, 140, 0.08) 100%
+      rgba(120, 180, 240, 0.08) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -416,7 +416,7 @@
     font-size: 13px;
     font-weight: 400;
     letter-spacing: 0.2em;
-    color: rgba(240, 200, 150, 0.7);
+    color: rgba(140, 190, 240, 0.7);
     margin-bottom: 14px;
   }
 
@@ -424,7 +424,7 @@
     font-size: 16px;
     font-weight: 300;
     letter-spacing: 0.06em;
-    color: #f0e6dc;
+    color: #e0e8f0;
     line-height: 1.6;
     margin-bottom: 6px;
     word-break: break-word;
@@ -442,7 +442,7 @@
     font-size: 12px;
     font-weight: 300;
     letter-spacing: 0.15em;
-    color: rgba(240, 200, 150, 0.5);
+    color: rgba(140, 190, 240, 0.5);
     cursor: pointer;
     background: none;
     border: none;
@@ -452,11 +452,11 @@
   }
 
   .msg-popup-dismiss:hover {
-    color: rgba(240, 200, 150, 0.9);
+    color: rgba(160, 210, 255, 0.9);
   }
 
-  /* ── Message Board Button ─────────────── */
-  .msg-board-btn {
+  /* ── Bottle Button ────────────────────── */
+  .bottle-btn {
     position: fixed;
     bottom: clamp(80px, 12vh, 110px);
     right: clamp(20px, 4vw, 32px);
@@ -465,10 +465,10 @@
     height: 48px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(20, 18, 30, 0.7);
+    background: rgba(14, 16, 28, 0.7);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
-    color: rgba(240, 200, 140, 0.7);
+    color: rgba(120, 180, 240, 0.7);
     font-size: 20px;
     cursor: pointer;
     display: flex;
@@ -480,26 +480,26 @@
     line-height: 1;
   }
 
-  .msg-board-btn:hover {
-    border-color: rgba(240, 200, 140, 0.3);
-    color: rgba(240, 200, 140, 0.95);
-    box-shadow: 0 4px 24px rgba(240, 200, 140, 0.12);
+  .bottle-btn:hover {
+    border-color: rgba(120, 180, 240, 0.3);
+    color: rgba(160, 210, 255, 0.95);
+    box-shadow: 0 4px 24px rgba(80, 140, 220, 0.12);
     transform: translateY(-2px);
   }
 
-  .msg-board-btn:active {
+  .bottle-btn:active {
     transform: scale(0.9);
   }
 
-  .msg-board-badge {
+  .bottle-badge {
     position: absolute;
     top: -4px;
     right: -4px;
     min-width: 18px;
     height: 18px;
     border-radius: 9px;
-    background: rgba(240, 180, 100, 0.9);
-    color: #1a1a2e;
+    background: rgba(90, 155, 220, 0.9);
+    color: #fff;
     font-size: 10px;
     font-weight: 600;
     display: flex;
@@ -510,21 +510,21 @@
     line-height: 1;
   }
 
-  .msg-board-badge:empty {
+  .bottle-badge:empty {
     display: none;
   }
 
-  /* ── Message Board Panel ──────────────── */
-  .msg-board-panel {
+  /* ── Bottle Panel ─────────────────────── */
+  .bottle-panel {
     position: fixed;
     bottom: 0;
     right: 0;
     z-index: 8;
     width: 100%;
     max-width: 400px;
-    height: 55vh;
-    max-height: 520px;
-    background: rgba(16, 14, 26, 0.92);
+    height: 50vh;
+    max-height: 460px;
+    background: rgba(10, 12, 22, 0.92);
     backdrop-filter: blur(28px) saturate(140%);
     -webkit-backdrop-filter: blur(28px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -539,11 +539,11 @@
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;
   }
 
-  .msg-board-panel.open {
+  .bottle-panel.open {
     transform: translateY(0);
   }
 
-  .msg-board-panel::before {
+  .bottle-panel::before {
     content: '';
     position: absolute;
     inset: -1px;
@@ -551,10 +551,10 @@
     padding: 1px;
     background: linear-gradient(
       180deg,
-      rgba(240, 200, 140, 0.15) 0%,
-      rgba(240, 200, 140, 0.03) 30%,
+      rgba(120, 180, 240, 0.15) 0%,
+      rgba(120, 180, 240, 0.03) 30%,
       rgba(255, 255, 255, 0) 70%,
-      rgba(240, 200, 140, 0.05) 100%
+      rgba(120, 180, 240, 0.05) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -563,7 +563,7 @@
     pointer-events: none;
   }
 
-  .msg-board-header {
+  .bottle-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -572,14 +572,14 @@
     flex-shrink: 0;
   }
 
-  .msg-board-title {
+  .bottle-title {
     font-size: 15px;
     font-weight: 400;
     letter-spacing: 0.15em;
-    color: rgba(240, 200, 150, 0.85);
+    color: rgba(140, 190, 240, 0.85);
   }
 
-  .msg-board-close {
+  .bottle-close {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -596,82 +596,111 @@
     line-height: 1;
   }
 
-  .msg-board-close:hover {
+  .bottle-close:hover {
     border-color: rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.8);
   }
 
-  .msg-board-list {
+  .bottle-body {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 20px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: 20px;
     -webkit-overflow-scrolling: touch;
   }
 
-  .msg-board-list::-webkit-scrollbar {
+  .bottle-body::-webkit-scrollbar {
     width: 2px;
   }
 
-  .msg-board-list::-webkit-scrollbar-track {
+  .bottle-body::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .msg-board-list::-webkit-scrollbar-thumb {
+  .bottle-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.06);
     border-radius: 1px;
   }
 
-  .msg-board-empty {
+  .bottle-unread-section {
     text-align: center;
-    padding: 40px 20px;
-    color: rgba(255, 255, 255, 0.25);
+    width: 100%;
+  }
+
+  .bottle-unread-count {
     font-size: 13px;
+    font-weight: 300;
     letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
   }
 
-  .msg-board-item {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 16px;
-    padding: 12px 16px;
-    animation: msg-item-in 0.4s ease-out;
-  }
-
-  @keyframes msg-item-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .msg-board-item-text {
-    font-size: 14px;
-    font-weight: 300;
-    letter-spacing: 0.05em;
-    color: #e8dcc8;
-    line-height: 1.5;
-    word-break: break-word;
-  }
-
-  .msg-board-item-time {
-    font-size: 11px;
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.25);
-    letter-spacing: 0.06em;
-    margin-top: 6px;
-  }
-
-  .msg-board-input-area {
-    display: flex;
+  .bottle-open-btn {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 20px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 32px;
+    border-radius: 50px;
+    border: 1px solid rgba(120, 180, 240, 0.3);
+    background: rgba(90, 155, 220, 0.1);
+    color: rgba(160, 210, 255, 0.9);
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.35s ease;
+    box-shadow: 0 0 20px rgba(80, 140, 220, 0.08);
+  }
+
+  .bottle-open-btn:hover {
+    background: rgba(90, 155, 220, 0.18);
+    border-color: rgba(140, 200, 255, 0.5);
+    box-shadow: 0 0 30px rgba(80, 140, 220, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .bottle-open-btn:active {
+    transform: scale(0.95);
+  }
+
+  .bottle-open-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .bottle-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(120, 180, 240, 0.15), transparent);
     flex-shrink: 0;
   }
 
-  .msg-board-input {
+  .bottle-input-section {
+    width: 100%;
+    text-align: center;
+  }
+
+  .bottle-input-label {
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 10px;
+  }
+
+  .bottle-input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .bottle-input {
     flex: 1;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -680,29 +709,29 @@
     font-size: 13px;
     font-family: inherit;
     font-weight: 300;
-    color: #e8dcc8;
+    color: #c8d8f0;
     letter-spacing: 0.05em;
     outline: none;
     transition: border-color 0.3s;
     min-width: 0;
   }
 
-  .msg-board-input::placeholder {
+  .bottle-input::placeholder {
     color: rgba(255, 255, 255, 0.18);
   }
 
-  .msg-board-input:focus {
-    border-color: rgba(240, 200, 140, 0.3);
+  .bottle-input:focus {
+    border-color: rgba(120, 180, 240, 0.3);
   }
 
-  .msg-board-send {
+  .bottle-send-btn {
     flex-shrink: 0;
     width: 36px;
     height: 36px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(240, 200, 140, 0.08);
-    color: rgba(240, 200, 140, 0.6);
+    background: rgba(90, 155, 220, 0.08);
+    color: rgba(120, 180, 240, 0.6);
     font-size: 14px;
     cursor: pointer;
     display: flex;
@@ -713,18 +742,27 @@
     line-height: 1;
   }
 
-  .msg-board-send:hover {
-    background: rgba(240, 200, 140, 0.15);
-    border-color: rgba(240, 200, 140, 0.3);
-    color: rgba(240, 200, 140, 0.9);
+  .bottle-send-btn:hover {
+    background: rgba(90, 155, 220, 0.15);
+    border-color: rgba(120, 180, 240, 0.3);
+    color: rgba(160, 210, 255, 0.9);
   }
 
-  .msg-board-send:active {
+  .bottle-send-btn:active {
     transform: scale(0.9);
   }
 
-  /* ── Backdrop for message board ───────── */
-  .msg-board-backdrop {
+  .bottle-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+  }
+
+  /* ── Backdrop for bottle panel ────────── */
+  .bottle-backdrop {
     position: fixed;
     inset: 0;
     z-index: 7;
@@ -734,11 +772,11 @@
     transition: opacity 0.35s ease;
   }
 
-  .msg-board-backdrop.show {
+  .bottle-backdrop.show {
     opacity: 1;
   }
 
-  .msg-board-backdrop.hidden {
+  .bottle-backdrop.hidden {
     pointer-events: none;
     opacity: 0;
   }
@@ -764,8 +802,8 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: rgba(100, 220, 140, 0.7);
-    box-shadow: 0 0 8px rgba(100, 220, 140, 0.4);
+    background: rgba(100, 200, 220, 0.7);
+    box-shadow: 0 0 8px rgba(100, 200, 220, 0.4);
     transition: background 0.5s, box-shadow 0.5s;
   }
 
@@ -792,12 +830,12 @@
     .msg-popup { padding: 28px 24px 22px; border-radius: 22px; }
     .msg-popup::before { border-radius: 22px; }
     .msg-popup-text { font-size: 15px; }
-    .msg-board-panel { max-width: 100%; border-radius: 24px 24px 0 0; }
-    .msg-board-panel::before { border-radius: 24px 24px 0 0; }
-    .msg-board-btn { bottom: 70px; right: 16px; width: 42px; height: 42px; font-size: 18px; }
-    .msg-board-header { padding: 16px 18px 12px; }
-    .msg-board-list { padding: 10px 16px; }
-    .msg-board-input-area { padding: 10px 16px 16px; }
+    .bottle-panel { max-width: 100%; border-radius: 24px 24px 0 0; }
+    .bottle-panel::before { border-radius: 24px 24px 0 0; }
+    .bottle-btn { bottom: 70px; right: 16px; width: 42px; height: 42px; font-size: 18px; }
+    .bottle-header { padding: 16px 18px 12px; }
+    .bottle-body { padding: 16px 18px; }
+    .bottle-input-area { gap: 6px; }
   }
 </style>
 </head>
@@ -824,7 +862,7 @@
       <span class="wish-label-small">个心愿</span>
     </div>
 
-    <!-- Wish message input -->
+    <!-- Wish input -->
     <div class="wish-input-area" id="wishInputArea">
       <input
         type="text"
@@ -840,46 +878,57 @@
 
   <p class="instruction" id="instruction">轻触屏幕 · 许下心愿</p>
 
-  <!-- ── Message Popup (shows previous message) ── -->
+  <!-- ── Message Popup (reveals a bottle message) ── -->
   <div class="msg-popup-overlay hidden" id="msgPopupOverlay">
     <div class="msg-popup">
       <div class="msg-popup-icon">💌</div>
-      <div class="msg-popup-title" id="msgPopupTitle">上一个人的留言</div>
+      <div class="msg-popup-title" id="msgPopupTitle">漂流瓶 · 来自上一个人的留言</div>
       <div class="msg-popup-text" id="msgPopupText"></div>
       <div class="msg-popup-time" id="msgPopupTime"></div>
       <button class="msg-popup-dismiss" id="msgPopupDismiss">我知道了 ✨</button>
     </div>
   </div>
 
-  <!-- ── Message Board Backdrop ── -->
-  <div class="msg-board-backdrop hidden" id="msgBoardBackdrop"></div>
+  <!-- ── Bottle Backdrop ── -->
+  <div class="bottle-backdrop hidden" id="bottleBackdrop"></div>
 
-  <!-- ── Message Board Panel ── -->
-  <div class="msg-board-panel" id="msgBoardPanel">
-    <div class="msg-board-header">
-      <span class="msg-board-title">💬 留言板</span>
-      <button class="msg-board-close" id="msgBoardClose">✕</button>
+  <!-- ── Bottle Panel ── -->
+  <div class="bottle-panel" id="bottlePanel">
+    <div class="bottle-header">
+      <span class="bottle-title">💌 漂流瓶</span>
+      <button class="bottle-close" id="bottleClose">✕</button>
     </div>
-    <div class="msg-board-list" id="msgBoardList">
-      <div class="msg-board-empty">还没有留言，来说点什么吧~</div>
-    </div>
-    <div class="msg-board-input-area">
-      <input
-        type="text"
-        class="msg-board-input"
-        id="msgBoardInput"
-        placeholder="写下留言…"
-        maxlength="200"
-        autocomplete="off"
-      >
-      <button class="msg-board-send" id="msgBoardSend" aria-label="发送留言">✧</button>
+    <div class="bottle-body" id="bottleBody">
+      <!-- Unread section -->
+      <div class="bottle-unread-section" id="bottleUnreadSection">
+        <div class="bottle-unread-count" id="bottleUnreadCount">…</div>
+        <button class="bottle-open-btn" id="bottleOpenBtn">
+          <span>📭</span> 打开漂流瓶
+        </button>
+      </div>
+      <div class="bottle-divider"></div>
+      <!-- Input section -->
+      <div class="bottle-input-section">
+        <div class="bottle-input-label">✍️ 留下你的漂流信</div>
+        <div class="bottle-input-area">
+          <input
+            type="text"
+            class="bottle-input"
+            id="bottleInput"
+            placeholder="写一句话，留给下一个人…"
+            maxlength="200"
+            autocomplete="off"
+          >
+          <button class="bottle-send-btn" id="bottleSendBtn" aria-label="发送留言">✧</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ── Message Board Toggle Button ── -->
-  <button class="msg-board-btn" id="msgBoardBtn" aria-label="留言板">
-    💬
-    <span class="msg-board-badge" id="msgBoardBadge"></span>
+  <!-- ── Bottle Toggle Button ── -->
+  <button class="bottle-btn" id="bottleBtn" aria-label="漂流瓶">
+    💌
+    <span class="bottle-badge" id="bottleBadge"></span>
   </button>
 
   <!-- Supabase SDK -->
@@ -927,22 +976,25 @@
     const msgPopupTime = document.getElementById('msgPopupTime');
     const msgPopupDismiss = document.getElementById('msgPopupDismiss');
 
-    // Message board
-    const msgBoardBtn = document.getElementById('msgBoardBtn');
-    const msgBoardBadge = document.getElementById('msgBoardBadge');
-    const msgBoardPanel = document.getElementById('msgBoardPanel');
-    const msgBoardBackdrop = document.getElementById('msgBoardBackdrop');
-    const msgBoardClose = document.getElementById('msgBoardClose');
-    const msgBoardList = document.getElementById('msgBoardList');
-    const msgBoardInput = document.getElementById('msgBoardInput');
-    const msgBoardSend = document.getElementById('msgBoardSend');
+    // Bottle panel
+    const bottleBtn = document.getElementById('bottleBtn');
+    const bottleBadge = document.getElementById('bottleBadge');
+    const bottlePanel = document.getElementById('bottlePanel');
+    const bottleBackdrop = document.getElementById('bottleBackdrop');
+    const bottleClose = document.getElementById('bottleClose');
+    const bottleBody = document.getElementById('bottleBody');
+    const bottleUnreadSection = document.getElementById('bottleUnreadSection');
+    const bottleUnreadCount = document.getElementById('bottleUnreadCount');
+    const bottleOpenBtn = document.getElementById('bottleOpenBtn');
+    const bottleInput = document.getElementById('bottleInput');
+    const bottleSendBtn = document.getElementById('bottleSendBtn');
 
     /* ═══════════════════════════════════════════════════════════════════════
        STATE
        ═══════════════════════════════════════════════════════════════════════ */
     let W = 0, H = 0;
     let totalWishes = 0;
-    let totalMessages = 0;
+    let totalUnreadMessages = 0;
     let mouseX = 0, mouseY = 0;
     let targetMouseX = 0, targetMouseY = 0;
     let time = 0;
@@ -954,18 +1006,17 @@
     let shootingStars = [];
     let nebulaBlobs = [];
     let wishMessages = [];
-    let messages = [];
     let audioCtx = null;
     let lastWishCount = 0;
-    let lastMsgCount = 0;
+    let lastUnreadCount = 0;
     let popupTimer = null;
 
     /* ═══════════════════════════════════════════════════════════════════════
        API HELPERS
        ═══════════════════════════════════════════════════════════════════════ */
     let supabase = null;
-    let localInsertIds = new Set(); // track self-inserted items to avoid double-display
-    let realtimeChannel = null;
+    let localInsertIds = new Set();
+    let localUpdateIds = new Set();
 
     function initSupabase() {
       if (CONFIG.supabaseUrl.includes('YOUR_')) {
@@ -999,15 +1050,21 @@
         connectionDot.textContent = '已连接';
       }
 
-      // Load messages
-      const { data: msgsData } = await supabase
-        .from('messages').select('*').order('created_at', { ascending: true });
-      if (msgsData) {
-        messages = msgsData;
-        totalMessages = msgsData.length;
-        lastMsgCount = msgsData.length;
-        updateMsgBadge();
-        renderMessageBoard();
+      // Load unrevealed message count
+      await refreshUnreadCount();
+    }
+
+    async function refreshUnreadCount() {
+      if (!supabase) return;
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('revealed', false);
+      if (!error && count !== null) {
+        totalUnreadMessages = count;
+        lastUnreadCount = count;
+        updateBottleBadge();
+        updateBottlePanel();
       }
     }
 
@@ -1023,9 +1080,8 @@
             const newWish = payload.new;
             if (localInsertIds.has(newWish.id)) {
               localInsertIds.delete(newWish.id);
-              return; // skip self-inserted
+              return;
             }
-            // New wish from another device!
             wishMessages.push(newWish);
             totalWishes = wishMessages.length;
             lastWishCount = totalWishes;
@@ -1049,18 +1105,30 @@
         .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages' },
           (payload) => {
-            const newMsg = payload.new;
-            if (localInsertIds.has(newMsg.id)) {
-              localInsertIds.delete(newMsg.id);
-              return; // skip self-inserted
+            if (localInsertIds.has(payload.new.id)) {
+              localInsertIds.delete(payload.new.id);
+              return;
             }
-            // New message from another device!
-            messages.push(newMsg);
-            totalMessages = messages.length;
-            lastMsgCount = totalMessages;
-            updateMsgBadge();
-            if (msgBoardPanel.classList.contains('open')) {
-              renderMessageBoard();
+            if (!payload.new.revealed) {
+              totalUnreadMessages++;
+              lastUnreadCount = totalUnreadMessages;
+              updateBottleBadge();
+              updateBottlePanel();
+            }
+          }
+        )
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'messages' },
+          (payload) => {
+            if (localUpdateIds.has(payload.new.id)) {
+              localUpdateIds.delete(payload.new.id);
+              return;
+            }
+            if (payload.new.revealed && !payload.old.revealed) {
+              totalUnreadMessages = Math.max(0, totalUnreadMessages - 1);
+              lastUnreadCount = totalUnreadMessages;
+              updateBottleBadge();
+              updateBottlePanel();
             }
           }
         )
@@ -1070,20 +1138,18 @@
     /* ═══════════════════════════════════════════════════════════════════════
        MESSAGE POPUP
        ═══════════════════════════════════════════════════════════════════════ */
-    function showMessagePopup(previousMessage) {
-      if (!previousMessage) return;
-
+    function showMessagePopup(message) {
+      if (!message) return;
       if (popupTimer) clearTimeout(popupTimer);
 
-      msgPopupTitle.textContent = '💌 上一个人的留言';
-      msgPopupText.textContent = previousMessage.text;
-      msgPopupTime.textContent = formatTime(previousMessage.time);
+      msgPopupTitle.textContent = '💌 漂流瓶 · 来自上一个人的留言';
+      msgPopupText.textContent = message.text;
+      msgPopupTime.textContent = formatTime(message.created_at);
       msgPopupOverlay.classList.remove('hidden');
-      // Force reflow then add show
       void msgPopupOverlay.offsetWidth;
       msgPopupOverlay.classList.add('show');
 
-      popupTimer = setTimeout(dismissPopup, 5000);
+      popupTimer = setTimeout(dismissPopup, 8000);
     }
 
     function dismissPopup() {
@@ -1105,80 +1171,118 @@
     });
 
     /* ═══════════════════════════════════════════════════════════════════════
-       MESSAGE BOARD
+       BOTTLE PANEL
        ═══════════════════════════════════════════════════════════════════════ */
-    function openMessageBoard() {
-      msgBoardPanel.classList.add('open');
-      msgBoardBackdrop.classList.remove('hidden');
-      void msgBoardBackdrop.offsetWidth;
-      msgBoardBackdrop.classList.add('show');
-      msgBoardBadge.textContent = '';
-      msgBoardBadge.style.display = 'none';
-      renderMessageBoard();
-      setTimeout(() => msgBoardInput.focus(), 400);
+    function openBottlePanel() {
+      updateBottlePanel();
+      bottlePanel.classList.add('open');
+      bottleBackdrop.classList.remove('hidden');
+      void bottleBackdrop.offsetWidth;
+      bottleBackdrop.classList.add('show');
+      setTimeout(() => bottleInput.focus(), 400);
     }
 
-    function closeMessageBoard() {
-      msgBoardPanel.classList.remove('open');
-      msgBoardBackdrop.classList.remove('show');
-      msgBoardBackdrop.addEventListener('transitionend', function handler() {
-        msgBoardBackdrop.classList.add('hidden');
-        msgBoardBackdrop.removeEventListener('transitionend', handler);
+    function closeBottlePanel() {
+      bottlePanel.classList.remove('open');
+      bottleBackdrop.classList.remove('show');
+      bottleBackdrop.addEventListener('transitionend', function handler() {
+        bottleBackdrop.classList.add('hidden');
+        bottleBackdrop.removeEventListener('transitionend', handler);
       });
     }
 
-    function updateMsgBadge() {
-      if (totalMessages > 0) {
-        msgBoardBadge.textContent = totalMessages > 99 ? '99+' : totalMessages;
-        msgBoardBadge.style.display = 'flex';
+    function updateBottleBadge() {
+      if (totalUnreadMessages > 0) {
+        bottleBadge.textContent = totalUnreadMessages > 99 ? '99+' : totalUnreadMessages;
+        bottleBadge.style.display = 'flex';
       } else {
-        msgBoardBadge.style.display = 'none';
+        bottleBadge.textContent = '';
+        bottleBadge.style.display = 'none';
       }
     }
 
-    function renderMessageBoard() {
-      if (messages.length === 0) {
-        msgBoardList.innerHTML = '<div class="msg-board-empty">还没有留言，来说点什么吧~</div>';
+    function updateBottlePanel() {
+      if (totalUnreadMessages > 0) {
+        bottleUnreadCount.textContent = `有 ${totalUnreadMessages} 封漂流信等待开启`;
+        bottleOpenBtn.disabled = false;
+        bottleOpenBtn.style.opacity = '1';
+      } else {
+        bottleUnreadCount.textContent = '暂无未读的漂流信';
+        bottleOpenBtn.disabled = true;
+        bottleOpenBtn.style.opacity = '0.35';
+      }
+    }
+
+    async function revealMessage() {
+      if (!supabase || totalUnreadMessages <= 0) return;
+
+      bottleOpenBtn.disabled = true;
+      bottleOpenBtn.textContent = '⏳ 正在打开…';
+
+      // Fetch oldest unrevealed message
+      const { data: msgs, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('revealed', false)
+        .order('created_at', { ascending: true })
+        .limit(1);
+
+      if (error || !msgs || msgs.length === 0) {
+        bottleOpenBtn.disabled = false;
+        bottleOpenBtn.innerHTML = '<span>📭</span> 打开漂流瓶';
         return;
       }
 
-      // Reverse chronological (newest first)
-      const reversed = [...messages].reverse();
-      msgBoardList.innerHTML = reversed.map(m => `
-        <div class="msg-board-item">
-          <div class="msg-board-item-text">${escapeHTML(m.text)}</div>
-          <div class="msg-board-item-time">${formatTime(m.time)}</div>
-        </div>
-      `).join('');
+      const msg = msgs[0];
 
-      // Scroll to top to show newest
-      msgBoardList.scrollTop = 0;
+      // Mark as revealed
+      const { error: updateError } = await supabase
+        .from('messages')
+        .update({ revealed: true })
+        .eq('id', msg.id);
+
+      if (updateError) {
+        console.warn('标记已读失败:', updateError);
+        bottleOpenBtn.disabled = false;
+        bottleOpenBtn.innerHTML = '<span>📭</span> 打开漂流瓶';
+        return;
+      }
+
+      localUpdateIds.add(msg.id);
+      totalUnreadMessages = Math.max(0, totalUnreadMessages - 1);
+      lastUnreadCount = totalUnreadMessages;
+      updateBottleBadge();
+      updateBottlePanel();
+      bottleOpenBtn.innerHTML = '<span>📭</span> 打开漂流瓶';
+
+      // Show the message in popup
+      closeBottlePanel();
+      setTimeout(() => showMessagePopup(msg), 500);
     }
 
-    async function submitMessage() {
-      const text = msgBoardInput.value.trim();
+    async function submitBottleMessage() {
+      const text = bottleInput.value.trim();
       if (!text) return;
-      msgBoardInput.value = '';
+      bottleInput.value = '';
 
       if (!supabase) return;
 
       const { data: inserted, error } = await supabase
         .from('messages')
-        .insert({ text })
+        .insert({ text, revealed: false })
         .select()
         .single();
 
       if (error || !inserted) {
-        console.warn('Supabase message insert error:', error);
+        console.warn('留言提交失败:', error);
         return;
       }
 
       localInsertIds.add(inserted.id);
-      messages.push(inserted);
-      totalMessages = messages.length;
-      lastMsgCount = totalMessages;
-      updateMsgBadge();
-      renderMessageBoard();
+      totalUnreadMessages++;
+      lastUnreadCount = totalUnreadMessages;
+      updateBottleBadge();
+      updateBottlePanel();
     }
 
     function escapeHTML(str) {
@@ -1202,29 +1306,33 @@
       return `${month}/${day} ${hours}:${minutes}`;
     }
 
-    msgBoardBtn.addEventListener('click', (e) => {
+    bottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      openMessageBoard();
+      openBottlePanel();
     });
 
-    msgBoardClose.addEventListener('click', () => closeMessageBoard());
-    msgBoardBackdrop.addEventListener('click', () => closeMessageBoard());
+    bottleClose.addEventListener('click', () => closeBottlePanel());
+    bottleBackdrop.addEventListener('click', () => closeBottlePanel());
 
-    msgBoardInput.addEventListener('click', (e) => e.stopPropagation());
-    msgBoardInput.addEventListener('keydown', (e) => {
+    bottleOpenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      revealMessage();
+    });
+
+    bottleInput.addEventListener('click', (e) => e.stopPropagation());
+    bottleInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        submitMessage();
+        submitBottleMessage();
       }
     });
 
-    msgBoardSend.addEventListener('click', (e) => {
+    bottleSendBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      submitMessage();
+      submitBottleMessage();
     });
 
-    // Prevent message board clicks from triggering canvas wishes
-    msgBoardPanel.addEventListener('click', (e) => e.stopPropagation());
+    bottlePanel.addEventListener('click', (e) => e.stopPropagation());
 
     /* ═══════════════════════════════════════════════════════════════════════
        RESIZE
@@ -1280,10 +1388,10 @@
     function initNebula() {
       nebulaBlobs = [];
       const colors = [
-        { h: 260, s: 40, l: 25 },
-        { h: 220, s: 30, l: 20 },
-        { h: 340, s: 30, l: 18 },
-        { h: 200, s: 25, l: 16 },
+        { h: 215, s: 45, l: 22 },
+        { h: 230, s: 35, l: 18 },
+        { h: 200, s: 40, l: 20 },
+        { h: 240, s: 30, l: 16 },
       ];
       for (let i = 0; i < CONFIG.nebulaCount; i++) {
         const c = colors[i % colors.length];
@@ -1331,7 +1439,7 @@
           baseAlpha: Math.random() * 0.45 + 0.15,
           twinkleSpeed: Math.random() * 0.015 + 0.003,
           twinkleOffset: Math.random() * Math.PI * 2,
-          hue: Math.random() < 0.08 ? 40 + Math.random() * 25 : 210 + Math.random() * 50,
+          hue: Math.random() < 0.08 ? 200 + Math.random() * 30 : 210 + Math.random() * 50,
         });
       }
     }
@@ -1343,13 +1451,13 @@
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${s.hue}, 20%, 78%, ${a})`;
+        ctx.fillStyle = `hsla(${s.hue}, 25%, 78%, ${a})`;
         ctx.fill();
 
         if (s.r > 0.8) {
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
-          ctx.fillStyle = `hsla(${s.hue}, 20%, 78%, ${a * 0.1})`;
+          ctx.fillStyle = `hsla(${s.hue}, 25%, 78%, ${a * 0.1})`;
           ctx.fill();
         }
       });
@@ -1385,7 +1493,7 @@
         ctx.lineTo(heartPoints[i].x, heartPoints[i].y);
       }
       ctx.closePath();
-      ctx.strokeStyle = 'rgba(200, 160, 120, 0.1)';
+      ctx.strokeStyle = 'rgba(100, 150, 210, 0.1)';
       ctx.lineWidth = 0.5;
       ctx.setLineDash([2, 6]);
       ctx.stroke();
@@ -1396,8 +1504,8 @@
         const alpha = 0.55 + Math.sin(time * 0.03 + s.pulseOffset) * 0.3;
 
         const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 8 * pulse);
-        glow.addColorStop(0, `rgba(240, 200, 140, ${alpha * 0.5})`);
-        glow.addColorStop(0.5, `rgba(240, 180, 120, ${alpha * 0.12})`);
+        glow.addColorStop(0, `rgba(120, 180, 240, ${alpha * 0.5})`);
+        glow.addColorStop(0.5, `rgba(90, 150, 220, ${alpha * 0.12})`);
         glow.addColorStop(1, 'transparent');
         ctx.fillStyle = glow;
         ctx.beginPath();
@@ -1406,12 +1514,12 @@
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 230, 190, ${alpha})`;
+        ctx.fillStyle = `rgba(200, 225, 255, ${alpha})`;
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * 0.4 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 245, 225, ${alpha + 0.2})`;
+        ctx.fillStyle = `rgba(230, 245, 255, ${alpha + 0.2})`;
         ctx.fill();
       });
     }
@@ -1453,7 +1561,7 @@
 
         const grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
         grad.addColorStop(0, `rgba(255, 255, 255, ${s.life})`);
-        grad.addColorStop(0.1, `rgba(255, 245, 220, ${s.life * 0.8})`);
+        grad.addColorStop(0.1, `rgba(200, 225, 255, ${s.life * 0.8})`);
         grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
         ctx.beginPath();
@@ -1558,9 +1666,9 @@
         const r = l.phase === 'settling' ? 3 : 4;
 
         const glow = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, r * 6);
-        glow.addColorStop(0, `rgba(255, 230, 170, ${alpha * 0.7})`);
-        glow.addColorStop(0.3, `rgba(240, 190, 120, ${alpha * 0.3})`);
-        glow.addColorStop(0.7, `rgba(200, 140, 80, ${alpha * 0.06})`);
+        glow.addColorStop(0, `rgba(160, 210, 255, ${alpha * 0.7})`);
+        glow.addColorStop(0.3, `rgba(100, 170, 240, ${alpha * 0.3})`);
+        glow.addColorStop(0.7, `rgba(60, 120, 200, ${alpha * 0.06})`);
         glow.addColorStop(1, 'transparent');
         ctx.fillStyle = glow;
         ctx.beginPath();
@@ -1569,12 +1677,12 @@
 
         ctx.beginPath();
         ctx.arc(l.x, l.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 245, 220, ${alpha})`;
+        ctx.fillStyle = `rgba(200, 230, 255, ${alpha})`;
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(l.x, l.y, r * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 245, 1)`;
+        ctx.fillStyle = `rgba(240, 248, 255, 1)`;
         ctx.fill();
 
         if (l.message) {
@@ -1582,8 +1690,8 @@
           ctx.save();
           ctx.font = '13px "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillStyle = `rgba(255, 235, 200, ${textAlpha})`;
-          ctx.shadowColor = `rgba(240, 200, 140, ${textAlpha * 0.6})`;
+          ctx.fillStyle = `rgba(200, 230, 255, ${textAlpha})`;
+          ctx.shadowColor = `rgba(120, 180, 240, ${textAlpha * 0.6})`;
           ctx.shadowBlur = 6;
           ctx.fillText(l.message, l.x, l.y - 18);
           ctx.restore();
@@ -1612,7 +1720,7 @@
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(240, 200, 150, ${p.life * 0.6})`;
+        ctx.fillStyle = `rgba(140, 200, 240, ${p.life * 0.6})`;
         ctx.fill();
       }
     }
@@ -1624,9 +1732,9 @@
       ctx.clearRect(0, 0, W, H);
 
       const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
-      bgGrad.addColorStop(0, '#0d0d22');
-      bgGrad.addColorStop(0.5, '#08081a');
-      bgGrad.addColorStop(1, '#040410');
+      bgGrad.addColorStop(0, '#0a1020');
+      bgGrad.addColorStop(0.5, '#060818');
+      bgGrad.addColorStop(1, '#030410');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
 
@@ -1698,23 +1806,11 @@
       wishInput.value = '';
 
       if (!supabase) {
-        // No Supabase configured — still show the lantern locally
         const rect = glassCard.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         handleInteraction(cx, cy, text);
         return;
-      }
-
-      // Fetch the latest message BEFORE inserting the wish
-      let previousMessage = null;
-      const { data: prevMsgs } = await supabase
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (prevMsgs && prevMsgs.length > 0) {
-        previousMessage = prevMsgs[0];
       }
 
       // Insert wish
@@ -1726,7 +1822,6 @@
 
       if (error || !inserted) {
         console.warn('Supabase insert error:', error);
-        // Fallback: show animation locally
         const rect = glassCard.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -1744,29 +1839,23 @@
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       handleInteraction(cx, cy, text);
-
-      // Show previous message popup
-      if (previousMessage) {
-        setTimeout(() => showMessagePopup(previousMessage), 800);
-      }
     }
 
     document.addEventListener('click', (e) => {
-      // Don't trigger when clicking interactive elements
       if (e.target === wishInput || e.target === wishSendBtn) return;
       if (e.target.closest('.msg-popup-overlay')) return;
-      if (e.target.closest('.msg-board-panel')) return;
-      if (e.target.closest('.msg-board-btn')) return;
-      if (e.target.closest('.msg-board-backdrop')) return;
+      if (e.target.closest('.bottle-panel')) return;
+      if (e.target.closest('.bottle-btn')) return;
+      if (e.target.closest('.bottle-backdrop')) return;
       handleInteraction(e.clientX, e.clientY);
     });
 
     document.addEventListener('touchstart', (e) => {
       if (e.target === wishInput || e.target === wishSendBtn) return;
       if (e.target.closest('.msg-popup-overlay')) return;
-      if (e.target.closest('.msg-board-panel')) return;
-      if (e.target.closest('.msg-board-btn')) return;
-      if (e.target.closest('.msg-board-backdrop')) return;
+      if (e.target.closest('.bottle-panel')) return;
+      if (e.target.closest('.bottle-btn')) return;
+      if (e.target.closest('.bottle-backdrop')) return;
       if (e.touches.length === 1) {
         handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
       }
@@ -1865,12 +1954,9 @@
       resize();
       window.addEventListener('resize', resize);
 
-      // Initialize Supabase
       const ok = initSupabase();
       if (ok) {
-        // Load existing data
         await loadFromSupabase();
-        // Setup realtime subscriptions for cross-device sync
         setupRealtime();
       } else {
         connectionDot.classList.add('offline');
@@ -1881,7 +1967,6 @@
       updateParallax();
       requestAnimationFrame(loop);
 
-      // Pre-populate settled stars for visual appeal
       const initialStars = 8;
       for (let i = 0; i < initialStars && i < heartPoints.length; i++) {
         const idx = Math.floor((i / initialStars) * heartPoints.length);
@@ -1896,7 +1981,7 @@
       wishCountEl.textContent = totalWishes;
       wishCounter.classList.add('visible');
       wishInputArea.classList.add('visible');
-      updateMsgBadge();
+      updateBottleBadge();
 
       if (wishMessages.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
