@@ -267,6 +267,39 @@
     letter-spacing: 0.15em;
   }
 
+  /* ── Capsule Public Counter ────────────── */
+  .capsule-counter {
+    margin-top: 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .capsule-counter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .capsule-count {
+    font-size: 28px;
+    font-weight: 200;
+    color: rgba(180, 150, 240, 0.85);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    text-shadow: 0 0 16px rgba(140, 100, 220, 0.35);
+  }
+
+  .capsule-label-small {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    letter-spacing: 0.12em;
+  }
+
   /* ── Instruction ──────────────────────── */
   .instruction {
     position: fixed;
@@ -1357,6 +1390,28 @@
 
   .galaxy-close:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
+  .galaxy-mgmt-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 200, 100, 0.25);
+    background: rgba(255, 200, 100, 0.06);
+    color: rgba(255, 200, 100, 0.6);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    line-height: 1;
+  }
+
+  .galaxy-mgmt-btn:hover {
+    background: rgba(255, 200, 100, 0.15);
+    border-color: rgba(255, 200, 100, 0.4);
+    color: rgba(255, 220, 140, 1);
+  }
+
   .galaxy-legend {
     display: flex;
     gap: 16px;
@@ -1784,6 +1839,154 @@
     color: rgba(255, 220, 140, 1);
   }
 
+  /* ── Constellation Management Panel ────── */
+  .constellation-mgmt-panel {
+    position: fixed;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    z-index: 12;
+    width: min(380px, 90vw);
+    max-height: 60vh;
+    background: rgba(14, 16, 32, 0.95);
+    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .constellation-mgmt-panel.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 50%);
+  }
+
+  .constellation-mgmt-panel.hidden {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .constellation-mgmt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+  }
+
+  .constellation-mgmt-title {
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+  }
+
+  .constellation-mgmt-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    line-height: 1;
+  }
+
+  .constellation-mgmt-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  .constellation-mgmt-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .constellation-mgmt-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 14px;
+    padding: 24px 0;
+  }
+
+  .constellation-mgmt-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+
+  .constellation-mgmt-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .constellation-mgmt-item-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .constellation-mgmt-item-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .constellation-mgmt-item-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .constellation-mgmt-item-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .constellation-mgmt-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 80, 80, 0.2);
+    background: rgba(255, 60, 60, 0.08);
+    color: rgba(255, 120, 120, 0.7);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .constellation-mgmt-delete:hover {
+    background: rgba(255, 60, 60, 0.18);
+    border-color: rgba(255, 80, 80, 0.4);
+    color: rgba(255, 140, 140, 1);
+  }
+
   /* ── Day/Night Indicator ──────────────── */
   .daynight-indicator {
     position: fixed;
@@ -1836,6 +2039,13 @@
     .meteor-banner-text { font-size: 11px; }
     .wish-tags { gap: 6px; }
     .wish-tag { padding: 4px 10px; font-size: 11px; }
+    .capsule-count { font-size: 22px; }
+    .capsule-counter { margin-top: 12px; }
+    .constellation-mgmt-panel { width: 92vw; max-height: 55vh; border-radius: 18px; }
+    .constellation-mgmt-header { padding: 14px 16px; }
+    .constellation-mgmt-body { padding: 12px 16px; }
+    .constellation-mgmt-title { font-size: 14px; }
+    .constellation-toolbar { bottom: 245px; }
   }
 </style>
 </head>
@@ -1880,6 +2090,12 @@
       <span class="wish-label-small">个心愿</span>
     </div>
 
+    <!-- Capsule public counter -->
+    <div class="capsule-counter" id="capsuleCounter">
+      <span class="capsule-count" id="capsuleCount">0</span>
+      <span class="capsule-label-small">个时光胶囊已封存</span>
+    </div>
+
     <!-- Wish input -->
     <div class="wish-input-area" id="wishInputArea">
       <input
@@ -1912,6 +2128,17 @@
       <div class="msg-popup-text" id="msgPopupText"></div>
       <div class="msg-popup-time" id="msgPopupTime"></div>
       <button class="msg-popup-dismiss" id="msgPopupDismiss">我知道了 ✨</button>
+    </div>
+  </div>
+
+  <!-- Capsule Reveal Popup (阅后即焚) -->
+  <div class="msg-popup-overlay hidden" id="capsulePopupOverlay">
+    <div class="msg-popup" style="border-color: rgba(200,140,100,0.2);">
+      <div class="msg-popup-icon">🔥</div>
+      <div class="msg-popup-title" id="capsulePopupTitle">阅后即焚 · 来自过去的你</div>
+      <div class="msg-popup-text" id="capsulePopupText"></div>
+      <div class="msg-popup-time" id="capsulePopupTime"></div>
+      <button class="msg-popup-dismiss" id="capsulePopupDismiss" style="color: rgba(240,160,100,0.7);">我已阅读 · 让它消散 ✨</button>
     </div>
   </div>
 
@@ -1979,7 +2206,10 @@
   <div class="galaxy-panel hidden" id="galaxyPanel">
     <div class="galaxy-header">
       <span class="galaxy-title">🌌 愿望星系地图</span>
-      <button class="galaxy-close" id="galaxyClose">✕</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="galaxy-mgmt-btn" id="galaxyMgmtBtn" title="管理星座">📋</button>
+        <button class="galaxy-close" id="galaxyClose">✕</button>
+      </div>
     </div>
     <div class="galaxy-legend" id="galaxyLegend"></div>
     <div class="galaxy-canvas-wrap" id="galaxyCanvasWrap">
@@ -2019,6 +2249,18 @@
     <button class="constellation-tool-btn" id="constellationConnect" title="连线模式">🔗</button>
     <button class="constellation-tool-btn" id="constellationClear" title="清除">🗑️</button>
     <button class="constellation-tool-btn" id="constellationSave" title="保存星座">💾</button>
+    <button class="constellation-tool-btn" id="constellationDelete" title="删除星座">📋</button>
+  </div>
+
+  <!-- Constellation Management Panel -->
+  <div class="constellation-mgmt-panel hidden" id="constellationMgmtPanel">
+    <div class="constellation-mgmt-header">
+      <span class="constellation-mgmt-title">📋 管理我的星座</span>
+      <button class="constellation-mgmt-close" id="constellationMgmtClose">✕</button>
+    </div>
+    <div class="constellation-mgmt-body" id="constellationMgmtBody">
+      <p class="constellation-mgmt-empty">还没有保存的星座哦～</p>
+    </div>
   </div>
 
   <!-- Bottle Toggle Button -->
@@ -2092,6 +2334,8 @@
     const ctx = canvas.getContext('2d');
     const wishCounter = document.getElementById('wishCounter');
     const wishCountEl = document.getElementById('wishCount');
+    const capsuleCounter = document.getElementById('capsuleCounter');
+    const capsuleCountEl = document.getElementById('capsuleCount');
     const instruction = document.getElementById('instruction');
     const glassCard = document.getElementById('glassCard');
     const wishInput = document.getElementById('wishInput');
@@ -2108,6 +2352,13 @@
     const msgPopupText = document.getElementById('msgPopupText');
     const msgPopupTime = document.getElementById('msgPopupTime');
     const msgPopupDismiss = document.getElementById('msgPopupDismiss');
+
+    // Capsule reveal popup
+    const capsulePopupOverlay = document.getElementById('capsulePopupOverlay');
+    const capsulePopupTitle = document.getElementById('capsulePopupTitle');
+    const capsulePopupText = document.getElementById('capsulePopupText');
+    const capsulePopupTime = document.getElementById('capsulePopupTime');
+    const capsulePopupDismiss = document.getElementById('capsulePopupDismiss');
 
     // Bottle
     const bottleBtn = document.getElementById('bottleBtn');
@@ -2151,6 +2402,7 @@
     const galaxyBtn = document.getElementById('galaxyBtn');
     const galaxyPanel = document.getElementById('galaxyPanel');
     const galaxyClose = document.getElementById('galaxyClose');
+    const galaxyMgmtBtn = document.getElementById('galaxyMgmtBtn');
     const galaxyCanvas = document.getElementById('galaxyCanvas');
     const galaxyCanvasWrap = document.getElementById('galaxyCanvasWrap');
     const galaxyLegend = document.getElementById('galaxyLegend');
@@ -2178,6 +2430,10 @@
     const constellationConnect = document.getElementById('constellationConnect');
     const constellationClear = document.getElementById('constellationClear');
     const constellationSave = document.getElementById('constellationSave');
+    const constellationDelete = document.getElementById('constellationDelete');
+    const constellationMgmtPanel = document.getElementById('constellationMgmtPanel');
+    const constellationMgmtClose = document.getElementById('constellationMgmtClose');
+    const constellationMgmtBody = document.getElementById('constellationMgmtBody');
 
     /* ═══════════════════════════════════════════════════════════════════════
        STATE
@@ -2410,10 +2666,8 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       MESSAGE POPUP
+       MESSAGE POPUP (漂流瓶)
        ═══════════════════════════════════════════════════════════════════════ */
-    let pendingBurnCapsule = null; // Capsule to delete after popup dismiss
-
     function showMessagePopup(message) {
       if (!message) return;
       if (popupTimer) clearTimeout(popupTimer);
@@ -2423,16 +2677,48 @@
       msgPopupOverlay.classList.remove('hidden');
       void msgPopupOverlay.offsetWidth;
       msgPopupOverlay.classList.add('show');
-      popupTimer = setTimeout(dismissPopup, 8000);
+      popupTimer = setTimeout(dismissMsgPopup, 8000);
     }
 
-    async function dismissPopup() {
+    function dismissMsgPopup() {
       if (popupTimer) clearTimeout(popupTimer);
       msgPopupOverlay.classList.remove('show');
-      // Burn after reading: delete capsule after popup dismissed
-      if (pendingBurnCapsule) {
-        const cap = pendingBurnCapsule;
-        pendingBurnCapsule = null;
+      msgPopupOverlay.addEventListener('transitionend', function handler() {
+        msgPopupOverlay.classList.add('hidden');
+        msgPopupOverlay.removeEventListener('transitionend', handler);
+      });
+    }
+
+    msgPopupDismiss.addEventListener('click', (e) => { e.stopPropagation(); dismissMsgPopup(); });
+    msgPopupOverlay.addEventListener('click', (e) => { if (e.target === msgPopupOverlay) dismissMsgPopup(); });
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       CAPSULE REVEAL POPUP (阅后即焚)
+       ═══════════════════════════════════════════════════════════════════════ */
+    let capsulePopupTimer = null;
+    let burningCapsule = null;
+
+    function showCapsulePopup(capsule) {
+      if (!capsule) return;
+      if (capsulePopupTimer) clearTimeout(capsulePopupTimer);
+      burningCapsule = capsule;
+      const displayText = getCapsuleDisplayText(capsule);
+      capsulePopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
+      capsulePopupText.textContent = displayText;
+      capsulePopupTime.textContent = formatDate(capsule.reveal_date) + ' 封存';
+      capsulePopupOverlay.classList.remove('hidden');
+      void capsulePopupOverlay.offsetWidth;
+      capsulePopupOverlay.classList.add('show');
+      capsulePopupTimer = setTimeout(burnCapsule, 15000); // Auto-burn after 15s
+    }
+
+    async function burnCapsule() {
+      if (capsulePopupTimer) clearTimeout(capsulePopupTimer);
+      capsulePopupOverlay.classList.remove('show');
+      const cap = burningCapsule;
+      burningCapsule = null;
+      if (cap) {
+        // Delete from Supabase
         if (supabase) {
           await supabase.from('time_capsules').delete().eq('id', cap.id);
         }
@@ -2443,14 +2729,14 @@
         updateTimeCapsuleBadge();
         renderTimeCapsules();
       }
-      msgPopupOverlay.addEventListener('transitionend', function handler() {
-        msgPopupOverlay.classList.add('hidden');
-        msgPopupOverlay.removeEventListener('transitionend', handler);
+      capsulePopupOverlay.addEventListener('transitionend', function handler() {
+        capsulePopupOverlay.classList.add('hidden');
+        capsulePopupOverlay.removeEventListener('transitionend', handler);
       });
     }
 
-    msgPopupDismiss.addEventListener('click', (e) => { e.stopPropagation(); dismissPopup(); });
-    msgPopupOverlay.addEventListener('click', (e) => { if (e.target === msgPopupOverlay) dismissPopup(); });
+    capsulePopupDismiss.addEventListener('click', (e) => { e.stopPropagation(); burnCapsule(); });
+    capsulePopupOverlay.addEventListener('click', (e) => { if (e.target === capsulePopupOverlay) burnCapsule(); });
 
     /* ═══════════════════════════════════════════════════════════════════════
        BOTTLE PANEL
@@ -2607,7 +2893,11 @@
       const nowBeijing = new Date(Date.now() + 8 * 60 * 60 * 1000);
       const tomorrowBeijing = new Date(nowBeijing);
       tomorrowBeijing.setUTCDate(tomorrowBeijing.getUTCDate() + 1);
-      timecapsuleDate.value = tomorrowBeijing.toISOString().split('T')[0];
+      const minDateStr = tomorrowBeijing.toISOString().split('T')[0];
+      timecapsuleDate.value = minDateStr;
+      timecapsuleDate.setAttribute('min', minDateStr);
+      // Update title with total count
+      document.querySelector('.timecapsule-title').textContent = `⏳ 时光胶囊 · ${timeCapsules.length} 个`;
       renderTimeCapsules();
       timecapsulePanel.classList.add('open');
       timecapsuleBackdrop.classList.remove('hidden');
@@ -2626,14 +2916,20 @@
     }
 
     function updateTimeCapsuleBadge() {
-      const now = new Date();
-      const ready = timeCapsules.filter(c => new Date(c.reveal_date) <= now && !c.revealed).length;
-      if (ready > 0) {
-        timecapsuleBadge.textContent = ready > 99 ? '99+' : ready;
+      const total = timeCapsules.length;
+      if (total > 0) {
+        timecapsuleBadge.textContent = total > 99 ? '99+' : total;
         timecapsuleBadge.style.display = 'flex';
       } else {
         timecapsuleBadge.textContent = '';
         timecapsuleBadge.style.display = 'none';
+      }
+      // Update public capsule counter
+      if (total > 0) {
+        capsuleCountEl.textContent = total;
+        if (!capsuleCounter.classList.contains('visible')) capsuleCounter.classList.add('visible');
+      } else {
+        capsuleCountEl.textContent = '0';
       }
     }
 
@@ -2648,26 +2944,56 @@
         timecapsuleList.appendChild(empty);
         return;
       }
+
+      // Public count header
+      const header = document.createElement('div');
+      header.style.cssText = 'text-align:center;font-size:12px;color:rgba(180,150,240,0.5);letter-spacing:0.08em;margin-bottom:4px;';
+      header.textContent = `📦 共 ${sorted.length} 个时光胶囊已封存`;
+      timecapsuleList.appendChild(header);
+
       sorted.forEach(cap => {
         const isReady = new Date(cap.reveal_date) <= now;
         const mine = isMyCapsule(cap);
         const displayText = getCapsuleDisplayText(cap);
         const card = document.createElement('div');
         card.className = 'timecapsule-capsule';
-        card.style.cssText = isReady && mine && !cap.revealed ? 'border-color: rgba(180,140,240,0.3);' : '';
+
+        let icon, statusText, cardStyle, clickable = false;
+        if (mine && isReady && !cap.revealed) {
+          // My capsule, ready to open
+          icon = '🔓';
+          statusText = escapeHTML(displayText);
+          cardStyle = 'border-color: rgba(200,140,100,0.4); cursor: pointer;';
+          clickable = true;
+        } else if (mine && !isReady) {
+          // My capsule, still waiting
+          icon = '⏳';
+          const daysLeft = Math.ceil((new Date(cap.reveal_date) - now) / (1000 * 60 * 60 * 24));
+          statusText = '我的胶囊 · ' + daysLeft + '天后解锁';
+          cardStyle = '';
+        } else if (!mine && isReady) {
+          // Someone else's capsule, ready
+          icon = '🔒';
+          statusText = '他人封存 · 仅自己可打开';
+          cardStyle = '';
+        } else {
+          // Someone else's capsule, waiting
+          icon = '🔒';
+          const daysLeft = Math.ceil((new Date(cap.reveal_date) - now) / (1000 * 60 * 60 * 24));
+          statusText = '他人封存 · ' + daysLeft + '天后解锁';
+          cardStyle = '';
+        }
+
+        card.style.cssText = cardStyle;
         card.innerHTML = `
-          <span class="timecapsule-capsule-icon">${isReady ? (mine ? '🔓' : '🔒') : '🔒'}</span>
-          <span class="timecapsule-capsule-text">${isReady && mine && !cap.revealed ? escapeHTML(displayText) : (isReady ? '📦 他人封存' : '📦 封存中…')}</span>
+          <span class="timecapsule-capsule-icon">${icon}</span>
+          <span class="timecapsule-capsule-text">${statusText}</span>
           <span class="timecapsule-capsule-date">${formatDate(cap.reveal_date)}</span>
         `;
-        if (isReady && mine && !cap.revealed) {
-          card.style.cursor = 'pointer';
+
+        if (clickable) {
           card.addEventListener('click', async () => {
-            pendingBurnCapsule = cap;
-            showMessagePopup({ text: displayText, created_at: cap.created_at });
-            msgPopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
-            updateTimeCapsuleBadge();
-            renderTimeCapsules();
+            showCapsulePopup(cap);
           });
         }
         timecapsuleList.appendChild(card);
@@ -2988,20 +3314,41 @@
       try {
         const saved = JSON.parse(localStorage.getItem('constellations') || '[]');
         if (!saved.length) return;
-        // Position saved constellations at the bottom-right area of the galaxy map
-        const offsetX = cw * 0.25;
-        const offsetY = ch * 0.25;
-        const scale = Math.min(cw, ch) * 0.0012;
+
+        // Responsive layout: fewer columns on narrow screens
+        const isNarrow = cw < 800;
+        const cols = isNarrow ? 2 : 3;
+        const totalRows = Math.ceil(saved.length / cols);
+
+        // Calculate grid spacing based on available canvas area
+        // Use the bottom portion of the canvas for constellations
+        const areaX = cw * 0.08;
+        const areaY = ch * 0.55;
+        const areaW = cw * 0.84;
+        const areaH = ch * 0.38;
+        const cellW = areaW / cols;
+        const cellH = Math.min(areaH / Math.max(totalRows, 1), cellW * 0.85);
+
+        // Scale factor relative to canvas size for proper rendering
+        const scale = Math.min(cw, ch) * 0.0015;
+
+        // Section title
+        galaxyCtx.fillStyle = 'rgba(255,220,150,0.5)';
+        galaxyCtx.font = `${isNarrow ? 11 : 13}px "PingFang SC","Microsoft YaHei",sans-serif`;
+        galaxyCtx.textAlign = 'center';
+        galaxyCtx.fillText('🔮 我的星座', cw * 0.5, areaY - 18);
+
         saved.forEach((constellation, ci) => {
           if (!constellation.stars || constellation.stars.length < 2) return;
           // Calculate centroid of constellation stars
           const cx_s = constellation.stars.reduce((s, st) => s + st.x, 0) / constellation.stars.length;
           const cy_s = constellation.stars.reduce((s, st) => s + st.y, 0) / constellation.stars.length;
-          // Position each constellation in a grid
-          const row = Math.floor(ci / 3);
-          const col = ci % 3;
-          const baseX = offsetX + col * 180;
-          const baseY = offsetY + row * 150;
+          // Position each constellation in the responsive grid
+          const row = Math.floor(ci / cols);
+          const col = ci % cols;
+          const baseX = areaX + col * cellW + cellW / 2;
+          const baseY = areaY + row * cellH + cellH / 2;
+
           // Draw constellation lines
           if (constellation.lines) {
             constellation.lines.forEach(line => {
@@ -3018,7 +3365,7 @@
                   baseY + (to.y - cy_s) * scale
                 );
                 galaxyCtx.strokeStyle = 'rgba(255,200,100,0.5)';
-                galaxyCtx.lineWidth = 1.5;
+                galaxyCtx.lineWidth = isNarrow ? 1.2 : 1.5;
                 galaxyCtx.setLineDash([4, 4]);
                 galaxyCtx.stroke();
                 galaxyCtx.setLineDash([]);
@@ -3026,23 +3373,25 @@
             });
           }
           // Draw constellation stars
+          const starRadius = isNarrow ? 2.5 : 3;
+          const glowRadius = isNarrow ? 6 : 8;
           constellation.stars.forEach(s => {
             const sx = baseX + (s.x - cx_s) * scale;
             const sy = baseY + (s.y - cy_s) * scale;
             galaxyCtx.beginPath();
-            galaxyCtx.arc(sx, sy, 3, 0, Math.PI * 2);
+            galaxyCtx.arc(sx, sy, starRadius, 0, Math.PI * 2);
             galaxyCtx.fillStyle = 'rgba(255,220,140,0.8)';
             galaxyCtx.fill();
             galaxyCtx.beginPath();
-            galaxyCtx.arc(sx, sy, 8, 0, Math.PI * 2);
+            galaxyCtx.arc(sx, sy, glowRadius, 0, Math.PI * 2);
             galaxyCtx.fillStyle = 'rgba(255,200,100,0.15)';
             galaxyCtx.fill();
           });
           // Label
           galaxyCtx.fillStyle = 'rgba(255,220,150,0.7)';
-          galaxyCtx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+          galaxyCtx.font = `${isNarrow ? 11 : 13}px "PingFang SC","Microsoft YaHei",sans-serif`;
           galaxyCtx.textAlign = 'center';
-          galaxyCtx.fillText(constellation.name || '我的星座', baseX, baseY - 40);
+          galaxyCtx.fillText(constellation.name || '我的星座', baseX, baseY - (isNarrow ? 28 : 35));
         });
       } catch(e) { /* ignore */ }
     }
@@ -3357,6 +3706,74 @@
       alert(`✨ 星座"${name}"已保存！`);
     }
 
+    function openConstellationMgmt() {
+      renderConstellationMgmtList();
+      constellationMgmtPanel.classList.remove('hidden');
+      void constellationMgmtPanel.offsetWidth;
+      constellationMgmtPanel.classList.add('show');
+    }
+
+    function closeConstellationMgmt() {
+      constellationMgmtPanel.classList.remove('show');
+      constellationMgmtPanel.addEventListener('transitionend', function handler() {
+        constellationMgmtPanel.classList.add('hidden');
+        constellationMgmtPanel.removeEventListener('transitionend', handler);
+      });
+    }
+
+    function renderConstellationMgmtList() {
+      const saved = JSON.parse(localStorage.getItem('constellations') || '[]');
+      if (!saved.length) {
+        constellationMgmtBody.innerHTML = '<p class="constellation-mgmt-empty">还没有保存的星座哦～<br>先用 🔮 画一个吧！</p>';
+        return;
+      }
+      constellationMgmtBody.innerHTML = saved.map((c, i) => {
+        const date = c.created_at ? new Date(c.created_at).toLocaleDateString('zh-CN') : '未知';
+        const starCount = c.stars ? c.stars.length : 0;
+        const lineCount = c.lines ? c.lines.length : 0;
+        return `
+          <div class="constellation-mgmt-item">
+            <div class="constellation-mgmt-item-info">
+              <span class="constellation-mgmt-item-icon">✨</span>
+              <div>
+                <div class="constellation-mgmt-item-name">${escapeHtml(c.name || '我的星座')}</div>
+                <div class="constellation-mgmt-item-meta">${starCount}颗星 · ${lineCount}条线 · ${date}</div>
+              </div>
+            </div>
+            <button class="constellation-mgmt-delete" data-index="${i}" title="删除">🗑️</button>
+          </div>`;
+      }).join('');
+
+      // Add click listeners to delete buttons
+      constellationMgmtBody.querySelectorAll('.constellation-mgmt-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.index);
+          deleteConstellation(idx);
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function deleteConstellation(index) {
+      const saved = JSON.parse(localStorage.getItem('constellations') || '[]');
+      if (index < 0 || index >= saved.length) return;
+      const name = saved[index].name || '我的星座';
+      if (!confirm(`确定要删除星座"${name}"吗？此操作不可恢复。`)) return;
+      saved.splice(index, 1);
+      localStorage.setItem('constellations', JSON.stringify(saved));
+      renderConstellationMgmtList();
+      // Refresh galaxy map if open
+      if (galaxyPanel.classList.contains('show')) {
+        renderGalaxyMap();
+      }
+    }
+
     constellationBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleConstellationMode(); });
     constellationAddStar.addEventListener('click', (e) => { e.stopPropagation(); constellationConnectMode = false; constellationConnect.classList.remove('active'); });
     constellationConnect.addEventListener('click', (e) => {
@@ -3371,6 +3788,12 @@
     });
     constellationClear.addEventListener('click', (e) => { e.stopPropagation(); clearDrawnConstellation(); });
     constellationSave.addEventListener('click', (e) => { e.stopPropagation(); saveConstellation(); });
+    constellationDelete.addEventListener('click', (e) => { e.stopPropagation(); openConstellationMgmt(); });
+    constellationMgmtClose.addEventListener('click', () => closeConstellationMgmt());
+    constellationMgmtPanel.addEventListener('click', (e) => {
+      if (e.target === constellationMgmtPanel) closeConstellationMgmt();
+    });
+    galaxyMgmtBtn.addEventListener('click', (e) => { e.stopPropagation(); openConstellationMgmt(); });
 
     // Override click handler for constellation mode
     canvas.addEventListener('click', (e) => {
@@ -3986,6 +4409,7 @@
       if (e.target.closest('.growth-tree-btn')) return;
       if (e.target.closest('.constellation-btn')) return;
       if (e.target.closest('.constellation-toolbar')) return;
+      if (e.target.closest('.constellation-mgmt-panel')) return;
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       handleInteraction(e.clientX, e.clientY);
@@ -4010,6 +4434,7 @@
       if (e.target.closest('.growth-tree-btn')) return;
       if (e.target.closest('.constellation-btn')) return;
       if (e.target.closest('.constellation-toolbar')) return;
+      if (e.target.closest('.constellation-mgmt-panel')) return;
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       if (e.touches.length === 1) {
@@ -4135,6 +4560,7 @@
       wishTags.classList.add('visible');
       updateBottleBadge();
       updateTimeCapsuleBadge();
+      if (timeCapsules.length > 0) capsuleCounter.classList.add('visible');
       if (wishMessages.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
         setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
