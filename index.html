@@ -2250,27 +2250,55 @@
        DATA LOADING
        ═══════════════════════════════════════════════════════════════════════ */
     async function loadFromSupabase() {
-      if (!supabase) return;
-      const { data: wishesData } = await supabase
-        .from('wishes').select('*').order('created_at', { ascending: true });
-      if (wishesData) {
-        wishMessages = wishesData;
-        totalWishes = wishesData.length;
-        lastWishCount = wishesData.length;
-        wishCountEl.textContent = totalWishes;
-        connectionDot.classList.remove('offline');
-        connectionDot.textContent = '已连接';
-      }
-      // Load capsules
-      const { data: capsData } = await supabase
-        .from('time_capsules').select('*').order('reveal_date', { ascending: true });
-      if (capsData) {
-        timeCapsules = capsData;
-      }
-      // Merge local storage capsules
+      // Always load local data first
+      loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
+      if (wishMessages.length > 0) {
+        totalWishes = wishMessages.length;
+        lastWishCount = totalWishes;
+        wishCountEl.textContent = totalWishes;
+      }
       updateTimeCapsuleBadge();
-      await refreshUnreadCount();
+
+      if (!supabase) return;
+      try {
+        const { data: wishesData } = await supabase
+          .from('wishes').select('*').order('created_at', { ascending: true });
+        if (wishesData && wishesData.length > 0) {
+          // Merge: Supabase wishes take precedence, dedup by id
+          const localIds = new Set(wishMessages.map(w => String(w.id)));
+          wishesData.forEach(w => {
+            if (!localIds.has(String(w.id))) {
+              wishMessages.push(w);
+            }
+          });
+          // Sort by created_at
+          wishMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          totalWishes = wishMessages.length;
+          lastWishCount = totalWishes;
+          wishCountEl.textContent = totalWishes;
+          connectionDot.classList.remove('offline');
+          connectionDot.textContent = '已连接';
+        }
+        // Load capsules
+        const { data: capsData } = await supabase
+          .from('time_capsules').select('*').order('reveal_date', { ascending: true });
+        if (capsData && capsData.length > 0) {
+          const localCapIds = new Set(timeCapsules.map(c => String(c.id)));
+          capsData.forEach(c => {
+            if (!localCapIds.has(String(c.id))) {
+              timeCapsules.push(c);
+            }
+          });
+          saveTimeCapsulesToStorage();
+          updateTimeCapsuleBadge();
+        }
+        await refreshUnreadCount();
+      } catch(e) {
+        console.warn('Supabase 加载失败，使用本地数据:', e);
+        connectionDot.classList.add('offline');
+        connectionDot.textContent = '离线模式';
+      }
     }
 
     async function refreshUnreadCount() {
@@ -2664,6 +2692,35 @@
       saveTimeCapsulesToStorage();
       updateTimeCapsuleBadge();
       renderTimeCapsules();
+    }
+
+    function saveWishesToStorage() {
+      try {
+        // Only save non-Supabase wishes (those with local_ prefix)
+        const localWishes = wishMessages.filter(w => String(w.id).startsWith('local_'));
+        if (localWishes.length > 0) {
+          localStorage.setItem('wish_wishes', JSON.stringify(localWishes));
+        }
+      } catch(e) { /* quota exceeded */ }
+    }
+
+    function loadWishesFromStorage() {
+      try {
+        const stored = localStorage.getItem('wish_wishes');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const existingTexts = new Set(wishMessages.map(w => w.text + '_' + w.created_at));
+            parsed.forEach(w => {
+              const key = (w.text || '') + '_' + (w.created_at || '');
+              if (!existingTexts.has(key)) {
+                wishMessages.push(w);
+                existingTexts.add(key);
+              }
+            });
+          }
+        }
+      } catch(e) { /* ignore */ }
     }
 
     function saveTimeCapsulesToStorage() {
@@ -3824,6 +3881,7 @@
       totalWishes = wishMessages.length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
+      saveWishesToStorage();
 
       // Update wish wall immediately if open
       if (wishwallPanel.classList.contains('show')) renderWishWall();
@@ -3848,6 +3906,7 @@
           const idx = wishMessages.findIndex(w => w.id === localWish.id);
           if (idx >= 0) {
             wishMessages[idx] = inserted;
+            saveWishesToStorage(); // Remove local wish since it's now server-side
           }
           if (wishwallPanel.classList.contains('show')) renderWishWall();
         }
@@ -3999,13 +4058,21 @@
     async function init() {
       resize();
       window.addEventListener('resize', resize);
+      // Always load local data first
+      loadWishesFromStorage();
+      loadTimeCapsulesFromStorage();
+      if (wishMessages.length > 0) {
+        totalWishes = wishMessages.length;
+        lastWishCount = totalWishes;
+        wishCountEl.textContent = totalWishes;
+      }
       const ok = initSupabase();
       if (ok) {
         await loadFromSupabase();
         setupRealtime();
       } else {
         connectionDot.classList.add('offline');
-        connectionDot.textContent = '未配置 Supabase';
+        connectionDot.textContent = '离线模式';
       }
       scheduleShootingStar();
       scheduleMeteorShower();
