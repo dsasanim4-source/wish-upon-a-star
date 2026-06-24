@@ -2412,6 +2412,8 @@
     /* ═══════════════════════════════════════════════════════════════════════
        MESSAGE POPUP
        ═══════════════════════════════════════════════════════════════════════ */
+    let pendingBurnCapsule = null; // Capsule to delete after popup dismiss
+
     function showMessagePopup(message) {
       if (!message) return;
       if (popupTimer) clearTimeout(popupTimer);
@@ -2424,9 +2426,23 @@
       popupTimer = setTimeout(dismissPopup, 8000);
     }
 
-    function dismissPopup() {
+    async function dismissPopup() {
       if (popupTimer) clearTimeout(popupTimer);
       msgPopupOverlay.classList.remove('show');
+      // Burn after reading: delete capsule after popup dismissed
+      if (pendingBurnCapsule) {
+        const cap = pendingBurnCapsule;
+        pendingBurnCapsule = null;
+        if (supabase) {
+          await supabase.from('time_capsules').delete().eq('id', cap.id);
+        }
+        // Remove from local array
+        const idx = timeCapsules.findIndex(c => c.id === cap.id);
+        if (idx >= 0) timeCapsules.splice(idx, 1);
+        saveTimeCapsulesToStorage();
+        updateTimeCapsuleBadge();
+        renderTimeCapsules();
+      }
       msgPopupOverlay.addEventListener('transitionend', function handler() {
         msgPopupOverlay.classList.add('hidden');
         msgPopupOverlay.removeEventListener('transitionend', handler);
@@ -2645,13 +2661,10 @@
         if (isReady && !cap.revealed) {
           card.style.cursor = 'pointer';
           card.addEventListener('click', async () => {
-            if (supabase) {
-              await supabase.from('time_capsules').update({ revealed: true }).eq('id', cap.id);
-            }
-            cap.revealed = true;
-            saveTimeCapsulesToStorage();
+            // Burn after reading: show then delete
+            pendingBurnCapsule = cap;
             showMessagePopup({ text: cap.text, created_at: cap.created_at });
-            msgPopupTitle.textContent = '⏳ 时光胶囊 · 来自过去的你';
+            msgPopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
             updateTimeCapsuleBadge();
             renderTimeCapsules();
           });
