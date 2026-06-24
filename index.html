@@ -2320,8 +2320,10 @@
         .from('time_capsules').select('*').order('reveal_date', { ascending: true });
       if (capsData) {
         timeCapsules = capsData;
-        updateTimeCapsuleBadge();
       }
+      // Merge local storage capsules
+      loadTimeCapsulesFromStorage();
+      updateTimeCapsuleBadge();
       await refreshUnreadCount();
     }
 
@@ -2380,6 +2382,7 @@
       supabase.channel('capsules-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'time_capsules' }, (payload) => {
           timeCapsules.push(payload.new);
+          saveTimeCapsulesToStorage();
           updateTimeCapsuleBadge();
           if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
         }).subscribe();
@@ -2672,6 +2675,7 @@
               await supabase.from('time_capsules').update({ revealed: true }).eq('id', cap.id);
             }
             cap.revealed = true;
+            saveTimeCapsulesToStorage();
             showMessagePopup({ text: cap.text, created_at: cap.created_at });
             msgPopupTitle.textContent = '⏳ 时光胶囊 · 来自过去的你';
             updateTimeCapsuleBadge();
@@ -2710,8 +2714,35 @@
         capsule.id = Date.now().toString();
         timeCapsules.push(capsule);
       }
+      // Persist to localStorage
+      saveTimeCapsulesToStorage();
       updateTimeCapsuleBadge();
       renderTimeCapsules();
+    }
+
+    function saveTimeCapsulesToStorage() {
+      try {
+        localStorage.setItem('wish_time_capsules', JSON.stringify(timeCapsules));
+      } catch(e) { /* quota exceeded, ignore */ }
+    }
+
+    function loadTimeCapsulesFromStorage() {
+      try {
+        const stored = localStorage.getItem('wish_time_capsules');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Merge with existing (Supabase-loaded) capsules, dedup by id
+            const existingIds = new Set(timeCapsules.map(c => c.id));
+            parsed.forEach(c => {
+              if (!existingIds.has(c.id)) {
+                timeCapsules.push(c);
+                existingIds.add(c.id);
+              }
+            });
+          }
+        }
+      } catch(e) { /* ignore parse errors */ }
     }
 
     timecapsuleBtn.addEventListener('click', (e) => { e.stopPropagation(); openTimeCapsulePanel(); });
@@ -2728,10 +2759,6 @@
       if (!audioCtx) {
         try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
       }
-      // Resume suspended AudioContext (browsers require user gesture)
-      if (audioCtx && audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
     }
 
     // Note name to frequency mapping
@@ -2743,12 +2770,13 @@
       'C6': 1046.50
     };
 
-    async function playNote(freq, duration = 0.5, oscType = 'sine') {
+    function playNote(freq, duration, oscType) {
       if (!audioCtx || !musicBoxActive) return;
-      // Ensure context is running (must await for currentTime to be correct)
-      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      if (audioCtx.state !== 'running') return;
+      duration = duration || 0.5;
+      oscType = oscType || 'sine';
       const now = audioCtx.currentTime;
-      const vol = 0.08;
+      const vol = 0.1;
       // Main oscillator
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -2761,7 +2789,7 @@
       gain.connect(audioCtx.destination);
       osc.start(now);
       osc.stop(now + duration + 0.1);
-      // Add a harmonic overtone for richness
+      // Harmonic overtone
       const osc2 = audioCtx.createOscillator();
       const gain2 = audioCtx.createGain();
       osc2.type = 'sine';
@@ -2777,19 +2805,22 @@
 
     function playStarNote(starIdx) {
       if (!musicBoxActive || !audioCtx) return;
-      // Use CONFIG musicScale for variety
+      if (audioCtx.state !== 'running') return;
       const scale = CONFIG.musicScale;
       const noteName = scale[starIdx % scale.length];
       const freq = NOTE_FREQS[noteName] || 440;
-      // Vary oscillator type based on star index for timbre variety
       const types = ['sine', 'triangle', 'sine', 'triangle', 'sine'];
       const oscType = types[starIdx % types.length];
       playNote(freq, 0.5 + Math.random() * 0.5, oscType);
     }
 
     function toggleMusicBox() {
-      musicBoxActive = !musicBoxActive;
       initMusicBox();
+      // MUST resume synchronously within user gesture handler
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      musicBoxActive = !musicBoxActive;
       if (musicBoxActive) {
         musicBtn.classList.add('active');
         musicBtn.textContent = '🔊';
