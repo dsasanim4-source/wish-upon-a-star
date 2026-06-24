@@ -2702,6 +2702,11 @@
       if (!capsule) return;
       if (capsulePopupTimer) clearTimeout(capsulePopupTimer);
       burningCapsule = capsule;
+
+      // Mark as revealed immediately so it won't show again
+      capsule.revealed = true;
+      saveTimeCapsulesToStorage();
+
       const displayText = getCapsuleDisplayText(capsule);
       capsulePopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
       capsulePopupText.textContent = displayText;
@@ -2710,6 +2715,8 @@
       void capsulePopupOverlay.offsetWidth;
       capsulePopupOverlay.classList.add('show');
       capsulePopupTimer = setTimeout(burnCapsule, 15000); // Auto-burn after 15s
+      // Re-render list to hide revealed capsule
+      renderTimeCapsules();
     }
 
     async function burnCapsule() {
@@ -2896,8 +2903,9 @@
       const minDateStr = tomorrowBeijing.toISOString().split('T')[0];
       timecapsuleDate.value = minDateStr;
       timecapsuleDate.setAttribute('min', minDateStr);
-      // Update title with total count
-      document.querySelector('.timecapsule-title').textContent = `⏳ 时光胶囊 · ${timeCapsules.length} 个`;
+      // Update title with active count (exclude revealed)
+      const activeCount = timeCapsules.filter(c => !c.revealed).length;
+      document.querySelector('.timecapsule-title').textContent = `⏳ 时光胶囊 · ${activeCount} 个`;
       renderTimeCapsules();
       timecapsulePanel.classList.add('open');
       timecapsuleBackdrop.classList.remove('hidden');
@@ -2916,7 +2924,8 @@
     }
 
     function updateTimeCapsuleBadge() {
-      const total = timeCapsules.length;
+      const active = timeCapsules.filter(c => !c.revealed);
+      const total = active.length;
       if (total > 0) {
         timecapsuleBadge.textContent = total > 99 ? '99+' : total;
         timecapsuleBadge.style.display = 'flex';
@@ -2936,7 +2945,10 @@
     function renderTimeCapsules() {
       timecapsuleList.innerHTML = '';
       const now = new Date();
-      const sorted = [...timeCapsules].sort((a, b) => new Date(a.reveal_date) - new Date(b.reveal_date));
+      // Filter out revealed (already viewed) capsules
+      const sorted = [...timeCapsules]
+        .filter(cap => !cap.revealed)
+        .sort((a, b) => new Date(a.reveal_date) - new Date(b.reveal_date));
       if (sorted.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'text-align:center;padding:20px;color:rgba(255,255,255,0.2);font-size:13px;';
@@ -4609,7 +4621,7 @@
       wishTags.classList.add('visible');
       updateBottleBadge();
       updateTimeCapsuleBadge();
-      if (timeCapsules.length > 0) capsuleCounter.classList.add('visible');
+      if (timeCapsules.filter(c => !c.revealed).length > 0) capsuleCounter.classList.add('visible');
       if (wishMessages.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
         setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
