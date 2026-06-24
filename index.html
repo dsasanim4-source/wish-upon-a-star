@@ -2343,6 +2343,15 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes' }, (payload) => {
           const newWish = payload.new;
           if (localInsertIds.has(newWish.id)) { localInsertIds.delete(newWish.id); return; }
+          // Check if a local wish with same text already exists (dedup)
+          const dupIdx = wishMessages.findIndex(w => String(w.id).startsWith('local_') && w.text === newWish.text);
+          if (dupIdx >= 0) {
+            // Replace local placeholder with server version
+            wishMessages[dupIdx] = newWish;
+            localInsertIds.add(newWish.id);
+            if (wishwallPanel.classList.contains('show')) renderWishWall();
+            return;
+          }
           wishMessages.push(newWish);
           totalWishes = wishMessages.length;
           lastWishCount = totalWishes;
@@ -3874,33 +3883,46 @@
       // Auto-detect tag from text content; fall back to selectedTag if detection is general
       const detectedTag = detectTag(text);
       const tag = detectedTag !== 'general' ? detectedTag : selectedTag;
-      if (!supabase) {
-        const rect = glassCard.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        wishMessages.push({ text, tag, created_at: new Date().toISOString(), id: Date.now() });
-        handleInteraction(cx, cy, text, tag);
-        return;
-      }
-      const { data: inserted, error } = await supabase
-        .from('wishes').insert({ text, tag }).select().single();
-      if (error || !inserted) {
-        const rect = glassCard.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        handleInteraction(cx, cy, text, tag);
-        return;
-      }
-      localInsertIds.add(inserted.id);
-      wishMessages.push(inserted);
+
+      // Always add locally first for immediate feedback
+      const localWish = {
+        id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        text,
+        tag,
+        created_at: new Date().toISOString(),
+      };
+      wishMessages.push(localWish);
       totalWishes = wishMessages.length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
+
+      // Update wish wall immediately if open
       if (wishwallPanel.classList.contains('show')) renderWishWall();
+
+      // Visual feedback
       const rect = glassCard.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       handleInteraction(cx, cy, text, tag);
+
+      // Try to sync with Supabase
+      if (supabase) {
+        const { data: inserted, error } = await supabase
+          .from('wishes').insert({ text, tag }).select().single();
+        if (inserted) {
+          // Preserve our tag if Supabase doesn't have a tag column
+          if (!inserted.tag || inserted.tag === 'general') {
+            inserted.tag = tag;
+          }
+          // Replace local wish with server version
+          localInsertIds.add(inserted.id);
+          const idx = wishMessages.findIndex(w => w.id === localWish.id);
+          if (idx >= 0) {
+            wishMessages[idx] = inserted;
+          }
+          if (wishwallPanel.classList.contains('show')) renderWishWall();
+        }
+      }
     }
 
     // Tag selection
