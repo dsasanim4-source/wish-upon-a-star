@@ -2650,20 +2650,21 @@
       }
       sorted.forEach(cap => {
         const isReady = new Date(cap.reveal_date) <= now;
+        const mine = isMyCapsule(cap);
+        const displayText = getCapsuleDisplayText(cap);
         const card = document.createElement('div');
         card.className = 'timecapsule-capsule';
-        card.style.cssText = isReady && !cap.revealed ? 'border-color: rgba(180,140,240,0.3);' : '';
+        card.style.cssText = isReady && mine && !cap.revealed ? 'border-color: rgba(180,140,240,0.3);' : '';
         card.innerHTML = `
-          <span class="timecapsule-capsule-icon">${isReady ? '🔓' : '🔒'}</span>
-          <span class="timecapsule-capsule-text">${isReady && !cap.revealed ? escapeHTML(cap.text) : '📦 封存中…'}</span>
+          <span class="timecapsule-capsule-icon">${isReady ? (mine ? '🔓' : '🔒') : '🔒'}</span>
+          <span class="timecapsule-capsule-text">${isReady && mine && !cap.revealed ? escapeHTML(displayText) : (isReady ? '📦 他人封存' : '📦 封存中…')}</span>
           <span class="timecapsule-capsule-date">${formatDate(cap.reveal_date)}</span>
         `;
-        if (isReady && !cap.revealed) {
+        if (isReady && mine && !cap.revealed) {
           card.style.cursor = 'pointer';
           card.addEventListener('click', async () => {
-            // Burn after reading: show then delete
             pendingBurnCapsule = cap;
-            showMessagePopup({ text: cap.text, created_at: cap.created_at });
+            showMessagePopup({ text: displayText, created_at: cap.created_at });
             msgPopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
             updateTimeCapsuleBadge();
             renderTimeCapsules();
@@ -2673,15 +2674,41 @@
       });
     }
 
+    function getDeviceId() {
+      let id = localStorage.getItem('wish_device_id');
+      if (!id) {
+        id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+        localStorage.setItem('wish_device_id', id);
+      }
+      return id;
+    }
+    function packCapsuleText(text, deviceId) {
+      return '[' + deviceId + ']' + text;
+    }
+    function unpackCapsuleText(packed) {
+      if (!packed) return { deviceId: null, text: '' };
+      const match = packed.match(/^\[([^\]]+)\](.*)/);
+      if (match) return { deviceId: match[1], text: match[2] };
+      return { deviceId: null, text: packed };
+    }
+    function isMyCapsule(cap) {
+      return unpackCapsuleText(cap.text || '').deviceId === getDeviceId();
+    }
+    function getCapsuleDisplayText(cap) {
+      return unpackCapsuleText(cap.text || '').text;
+    }
+
     async function submitTimeCapsule() {
       const text = timecapsuleInput.value.trim();
       const date = timecapsuleDate.value;
       if (!text || !date) return;
       timecapsuleInput.value = '';
+      const deviceId = getDeviceId();
+      const packedText = packCapsuleText(text, deviceId);
       // Store as midnight Beijing time (UTC+8) so comparison is consistent
       const beijingMidnight = new Date(date + 'T00:00:00+08:00');
       const capsule = {
-        text,
+        text: packedText,
         reveal_date: beijingMidnight.toISOString(),
         revealed: false,
         created_at: new Date().toISOString(),
