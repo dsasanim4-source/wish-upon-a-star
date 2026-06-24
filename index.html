@@ -1735,7 +1735,7 @@
   /* ── Constellation Draw Button ────────── */
   .constellation-btn {
     position: fixed;
-    bottom: clamp(260px, 36vh, 290px);
+    bottom: clamp(320px, 44vh, 350px);
     left: clamp(20px, 4vw, 32px);
     z-index: 6;
     width: 44px;
@@ -1779,7 +1779,7 @@
 
   .constellation-toolbar {
     position: fixed;
-    bottom: clamp(310px, 44vh, 340px);
+    bottom: clamp(370px, 52vh, 400px);
     left: clamp(20px, 4vw, 32px);
     z-index: 6;
     display: flex;
@@ -1870,7 +1870,7 @@
     .bottle-input-area { gap: 6px; }
     .timecapsule-btn { bottom: 130px; right: 14px; width: 40px; height: 40px; }
     .music-btn { bottom: 180px; right: 14px; width: 38px; height: 38px; }
-    .constellation-btn { bottom: 230px; left: 12px; width: 38px; height: 38px; }
+    .constellation-btn { bottom: 280px; left: 12px; width: 38px; height: 38px; }
     .galaxy-btn { bottom: 130px; left: 12px; width: 40px; height: 40px; }
     .ai-btn { bottom: 180px; left: 12px; width: 38px; height: 38px; }
     .growth-tree-btn { bottom: 230px; left: 12px; width: 38px; height: 38px; }
@@ -2560,7 +2560,10 @@
         card.className = 'wish-card';
         const star = stars[i % stars.length];
         const time = formatTime(wish.created_at);
-        const tag = wish.tag || 'general';
+        let tag = wish.tag;
+        if (!tag || tag === 'general') {
+          tag = detectTag(wish.text || '');
+        }
         const cat = CATEGORIES[tag] || CATEGORIES.general;
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
@@ -2684,10 +2687,15 @@
         created_at: new Date().toISOString(),
       };
       if (supabase) {
-        const { data: inserted } = await supabase.from('time_capsules').insert(capsule).select().single();
+        const { data: inserted, error } = await supabase.from('time_capsules').insert(capsule).select().single();
         if (inserted) {
           localInsertIds.add(inserted.id);
           timeCapsules.push(inserted);
+        } else {
+          // Fallback: add locally if Supabase insert fails
+          console.warn('时光胶囊提交失败，使用本地存储:', error);
+          capsule.id = 'local_' + Date.now().toString();
+          timeCapsules.push(capsule);
         }
       } else {
         capsule.id = Date.now().toString();
@@ -2707,13 +2715,13 @@
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 4: MUSIC BOX
        ═══════════════════════════════════════════════════════════════════════ */
-    function initMusicBox() {
+    async function initMusicBox() {
       if (!audioCtx) {
         try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
       }
       // Resume suspended AudioContext (browsers require user gesture)
       if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        await audioCtx.resume();
       }
     }
 
@@ -2726,10 +2734,10 @@
       'C6': 1046.50
     };
 
-    function playNote(freq, duration = 0.5, oscType = 'sine') {
+    async function playNote(freq, duration = 0.5, oscType = 'sine') {
       if (!audioCtx || !musicBoxActive) return;
-      // Ensure context is running
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // Ensure context is running (must await for currentTime to be correct)
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
       const now = audioCtx.currentTime;
       const vol = 0.08;
       // Main oscillator
@@ -2943,10 +2951,13 @@
       galaxyCtx.translate(cw / 2 + galaxyPan.x, ch / 2 + galaxyPan.y);
       galaxyCtx.scale(galaxyPan.zoom, galaxyPan.zoom);
 
-      // Group wishes by tag
+      // Group wishes by tag (use detectTag as fallback if tag is 'general')
       const groups = {};
       wishMessages.forEach(w => {
-        const tag = w.tag || 'general';
+        let tag = w.tag;
+        if (!tag || tag === 'general') {
+          tag = detectTag(w.text || '');
+        }
         if (!groups[tag]) groups[tag] = [];
         groups[tag].push(w);
       });
@@ -3237,9 +3248,9 @@
       // Set sky colors for canvas rendering
       const skyPresets = {
         night:     { bgTop: '#0a1020', bgMid: '#060818', bgBottom: '#030410', vignetteColor: 'rgba(2, 2, 8, 0.55)' },
-        day:       { bgTop: '#1a2a40', bgMid: '#152030', bgBottom: '#0a1520', vignetteColor: 'rgba(2, 4, 10, 0.4)' },
-        sunrise:   { bgTop: '#2a1530', bgMid: '#1a1030', bgBottom: '#0a0820', vignetteColor: 'rgba(4, 2, 6, 0.45)' },
-        sunset:    { bgTop: '#301a10', bgMid: '#201010', bgBottom: '#0a0808', vignetteColor: 'rgba(4, 2, 2, 0.5)' },
+        day:       { bgTop: '#4a7a9c', bgMid: '#2a5070', bgBottom: '#102840', vignetteColor: 'rgba(2, 4, 10, 0.25)' },
+        sunrise:   { bgTop: '#5a3060', bgMid: '#3a2040', bgBottom: '#1a1028', vignetteColor: 'rgba(4, 2, 6, 0.35)' },
+        sunset:    { bgTop: '#6a4030', bgMid: '#402020', bgBottom: '#1a1010', vignetteColor: 'rgba(4, 2, 2, 0.4)' },
       };
       skyColors = skyPresets[mode] || skyPresets.night;
 
@@ -3380,7 +3391,10 @@
       // Group settled stars by category from wish messages
       const tagStars = {};
       wishMessages.forEach((wish, i) => {
-        const tag = wish.tag || 'general';
+        let tag = wish.tag;
+        if (!tag || tag === 'general') {
+          tag = detectTag(wish.text || '');
+        }
         if (!tagStars[tag]) tagStars[tag] = [];
         if (i < settledStars.length) {
           tagStars[tag].push(settledStars[i]);
@@ -3462,7 +3476,7 @@
 
     function playChime() {
       if (!audioCtx) return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
       const now = audioCtx.currentTime;
       const notes = [523.25, 659.25, 783.99];
       notes.forEach((freq, i) => {
@@ -3488,7 +3502,7 @@
       const mode = dayNightMode;
       const colorSets = {
         night: [{ h: 215, s: 45, l: 22 }, { h: 230, s: 35, l: 18 }, { h: 200, s: 40, l: 20 }, { h: 240, s: 30, l: 16 }],
-        day: [{ h: 200, s: 30, l: 28 }, { h: 210, s: 25, l: 25 }, { h: 190, s: 28, l: 26 }, { h: 220, s: 22, l: 24 }],
+        day: [{ h: 200, s: 50, l: 50 }, { h: 210, s: 45, l: 45 }, { h: 190, s: 48, l: 48 }, { h: 220, s: 42, l: 42 }],
         sunrise: [{ h: 340, s: 40, l: 20 }, { h: 20, s: 35, l: 18 }, { h: 350, s: 38, l: 19 }, { h: 10, s: 30, l: 17 }],
         sunset: [{ h: 20, s: 45, l: 20 }, { h: 10, s: 40, l: 18 }, { h: 30, s: 35, l: 19 }, { h: 15, s: 38, l: 17 }],
       };
