@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#06060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>祈愿 · 天天开心 ✨</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+<link rel="manifest" href="./manifest.webmanifest">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1365,6 +1369,125 @@
     background: rgba(90, 155, 220, 0.11);
   }
 
+  .export-preview-popup {
+    max-width: min(92vw, 520px);
+    padding: 24px 22px 22px;
+  }
+
+  .export-preview-frame {
+    width: 100%;
+    max-height: 52vh;
+    margin: 14px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .export-preview-img {
+    display: block;
+    max-width: 100%;
+    max-height: 52vh;
+    object-fit: contain;
+  }
+
+  .export-preview-presets,
+  .export-preview-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .export-preview-actions {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 10px;
+  }
+
+  .export-preview-btn {
+    min-height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(220, 232, 250, 0.78);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    transition: all 0.25s ease;
+  }
+
+  .export-preview-btn:hover,
+  .export-preview-btn.active {
+    border-color: rgba(140, 200, 255, 0.32);
+    background: rgba(90, 155, 220, 0.12);
+    color: rgba(238, 246, 255, 0.95);
+  }
+
+  .export-preview-btn.primary {
+    border-color: rgba(255, 220, 126, 0.3);
+    background: rgba(255, 210, 90, 0.12);
+    color: rgba(255, 232, 170, 0.95);
+  }
+
+  .export-preview-meta {
+    min-height: 18px;
+    margin-top: -4px;
+    color: rgba(190, 210, 235, 0.6);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+
+  .room-chip {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 6;
+    max-width: min(260px, calc(100vw - 36px));
+    display: none;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 13px;
+    border-radius: 17px;
+    border: 1px solid rgba(120, 180, 240, 0.18);
+    background: rgba(8, 12, 24, 0.62);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    color: rgba(210, 230, 250, 0.82);
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    pointer-events: auto;
+  }
+
+  .room-chip.show { display: flex; }
+
+  .room-chip code {
+    color: rgba(255, 232, 170, 0.95);
+    font-family: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .timecapsule-capsule-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .timecapsule-capsule-countdown {
+    font-size: 10px;
+    color: rgba(255, 220, 150, 0.72);
+    white-space: nowrap;
+  }
+
   /* ══════════════════════════════════════════════════════════════
      NEW FEATURE STYLES
      ══════════════════════════════════════════════════════════════ */
@@ -2302,13 +2425,18 @@
     color: var(--text-secondary);
   }
 
+  .constellation-mgmt-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .constellation-mgmt-edit,
   .constellation-mgmt-delete {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 80, 80, 0.2);
-    background: rgba(255, 60, 60, 0.08);
-    color: rgba(255, 120, 120, 0.7);
     font-size: 14px;
     cursor: pointer;
     display: flex;
@@ -2317,6 +2445,24 @@
     transition: all 0.3s;
     flex-shrink: 0;
     line-height: 1;
+  }
+
+  .constellation-mgmt-edit {
+    border: 1px solid rgba(120, 180, 240, 0.2);
+    background: rgba(80, 150, 220, 0.08);
+    color: rgba(170, 210, 245, 0.74);
+  }
+
+  .constellation-mgmt-edit:hover {
+    background: rgba(80, 150, 220, 0.16);
+    border-color: rgba(120, 180, 240, 0.38);
+    color: rgba(210, 235, 255, 1);
+  }
+
+  .constellation-mgmt-delete {
+    border: 1px solid rgba(255, 80, 80, 0.2);
+    background: rgba(255, 60, 60, 0.08);
+    color: rgba(255, 120, 120, 0.7);
   }
 
   .constellation-mgmt-delete:hover {
@@ -2388,6 +2534,11 @@
     .toolbox-panel { bottom: 124px; right: 12px; }
     .wishwall-actions { padding: 10px 14px 0; }
     .wishwall-reminder-summary { margin: 4px 14px 0; }
+    .export-preview-popup { width: 94%; padding: 20px 16px 18px; }
+    .export-preview-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .export-preview-frame,
+    .export-preview-img { max-height: 48vh; }
+    .room-chip { top: 62px; left: 12px; min-height: 32px; font-size: 11px; }
   }
 
   body .bottle-btn,
@@ -2411,6 +2562,10 @@
     <span class="daynight-icon">🌙</span>
     <span class="daynight-text">深夜</span>
   </div>
+
+  <button class="room-chip" id="roomChip" type="button" aria-label="当前心愿房间">
+    <span>房间</span><code id="roomChipCode"></code>
+  </button>
 
   <!-- Floating wish messages in background -->
   <div class="floating-wishes" id="floatingWishes"></div>
@@ -2516,6 +2671,27 @@
       <div class="msg-popup-title">选择导出心愿</div>
       <div class="wish-export-picker-list" id="exportPickerList"></div>
       <button class="msg-popup-dismiss" id="exportPickerCancel" type="button">取消</button>
+    </div>
+  </div>
+
+  <!-- Export Preview -->
+  <div class="msg-popup-overlay hidden" id="exportPreviewOverlay">
+    <div class="msg-popup export-preview-popup">
+      <div class="msg-popup-title">导出预览</div>
+      <div class="export-preview-presets" id="exportPreviewPresets">
+        <button class="export-preview-btn active" type="button" data-export-preset="adaptive">自适应</button>
+        <button class="export-preview-btn" type="button" data-export-preset="wallpaper">壁纸</button>
+        <button class="export-preview-btn" type="button" data-export-preset="square">方图</button>
+        <button class="export-preview-btn" type="button" data-export-preset="landscape">横图</button>
+      </div>
+      <div class="export-preview-frame">
+        <img class="export-preview-img" id="exportPreviewImage" alt="导出星图预览">
+      </div>
+      <div class="export-preview-meta" id="exportPreviewMeta"></div>
+      <div class="export-preview-actions">
+        <button class="export-preview-btn primary" id="exportPreviewDownload" type="button">下载</button>
+        <button class="export-preview-btn" id="exportPreviewClose" type="button">关闭</button>
+      </div>
     </div>
   </div>
 
@@ -2629,6 +2805,8 @@
   <div class="constellation-toolbar" id="constellationToolbar">
     <button class="constellation-tool-btn" id="constellationAddStar" title="放置星星">⭐</button>
     <button class="constellation-tool-btn" id="constellationConnect" title="连线模式">🔗</button>
+    <button class="constellation-tool-btn" id="constellationUndo" title="撤销一步">↶</button>
+    <button class="constellation-tool-btn" id="constellationColor" title="切换颜色">🎨</button>
     <button class="constellation-tool-btn" id="constellationClear" title="清除">🗑️</button>
     <button class="constellation-tool-btn" id="constellationSave" title="保存星座">💾</button>
     <button class="constellation-tool-btn" id="constellationDelete" title="删除星座">📋</button>
@@ -2684,6 +2862,7 @@
     <button class="toolbox-item" type="button" data-tool="ai">🧚 愿望精灵</button>
     <button class="toolbox-item" type="button" data-tool="tree">🌱 生长树</button>
     <button class="toolbox-item" type="button" data-tool="constellation">🔮 协作星座</button>
+    <button class="toolbox-item" type="button" data-tool="room">🔗 心愿房间</button>
     <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
     <button class="toolbox-item" type="button" id="toolboxExportBtn">🖼 导出星空</button>
     <button class="toolbox-item" type="button" id="backupExportBtn">📦 备份数据</button>
@@ -2795,6 +2974,16 @@
     const exportPickerOverlay = document.getElementById('exportPickerOverlay');
     const exportPickerList = document.getElementById('exportPickerList');
     const exportPickerCancel = document.getElementById('exportPickerCancel');
+    const exportPreviewOverlay = document.getElementById('exportPreviewOverlay');
+    const exportPreviewImage = document.getElementById('exportPreviewImage');
+    const exportPreviewMeta = document.getElementById('exportPreviewMeta');
+    const exportPreviewPresets = document.getElementById('exportPreviewPresets');
+    const exportPreviewDownload = document.getElementById('exportPreviewDownload');
+    const exportPreviewClose = document.getElementById('exportPreviewClose');
+
+    // Wish room
+    const roomChip = document.getElementById('roomChip');
+    const roomChipCode = document.getElementById('roomChipCode');
 
     // Toolbox
     const toolboxBtn = document.getElementById('toolboxBtn');
@@ -2854,6 +3043,8 @@
     const constellationToolbar = document.getElementById('constellationToolbar');
     const constellationAddStar = document.getElementById('constellationAddStar');
     const constellationConnect = document.getElementById('constellationConnect');
+    const constellationUndo = document.getElementById('constellationUndo');
+    const constellationColor = document.getElementById('constellationColor');
     const constellationClear = document.getElementById('constellationClear');
     const constellationSave = document.getElementById('constellationSave');
     const constellationDelete = document.getElementById('constellationDelete');
@@ -2890,12 +3081,14 @@
     const HIDDEN_WISH_IDS_KEY = 'wish_hidden_ids';
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
+    const ROOM_STATE_KEY = 'wish_active_room';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let wishOverrides = {};
     let wishwallMode = 'all';
     let quietMode = false;
     let wishPrivacyMode = 'public';
+    let activeRoomCode = '';
     let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
@@ -2909,6 +3102,11 @@
     let drawnStars = [];
     let drawnLines = [];
     let lastDrawnStar = null;
+    let draggingDrawnStarIndex = null;
+    let constellationPointerMoved = false;
+    let constellationPointerHandled = false;
+    const CONSTELLATION_COLORS = ['#ffc85f', '#8bd3ff', '#f9a8d4', '#a7f3d0', '#c4b5fd'];
+    let constellationColorIndex = 0;
     let meteorShowerActive = false;
     let meteorShowerTimer = null;
     let meteorShowerEnd = 0;
@@ -2919,6 +3117,12 @@
     let treeGrowth = 0;
     let treeWishes = [];
     let dayNightMode = 'night';
+    let exportPreviewState = {
+      selectedWish: null,
+      preset: 'adaptive',
+      dataUrl: '',
+      sizeLabel: '',
+    };
     let skyColors = {
       bgTop: '#0a1020',
       bgMid: '#060818',
@@ -2994,6 +3198,7 @@
       loadWishReminders();
       loadWishVisibilityState();
       loadQuietMode();
+      loadRoomState();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -3081,11 +3286,12 @@
           totalWishes = getVisibleWishes().length;
           lastWishCount = totalWishes;
           wishCountEl.textContent = totalWishes;
-          spawnFloatingWish(newWish.text);
+          const displayNewWish = getDisplayWish(newWish);
+          spawnFloatingWish(displayNewWish.text);
           const rect = glassCard.getBoundingClientRect();
           const cx = rect.left + rect.width / 2 + (Math.random() - 0.5) * 200;
           const cy = rect.top + rect.height / 2 + (Math.random() - 0.5) * 100;
-          createLantern(cx, cy, newWish.text, newWish.tag || 'general');
+          createLantern(cx, cy, displayNewWish.text, displayNewWish.tag || newWish.tag || 'general');
           if (wishwallPanel.classList.contains('show')) renderWishWall();
           if (totalWishes >= 3) { instruction.style.opacity = '0'; instruction.style.transition = 'opacity 1s ease'; }
           treeGrowth += 0.02;
@@ -3150,6 +3356,86 @@
 
     function rejectBlockedLanguage(surface) {
       alert(`${surface}里不能包含脏话或攻击性表达，换一句温柔一点的吧。`);
+    }
+
+    function normalizeRoomCode(value) {
+      return String(value || '')
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9-]/g, '')
+        .slice(0, 16);
+    }
+
+    function generateRoomCode() {
+      return Math.random().toString(36).slice(2, 8).toUpperCase();
+    }
+
+    function packRoomWishText(text, roomCode) {
+      const code = normalizeRoomCode(roomCode);
+      return code ? `[room:${code}]${text}` : text;
+    }
+
+    function unpackRoomWishText(text) {
+      const raw = String(text || '');
+      const match = raw.match(/^\[room:([A-Z0-9-]{2,16})\]([\s\S]*)$/i);
+      if (!match) return { roomCode: '', text: raw };
+      return { roomCode: normalizeRoomCode(match[1]), text: match[2] };
+    }
+
+    function getWishRoomCode(wish) {
+      if (!wish) return '';
+      return normalizeRoomCode(wish.roomCode || unpackRoomWishText(wish.text).roomCode);
+    }
+
+    function updateRoomChip() {
+      if (!roomChip || !roomChipCode) return;
+      roomChip.classList.toggle('show', !!activeRoomCode);
+      roomChipCode.textContent = activeRoomCode || '';
+      if (wishPrivacyMode === 'private') wishInput.placeholder = '写下只给自己看的心愿…';
+      else if (activeRoomCode) wishInput.placeholder = `写给 ${activeRoomCode} 房间的心愿…`;
+      else wishInput.placeholder = '写下你的心愿…';
+    }
+
+    function loadRoomState() {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = normalizeRoomCode(params.get('room'));
+      const stored = normalizeRoomCode(localStorage.getItem(ROOM_STATE_KEY));
+      activeRoomCode = fromUrl || stored;
+      if (activeRoomCode) localStorage.setItem(ROOM_STATE_KEY, activeRoomCode);
+      updateRoomChip();
+    }
+
+    function setActiveRoomCode(code) {
+      activeRoomCode = normalizeRoomCode(code);
+      if (activeRoomCode) localStorage.setItem(ROOM_STATE_KEY, activeRoomCode);
+      else localStorage.removeItem(ROOM_STATE_KEY);
+
+      const url = new URL(window.location.href);
+      if (activeRoomCode) url.searchParams.set('room', activeRoomCode);
+      else url.searchParams.delete('room');
+      window.history.replaceState({}, '', url);
+      updateRoomChip();
+      totalWishes = getVisibleWishes().length;
+      lastWishCount = totalWishes;
+      wishCountEl.textContent = totalWishes;
+      updateTreeWishes();
+      if (wishwallPanel.classList.contains('show')) renderWishWall();
+    }
+
+    async function openRoomDialog() {
+      const next = window.prompt('输入房间码加入共享星空，留空回到公开星空。', activeRoomCode || generateRoomCode());
+      if (next === null) return;
+      setActiveRoomCode(next);
+      if (supabase) await loadFromSupabase();
+      if (!activeRoomCode) return;
+      const shareUrl = new URL(window.location.href);
+      shareUrl.searchParams.set('room', activeRoomCode);
+      try {
+        await navigator.clipboard.writeText(shareUrl.toString());
+        alert(`已进入房间 ${activeRoomCode}，邀请链接也复制好了。`);
+      } catch(e) {
+        window.prompt(`已进入房间 ${activeRoomCode}，复制这个链接邀请朋友：`, shareUrl.toString());
+      }
     }
 
     function getWishProgressKey(wish) {
@@ -3340,7 +3626,11 @@
 
     function isWishVisible(wish) {
       const id = getWishId(wish);
-      return !id || !hiddenWishIds.has(id);
+      if (id && hiddenWishIds.has(id)) return false;
+      const roomCode = getWishRoomCode(wish);
+      if (roomCode) return !!activeRoomCode && roomCode === activeRoomCode;
+      if (activeRoomCode && wish && wish.visibility !== 'private') return false;
+      return true;
     }
 
     function getVisibleWishes() {
@@ -3355,7 +3645,10 @@
     }
 
     function getDisplayWish(wish) {
-      return applyWishOverride(wish);
+      const displayWish = applyWishOverride(wish);
+      const unpacked = unpackRoomWishText(displayWish.text || '');
+      if (!unpacked.roomCode) return displayWish;
+      return { ...displayWish, text: unpacked.text, roomCode: unpacked.roomCode };
     }
 
     function saveWishOverride(wish, values) {
@@ -3403,7 +3696,7 @@
       wishPrivacyMode = wishPrivacyMode === 'private' ? 'public' : 'private';
       wishPrivacyBtn.classList.toggle('private', wishPrivacyMode === 'private');
       wishPrivacyBtn.textContent = wishPrivacyMode === 'private' ? '私密' : '公开';
-      wishInput.placeholder = wishPrivacyMode === 'private' ? '写下只给自己看的心愿…' : '写下你的心愿…';
+      updateRoomChip();
     }
 
     function showWishAchievement(wish) {
@@ -3528,7 +3821,11 @@
       });
     }
 
-    function getExportCanvasSize() {
+    function getExportCanvasSize(preset = 'adaptive') {
+      if (preset === 'wallpaper') return { width: 1080, height: 1920 };
+      if (preset === 'square') return { width: 1500, height: 1500 };
+      if (preset === 'landscape') return { width: 1600, height: 900 };
+
       const sourceWidth = Math.max(1, canvas.width || window.innerWidth || 1200);
       const sourceHeight = Math.max(1, canvas.height || window.innerHeight || 1600);
       const ratio = clampNumber(sourceWidth / sourceHeight, 0.42, 2.4);
@@ -3770,11 +4067,9 @@
       ctx2.restore();
     }
 
-    async function exportMySky() {
-      const selectedWish = await chooseWishForExport();
-      if (selectedWish === undefined) return;
+    function createWishSkyExportCanvas(selectedWish, preset = 'adaptive') {
       const out = document.createElement('canvas');
-      const exportSize = getExportCanvasSize();
+      const exportSize = getExportCanvasSize(preset);
       out.width = exportSize.width;
       out.height = exportSize.height;
       const octx = out.getContext('2d');
@@ -3830,10 +4125,56 @@
       octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
       octx.fillText('wish upon a star', centerX, out.height * 0.93);
+      return out;
+    }
+
+    function closeExportPreview() {
+      if (!exportPreviewOverlay) return;
+      exportPreviewOverlay.classList.remove('show');
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        exportPreviewOverlay.classList.add('hidden');
+        exportPreviewOverlay.removeEventListener('transitionend', finish);
+      };
+      exportPreviewOverlay.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
+    }
+
+    function renderExportPreview() {
+      if (!exportPreviewState.selectedWish && exportPreviewState.selectedWish !== null) return;
+      const out = createWishSkyExportCanvas(exportPreviewState.selectedWish, exportPreviewState.preset);
+      exportPreviewState.dataUrl = out.toDataURL('image/png');
+      exportPreviewState.sizeLabel = `${out.width} × ${out.height}`;
+      exportPreviewImage.src = exportPreviewState.dataUrl;
+      exportPreviewMeta.textContent = exportPreviewState.sizeLabel;
+      exportPreviewPresets.querySelectorAll('[data-export-preset]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.exportPreset === exportPreviewState.preset);
+      });
+    }
+
+    function downloadExportPreview() {
+      if (!exportPreviewState.dataUrl) renderExportPreview();
       const link = document.createElement('a');
-      link.download = 'my-wish-sky.png';
-      link.href = out.toDataURL('image/png');
+      link.download = `my-wish-sky-${exportPreviewState.preset}.png`;
+      link.href = exportPreviewState.dataUrl;
       link.click();
+    }
+
+    async function exportMySky() {
+      const selectedWish = await chooseWishForExport();
+      if (selectedWish === undefined) return;
+      exportPreviewState = {
+        selectedWish,
+        preset: 'adaptive',
+        dataUrl: '',
+        sizeLabel: '',
+      };
+      renderExportPreview();
+      exportPreviewOverlay.classList.remove('hidden');
+      void exportPreviewOverlay.offsetWidth;
+      exportPreviewOverlay.classList.add('show');
     }
 
     function loadQuietMode() {
@@ -3886,6 +4227,7 @@
       if (tool === 'ai') openAIPanel();
       if (tool === 'tree') openTreePanel();
       if (tool === 'constellation') toggleConstellationMode();
+      if (tool === 'room') openRoomDialog();
     }
 
     function exportBackupData() {
@@ -4327,11 +4669,21 @@
     achievementCloseBtn.addEventListener('click', closeWishAchievement);
     achievementExportBtn.addEventListener('click', exportMySky);
     achievementPopupOverlay.addEventListener('click', (e) => { if (e.target === achievementPopupOverlay) closeWishAchievement(); });
+    exportPreviewPresets.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-export-preset]');
+      if (!btn) return;
+      exportPreviewState.preset = btn.dataset.exportPreset;
+      renderExportPreview();
+    });
+    exportPreviewDownload.addEventListener('click', downloadExportPreview);
+    exportPreviewClose.addEventListener('click', closeExportPreview);
+    exportPreviewOverlay.addEventListener('click', (e) => { if (e.target === exportPreviewOverlay) closeExportPreview(); });
     toolboxBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleToolbox(); });
     toolboxPanel.addEventListener('click', (e) => e.stopPropagation());
     toolboxPanel.querySelectorAll('[data-tool]').forEach(btn => {
       btn.addEventListener('click', () => openToolboxTool(btn.dataset.tool));
     });
+    roomChip.addEventListener('click', (e) => { e.stopPropagation(); openRoomDialog(); });
     quietModeBtn.addEventListener('click', toggleQuietMode);
     toolboxExportBtn.addEventListener('click', exportMySky);
     backupExportBtn.addEventListener('click', exportBackupData);
@@ -4389,6 +4741,18 @@
       updateToolboxBadge();
     }
 
+    function formatCapsuleCountdown(dateValue) {
+      const target = new Date(dateValue);
+      const diff = target - new Date();
+      if (!Number.isFinite(target.getTime()) || diff <= 0) return '已可打开';
+      const minute = 60 * 1000;
+      const hour = 60 * minute;
+      const day = 24 * hour;
+      if (diff < hour) return `还有 ${Math.max(1, Math.ceil(diff / minute))} 分钟`;
+      if (diff < day) return `还有 ${Math.ceil(diff / hour)} 小时`;
+      return `还有 ${Math.ceil(diff / day)} 天`;
+    }
+
     function renderTimeCapsules() {
       timecapsuleList.innerHTML = '';
       const now = new Date();
@@ -4414,6 +4778,7 @@
         const isReady = new Date(cap.reveal_date) <= now;
         const mine = isMyCapsule(cap);
         const displayText = getCapsuleDisplayText(cap);
+        const countdownText = formatCapsuleCountdown(cap.reveal_date);
         const card = document.createElement('div');
         card.className = 'timecapsule-capsule';
 
@@ -4447,7 +4812,10 @@
         card.innerHTML = `
           <span class="timecapsule-capsule-icon">${icon}</span>
           <span class="timecapsule-capsule-text">${statusText}</span>
-          <span class="timecapsule-capsule-date">${formatDate(cap.reveal_date)}</span>
+          <span class="timecapsule-capsule-meta">
+            <span class="timecapsule-capsule-date">${formatDate(cap.reveal_date)}</span>
+            <span class="timecapsule-capsule-countdown">${countdownText}</span>
+          </span>
         `;
 
         if (clickable) {
@@ -4522,7 +4890,10 @@
     function saveWishesToStorage() {
       try {
         // Only save non-Supabase wishes (those with local_ prefix)
-        const localWishes = wishMessages.filter(w => isLocalWish(w) && isWishVisible(w));
+        const localWishes = wishMessages.filter(w => {
+          const id = getWishId(w);
+          return isLocalWish(w) && (!id || !hiddenWishIds.has(id));
+        });
         if (localWishes.length > 0) {
           localStorage.setItem('wish_wishes', JSON.stringify(localWishes));
         } else {
@@ -4592,6 +4963,10 @@
     timecapsuleSendBtn.addEventListener('click', (e) => { e.stopPropagation(); submitTimeCapsule(); });
     timecapsulePanel.addEventListener('click', (e) => e.stopPropagation());
     timecapsuleInput.addEventListener('click', (e) => e.stopPropagation());
+    setInterval(() => {
+      updateTimeCapsuleBadge();
+      if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
+    }, 60000);
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 5: METEOR SHOWER
@@ -5204,6 +5579,42 @@
       lastDrawnStar = drawnStars.length - 1;
     }
 
+    function getConstellationColor(alpha = 1) {
+      const hex = CONSTELLATION_COLORS[constellationColorIndex % CONSTELLATION_COLORS.length];
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function cycleConstellationColor() {
+      constellationColorIndex = (constellationColorIndex + 1) % CONSTELLATION_COLORS.length;
+      constellationColor.style.color = getConstellationColor(1);
+      constellationColor.classList.add('active');
+      setTimeout(() => constellationColor.classList.remove('active'), 220);
+    }
+
+    function undoConstellationStep() {
+      if (drawnStars.length === 0) return;
+      const lastIndex = drawnStars.length - 1;
+      drawnLines = drawnLines.filter(line => line.from !== lastIndex && line.to !== lastIndex);
+      drawnStars.pop();
+      lastDrawnStar = drawnStars.length ? drawnStars.length - 1 : null;
+    }
+
+    function getNearestDrawnStarIndex(x, y, maxDistance = 26) {
+      let bestIndex = null;
+      let bestDistance = maxDistance;
+      drawnStars.forEach((star, index) => {
+        const distance = Math.hypot(star.x - x, star.y - y);
+        if (distance <= bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      });
+      return bestIndex;
+    }
+
     function clearDrawnConstellation() {
       drawnStars = [];
       drawnLines = [];
@@ -5218,6 +5629,7 @@
         name,
         stars: [...drawnStars],
         lines: [...drawnLines],
+        color: CONSTELLATION_COLORS[constellationColorIndex % CONSTELLATION_COLORS.length],
         created_at: new Date().toISOString(),
       };
       // Save to localStorage
@@ -5263,9 +5675,20 @@
                 <div class="constellation-mgmt-item-meta">${starCount}颗星 · ${lineCount}条线 · ${date}</div>
               </div>
             </div>
-            <button class="constellation-mgmt-delete" data-index="${i}" title="删除">🗑️</button>
+            <div class="constellation-mgmt-actions">
+              <button class="constellation-mgmt-edit" data-index="${i}" title="重命名">✎</button>
+              <button class="constellation-mgmt-delete" data-index="${i}" title="删除">🗑️</button>
+            </div>
           </div>`;
       }).join('');
+
+      constellationMgmtBody.querySelectorAll('.constellation-mgmt-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.index);
+          renameConstellation(idx);
+        });
+      });
 
       // Add click listeners to delete buttons
       constellationMgmtBody.querySelectorAll('.constellation-mgmt-delete').forEach(btn => {
@@ -5297,6 +5720,20 @@
       }
     }
 
+    function renameConstellation(index) {
+      const saved = JSON.parse(localStorage.getItem('constellations') || '[]');
+      if (index < 0 || index >= saved.length) return;
+      const current = saved[index].name || '我的星座';
+      const next = window.prompt('给这个星座换个名字：', current);
+      if (next === null) return;
+      const name = next.trim();
+      if (!name) return;
+      saved[index].name = name;
+      localStorage.setItem('constellations', JSON.stringify(saved));
+      renderConstellationMgmtList();
+      if (galaxyPanel.classList.contains('show')) renderGalaxyMap();
+    }
+
     constellationBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleConstellationMode(); });
     constellationAddStar.addEventListener('click', (e) => { e.stopPropagation(); constellationConnectMode = false; constellationConnect.classList.remove('active'); });
     constellationConnect.addEventListener('click', (e) => {
@@ -5309,6 +5746,8 @@
         lastDrawnStar = null;
       }
     });
+    constellationUndo.addEventListener('click', (e) => { e.stopPropagation(); undoConstellationStep(); });
+    constellationColor.addEventListener('click', (e) => { e.stopPropagation(); cycleConstellationColor(); });
     constellationClear.addEventListener('click', (e) => { e.stopPropagation(); clearDrawnConstellation(); });
     constellationSave.addEventListener('click', (e) => { e.stopPropagation(); saveConstellation(); });
     constellationDelete.addEventListener('click', (e) => { e.stopPropagation(); openConstellationMgmt(); });
@@ -5318,10 +5757,51 @@
     });
     galaxyMgmtBtn.addEventListener('click', (e) => { e.stopPropagation(); openConstellationMgmt(); });
 
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!constellationDrawMode) return;
+      const index = getNearestDrawnStarIndex(e.clientX, e.clientY);
+      if (index === null) return;
+      draggingDrawnStarIndex = index;
+      constellationPointerMoved = false;
+      constellationPointerHandled = true;
+      lastDrawnStar = index;
+      canvas.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!constellationDrawMode || draggingDrawnStarIndex === null) return;
+      drawnStars[draggingDrawnStarIndex].x = e.clientX;
+      drawnStars[draggingDrawnStarIndex].y = e.clientY;
+      constellationPointerMoved = true;
+      e.preventDefault();
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (draggingDrawnStarIndex === null) return;
+      draggingDrawnStarIndex = null;
+      try { canvas.releasePointerCapture(e.pointerId); } catch(err) { /* ignore */ }
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     // Override click handler for constellation mode
     canvas.addEventListener('click', (e) => {
       if (!constellationDrawMode) return;
       e.stopPropagation();
+      if (constellationPointerHandled) {
+        constellationPointerHandled = false;
+        if (constellationPointerMoved) {
+          constellationPointerMoved = false;
+          return;
+        }
+        const index = getNearestDrawnStarIndex(e.clientX, e.clientY);
+        if (index !== null) {
+          lastDrawnStar = index;
+          return;
+        }
+      }
       addDrawnStar(e.clientX, e.clientY);
     });
 
@@ -5339,7 +5819,7 @@
           ctx.beginPath();
           ctx.moveTo(from.x, from.y);
           ctx.lineTo(to.x, to.y);
-          ctx.strokeStyle = 'rgba(255,200,100,0.5)';
+          ctx.strokeStyle = getConstellationColor(0.68);
           ctx.lineWidth = 1.5;
           ctx.setLineDash([4, 4]);
           ctx.stroke();
@@ -5350,8 +5830,8 @@
       // Draw stars
       drawnStars.forEach(s => {
         const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 12);
-        glow.addColorStop(0, 'rgba(255,220,140,0.6)');
-        glow.addColorStop(0.5, 'rgba(255,180,60,0.2)');
+        glow.addColorStop(0, getConstellationColor(0.65));
+        glow.addColorStop(0.5, getConstellationColor(0.24));
         glow.addColorStop(1, 'transparent');
         ctx.fillStyle = glow;
         ctx.beginPath();
@@ -5360,7 +5840,7 @@
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,240,200,0.9)';
+        ctx.fillStyle = getConstellationColor(0.95);
         ctx.fill();
       });
     }
@@ -5869,6 +6349,8 @@
       // Auto-detect tag from text content; fall back to selectedTag if detection is general
       const detectedTag = detectTag(text);
       const tag = detectedTag !== 'general' ? detectedTag : selectedTag;
+      const roomCode = wishPrivacyMode !== 'private' ? activeRoomCode : '';
+      const storedText = roomCode ? packRoomWishText(text, roomCode) : text;
 
       // Always add locally first for immediate feedback
       const localWish = {
@@ -5877,6 +6359,7 @@
         tag,
         progress: 'new',
         visibility: wishPrivacyMode,
+        roomCode,
         created_at: new Date().toISOString(),
       };
       wishMessages.push(localWish);
@@ -5897,7 +6380,7 @@
       // Try to sync with Supabase
       if (supabase && wishPrivacyMode !== 'private') {
         const { data: inserted, error } = await supabase
-          .from('wishes').insert({ text, tag }).select().single();
+          .from('wishes').insert({ text: storedText, tag }).select().single();
         if (inserted) {
           // Preserve our tag if Supabase doesn't have a tag column
           if (!inserted.tag || inserted.tag === 'general') {
@@ -5953,6 +6436,7 @@
       if (e.target.closest('.toolbox-btn')) return;
       if (e.target.closest('.toolbox-panel')) return;
       if (toolboxPanel.classList.contains('open')) { closeToolbox(); return; }
+      if (e.target.closest('.room-chip')) return;
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       handleInteraction(e.clientX, e.clientY);
@@ -5981,6 +6465,7 @@
       if (e.target.closest('.toolbox-btn')) return;
       if (e.target.closest('.toolbox-panel')) return;
       if (toolboxPanel.classList.contains('open')) { closeToolbox(); return; }
+      if (e.target.closest('.room-chip')) return;
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       if (e.touches.length === 1) {
@@ -6067,6 +6552,16 @@
       requestAnimationFrame(() => updateParallax());
     }
 
+    function registerPWA() {
+      if (!('serviceWorker' in navigator)) return;
+      if (!window.isSecureContext && location.hostname !== 'localhost') return;
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
+
     /* ═══════════════════════════════════════════════════════════════════════
        INIT
        ═══════════════════════════════════════════════════════════════════════ */
@@ -6079,6 +6574,7 @@
       loadWishReminders();
       loadWishVisibilityState();
       loadQuietMode();
+      loadRoomState();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -6123,6 +6619,7 @@
       }
       setTimeout(() => spawnShootingStar(), 1500);
       updateTreeWishes();
+      registerPWA();
     }
 
     init();
