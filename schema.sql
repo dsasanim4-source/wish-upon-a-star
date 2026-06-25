@@ -87,6 +87,7 @@ DROP POLICY IF EXISTS "允许任何人写入时光胶囊" ON time_capsules;
 DROP POLICY IF EXISTS "允许任何人更新时光胶囊" ON time_capsules;
 DROP POLICY IF EXISTS "允许任何人读取星座" ON constellations;
 DROP POLICY IF EXISTS "允许任何人写入星座" ON constellations;
+DROP FUNCTION IF EXISTS admin_delete_wish(TEXT, BIGINT);
 
 -- ── 公开读取 ────────────────────────────────────────────
 CREATE POLICY "允许任何人读取心愿" ON wishes
@@ -114,11 +115,28 @@ CREATE POLICY "允许任何人写入时光胶囊" ON time_capsules
 CREATE POLICY "允许任何人写入星座" ON constellations
   FOR INSERT WITH CHECK (true);
 
--- 管理员模式删除公开心愿
--- 注意：GitHub Pages 是纯前端站点，真正的密码校验在前端完成；
--- 这条策略允许前端在管理员模式下删除 wishes 行。
-CREATE POLICY "allow_admin_delete_wishes" ON wishes
-  FOR DELETE USING (true);
+-- 管理员模式删除公开心愿（密码在数据库函数内校验）
+CREATE OR REPLACE FUNCTION admin_delete_wish(admin_password TEXT, wish_id BIGINT)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  IF admin_password <> 'LJXNB' THEN
+    RAISE EXCEPTION 'invalid admin password';
+  END IF;
+
+  DELETE FROM wishes WHERE id = wish_id;
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO anon;
+GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO authenticated;
 
 -- ── 允许更新 ────────────────────────────────────────────
 CREATE POLICY "允许任何人更新留言" ON messages

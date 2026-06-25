@@ -3229,6 +3229,8 @@
         const { data: wishesData } = await supabase
           .from('wishes').select('*').order('created_at', { ascending: true });
         if (wishesData && wishesData.length > 0) {
+          const remoteWishIds = new Set(wishesData.map(w => String(w.id)));
+          wishMessages = wishMessages.filter(w => isLocalWish(w) || remoteWishIds.has(getWishId(w)));
           // Merge: Supabase wishes take precedence, dedup by id
           const localIds = new Set(wishMessages.map(w => String(w.id)));
           wishesData.forEach(w => {
@@ -3244,6 +3246,11 @@
           wishCountEl.textContent = totalWishes;
           connectionDot.classList.remove('offline');
           connectionDot.textContent = '已连接';
+        } else {
+          wishMessages = wishMessages.filter(isLocalWish);
+          totalWishes = getVisibleWishes().length;
+          lastWishCount = totalWishes;
+          wishCountEl.textContent = totalWishes;
         }
         // Load capsules
         const { data: capsData } = await supabase
@@ -3713,6 +3720,36 @@
       if (id) hiddenWishIds.delete(id);
     }
 
+    async function adminDeleteCloudWish(id) {
+      const numericId = Number(id);
+      if (!Number.isFinite(numericId)) {
+        return { ok: false, message: '这条云端愿望的 ID 无效，无法删除。' };
+      }
+
+      const rpcResult = await supabase.rpc('admin_delete_wish', {
+        admin_password: ADMIN_PASSWORD,
+        wish_id: numericId,
+      });
+      if (!rpcResult.error) {
+        const deletedCount = Number(rpcResult.data || 0);
+        if (deletedCount === 0) {
+          console.warn('Admin delete RPC found no matching wish; clearing stale local item:', id);
+        }
+        return { ok: true };
+      }
+
+      console.warn('Admin delete RPC failed, trying direct delete fallback:', rpcResult.error);
+      const directResult = await supabase.from('wishes').delete().eq('id', id).select('id');
+      if (directResult.error) {
+        console.warn('Admin direct delete failed:', directResult.error);
+        return { ok: false, message: '云端删除失败。请先在 Supabase SQL Editor 执行最新 schema.sql。' };
+      }
+      if (!directResult.data || directResult.data.length === 0) {
+        return { ok: false, message: '云端删除没有生效。请先在 Supabase SQL Editor 执行最新 schema.sql。' };
+      }
+      return { ok: true };
+    }
+
     async function deleteWish(wish) {
       const displayWish = getDisplayWish(wish);
       const id = getWishId(wish);
@@ -3723,10 +3760,9 @@
       if (!window.confirm(confirmText)) return;
 
       if (canDeleteFromCloud) {
-        const { error } = await supabase.from('wishes').delete().eq('id', id);
-        if (error) {
-          console.warn('Admin cloud delete failed:', error);
-          alert('云端删除失败，可能是 Supabase 删除权限未开放。');
+        const result = await adminDeleteCloudWish(id);
+        if (!result.ok) {
+          alert(result.message || '云端删除失败。');
           return;
         }
         removeWishFromLocalState(wish);
