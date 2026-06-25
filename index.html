@@ -1091,6 +1091,15 @@
     background: rgba(160, 120, 240, 0.09);
     color: rgba(220, 205, 255, 0.8);
   }
+  .wish-card-admin {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 190, 90, 0.28);
+    background: rgba(255, 170, 70, 0.1);
+    color: rgba(255, 225, 170, 0.88);
+  }
   .wish-card-edit,
   .wish-card-delete {
     flex-shrink: 0;
@@ -1115,6 +1124,11 @@
     border-color: rgba(255, 120, 120, 0.32);
     color: rgba(255, 165, 165, 0.95);
     background: rgba(255, 90, 90, 0.08);
+  }
+  .wish-card-delete.admin-delete {
+    border-color: rgba(255, 140, 90, 0.28);
+    color: rgba(255, 185, 145, 0.9);
+    background: rgba(255, 120, 70, 0.1);
   }
   .wishwall-actions {
     display: flex;
@@ -3082,6 +3096,7 @@
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
+    const ADMIN_PASSWORD = 'LJXNB';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let wishOverrides = {};
@@ -3089,6 +3104,7 @@
     let quietMode = false;
     let wishPrivacyMode = 'public';
     let activeRoomCode = '';
+    let adminMode = false;
     let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
@@ -3296,6 +3312,21 @@
           if (totalWishes >= 3) { instruction.style.opacity = '0'; instruction.style.transition = 'opacity 1s ease'; }
           treeGrowth += 0.02;
           updateTreeWishes();
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'wishes' }, (payload) => {
+          const oldWish = payload.old;
+          const id = getWishId(oldWish);
+          if (!id) return;
+          const idx = wishMessages.findIndex(w => getWishId(w) === id);
+          if (idx >= 0) wishMessages.splice(idx, 1);
+          hiddenWishIds.delete(id);
+          totalWishes = getVisibleWishes().length;
+          lastWishCount = totalWishes;
+          wishCountEl.textContent = totalWishes;
+          saveWishVisibilityState();
+          saveWishesToStorage();
+          updateTreeWishes();
+          if (wishwallPanel.classList.contains('show')) renderWishWall();
         }).subscribe();
 
       supabase.channel('messages-realtime')
@@ -3674,19 +3705,43 @@
       renderWishWall();
     }
 
-    function deleteWish(wish) {
-      const displayWish = getDisplayWish(wish);
-      if (!window.confirm(`要从这里移除这条心愿吗？\n\n${displayWish.text || ''}`)) return;
+    function removeWishFromLocalState(wish) {
       const id = getWishId(wish);
-      if (isLocalWish(wish)) {
-        const idx = wishMessages.findIndex(w => w === wish || getWishProgressKey(w) === getWishProgressKey(wish));
-        if (idx >= 0) wishMessages.splice(idx, 1);
+      const key = getWishProgressKey(wish);
+      const idx = wishMessages.findIndex(w => w === wish || getWishId(w) === id || getWishProgressKey(w) === key);
+      if (idx >= 0) wishMessages.splice(idx, 1);
+      if (id) hiddenWishIds.delete(id);
+    }
+
+    async function deleteWish(wish) {
+      const displayWish = getDisplayWish(wish);
+      const id = getWishId(wish);
+      const canDeleteFromCloud = adminMode && supabase && id && !isLocalWish(wish);
+      const confirmText = canDeleteFromCloud
+        ? `管理员模式：确定要从云端永久删除这条公共愿望吗？\n\n${displayWish.text || ''}`
+        : `要从这里移除这条心愿吗？\n\n${displayWish.text || ''}`;
+      if (!window.confirm(confirmText)) return;
+
+      if (canDeleteFromCloud) {
+        const { error } = await supabase.from('wishes').delete().eq('id', id);
+        if (error) {
+          console.warn('Admin cloud delete failed:', error);
+          alert('云端删除失败，可能是 Supabase 删除权限未开放。');
+          return;
+        }
+        removeWishFromLocalState(wish);
+      } else if (adminMode && id && !supabase && !isLocalWish(wish)) {
+        alert('当前没有连接到 Supabase，无法删除云端公共愿望。');
+        return;
+      } else if (isLocalWish(wish)) {
+        removeWishFromLocalState(wish);
       } else if (id) {
         hiddenWishIds.add(id);
-        saveWishVisibilityState();
       }
+
       totalWishes = getVisibleWishes().length;
       wishCountEl.textContent = totalWishes;
+      saveWishVisibilityState();
       saveWishesToStorage();
       updateTreeWishes();
       renderWishWall();
@@ -4581,15 +4636,18 @@
         card.dataset.progress = progress.id;
         const reminderLabel = getWishReminderLabel(wish);
         const reminderDueClass = isReminderDue(wish) ? ' due' : '';
+        const adminCloudBadge = adminMode && !isLocalWish(wish) ? '<span class="wish-card-admin">云端</span>' : '';
+        const adminDeleteClass = adminMode && !isLocalWish(wish) ? ' admin-delete' : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(displayWish.text)}</span>
           <span class="wish-card-tag">${cat.icon} ${cat.name}</span>
           ${displayWish.visibility === 'private' ? '<span class="wish-card-private">私密</span>' : ''}
+          ${adminCloudBadge}
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" aria-label="更新心愿进度：${progress.label}">${progress.label}</button>
           <button class="wish-card-reminder${reminderDueClass}" type="button" aria-label="设置心愿回访">${reminderLabel}</button>
           <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
-          <button class="wish-card-delete" type="button" aria-label="删除心愿">×</button>
+          <button class="wish-card-delete${adminDeleteClass}" type="button" aria-label="删除心愿">×</button>
           <span class="wish-card-time">${time}</span>
         `;
         const progressBtn = card.querySelector('.wish-card-progress');
@@ -5353,10 +5411,28 @@
       return pool[Math.floor(Math.random() * pool.length)];
     }
 
+    function setAdminMode(enabled) {
+      adminMode = !!enabled;
+      addAIMessage(adminMode
+        ? '管理员模式已开启。打开愿望墙后，可以删除云端公共愿望。'
+        : '管理员模式已关闭。',
+        'assistant'
+      );
+      if (wishwallPanel.classList.contains('show')) renderWishWall();
+    }
+
     function sendAIMessage() {
       const text = aiInput.value.trim();
       if (!text) return;
       aiInput.value = '';
+      if (text === ADMIN_PASSWORD) {
+        setAdminMode(true);
+        return;
+      }
+      if (adminMode && text === '退出管理员') {
+        setAdminMode(false);
+        return;
+      }
       addAIMessage(text, 'user');
       setTimeout(() => {
         const response = getAIResponse(text);

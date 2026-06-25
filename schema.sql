@@ -80,6 +80,7 @@ DROP POLICY IF EXISTS "允许任何人读取心愿" ON wishes;
 DROP POLICY IF EXISTS "允许任何人读取留言" ON messages;
 DROP POLICY IF EXISTS "允许任何人写入心愿" ON wishes;
 DROP POLICY IF EXISTS "允许任何人写入留言" ON messages;
+DROP POLICY IF EXISTS "allow_admin_delete_wishes" ON wishes;
 DROP POLICY IF EXISTS "允许任何人更新留言" ON messages;
 DROP POLICY IF EXISTS "允许任何人读取时光胶囊" ON time_capsules;
 DROP POLICY IF EXISTS "允许任何人写入时光胶囊" ON time_capsules;
@@ -112,6 +113,12 @@ CREATE POLICY "允许任何人写入时光胶囊" ON time_capsules
 
 CREATE POLICY "允许任何人写入星座" ON constellations
   FOR INSERT WITH CHECK (true);
+
+-- 管理员模式删除公开心愿
+-- 注意：GitHub Pages 是纯前端站点，真正的密码校验在前端完成；
+-- 这条策略允许前端在管理员模式下删除 wishes 行。
+CREATE POLICY "allow_admin_delete_wishes" ON wishes
+  FOR DELETE USING (true);
 
 -- ── 允许更新 ────────────────────────────────────────────
 CREATE POLICY "允许任何人更新留言" ON messages
