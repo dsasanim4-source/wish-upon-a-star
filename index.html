@@ -1334,6 +1334,37 @@
     color: rgba(225, 210, 255, 0.92);
   }
 
+  .wish-export-picker-list {
+    width: 100%;
+    max-height: 46vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 18px 0 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wish-export-option {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(220, 232, 250, 0.86);
+    border-radius: 14px;
+    padding: 11px 13px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .wish-export-option:hover {
+    border-color: rgba(140, 200, 255, 0.32);
+    background: rgba(90, 155, 220, 0.11);
+  }
+
   /* ══════════════════════════════════════════════════════════════
      NEW FEATURE STYLES
      ══════════════════════════════════════════════════════════════ */
@@ -2478,6 +2509,16 @@
     </div>
   </div>
 
+  <!-- Export Wish Picker -->
+  <div class="msg-popup-overlay hidden" id="exportPickerOverlay">
+    <div class="msg-popup">
+      <div class="msg-popup-icon">🖼</div>
+      <div class="msg-popup-title">选择导出心愿</div>
+      <div class="wish-export-picker-list" id="exportPickerList"></div>
+      <button class="msg-popup-dismiss" id="exportPickerCancel" type="button">取消</button>
+    </div>
+  </div>
+
   <!-- Bottle Backdrop -->
   <div class="bottle-backdrop hidden" id="bottleBackdrop"></div>
 
@@ -2751,6 +2792,9 @@
     const achievementPopupTime = document.getElementById('achievementPopupTime');
     const achievementExportBtn = document.getElementById('achievementExportBtn');
     const achievementCloseBtn = document.getElementById('achievementCloseBtn');
+    const exportPickerOverlay = document.getElementById('exportPickerOverlay');
+    const exportPickerList = document.getElementById('exportPickerList');
+    const exportPickerCancel = document.getElementById('exportPickerCancel');
 
     // Toolbox
     const toolboxBtn = document.getElementById('toolboxBtn');
@@ -3081,6 +3125,33 @@
       return div.innerHTML;
     }
 
+    const BLOCKED_LANGUAGE_PATTERNS = [
+      /傻[逼屄比]/,
+      /煞笔|沙比/,
+      /草泥马|艹你|肏/,
+      /(?:我|你|他|她)?操(?:你|他|她|我|妈|蛋|死)/,
+      /我操|卧槽|操蛋/,
+      /妈的|他妈|你妈|去死|滚蛋/,
+      /nmsl/,
+      /fuck|shit|bitch|asshole|dick|cunt/,
+    ];
+
+    function normalizeForModeration(text) {
+      return String(text || '')
+        .toLowerCase()
+        .normalize('NFKC')
+        .replace(/[\s\-_.。，,，!！?？、'"“”‘’`~@#$%^&*()（）\[\]{}<>《》:：;；|\\/]+/g, '');
+    }
+
+    function hasBlockedLanguage(text) {
+      const normalized = normalizeForModeration(text);
+      return BLOCKED_LANGUAGE_PATTERNS.some(pattern => pattern.test(normalized));
+    }
+
+    function rejectBlockedLanguage(surface) {
+      alert(`${surface}里不能包含脏话或攻击性表达，换一句温柔一点的吧。`);
+    }
+
     function getWishProgressKey(wish) {
       if (!wish) return '';
       if (wish.id !== undefined && wish.id !== null) return 'id:' + String(wish.id);
@@ -3390,44 +3461,339 @@
       if (line && lines < maxLines) ctx2.fillText(line, x, y);
     }
 
-    function chooseWishForExport() {
-      const options = getVisibleWishes().slice().reverse();
-      if (options.length === 0) return null;
-      const lines = options.map((wish, i) => {
-        const displayWish = getDisplayWish(wish);
-        const text = (displayWish.text || '').replace(/\s+/g, ' ').slice(0, 28);
-        return `${i + 1}. ${text}${(displayWish.text || '').length > 28 ? '…' : ''}`;
-      });
-      const answer = window.prompt('选择导出图中的心愿编号：\n\n' + lines.join('\n'), '1');
-      if (answer === null) return undefined;
-      const index = Number.parseInt(answer, 10) - 1;
-      if (!Number.isInteger(index) || index < 0 || index >= options.length) {
-        window.alert('没有找到这个编号，请重新导出并选择列表里的数字。');
-        return undefined;
-      }
-      return options[index];
+    function clampNumber(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
 
-    function exportMySky() {
-      const selectedWish = chooseWishForExport();
+    function hideExportPickerOverlay() {
+      if (!exportPickerOverlay) return;
+      exportPickerOverlay.classList.remove('show');
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        exportPickerOverlay.classList.add('hidden');
+        exportPickerOverlay.removeEventListener('transitionend', finish);
+      };
+      exportPickerOverlay.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
+    }
+
+    function chooseWishForExport() {
+      const options = getVisibleWishes().slice().reverse();
+      if (options.length === 0) return Promise.resolve(null);
+      if (!exportPickerOverlay || !exportPickerList || !exportPickerCancel) {
+        return Promise.resolve(options[0]);
+      }
+
+      exportPickerList.innerHTML = '';
+
+      return new Promise(resolve => {
+        let settled = false;
+        const finish = (wish) => {
+          if (settled) return;
+          settled = true;
+          exportPickerCancel.removeEventListener('click', onCancel);
+          exportPickerOverlay.removeEventListener('click', onOverlayClick);
+          hideExportPickerOverlay();
+          resolve(wish);
+        };
+        const onCancel = (e) => {
+          e.stopPropagation();
+          finish(undefined);
+        };
+        const onOverlayClick = (e) => {
+          if (e.target === exportPickerOverlay) finish(undefined);
+        };
+
+        options.forEach((wish, i) => {
+          const displayWish = getDisplayWish(wish);
+          const fullText = (displayWish.text || '').replace(/\s+/g, ' ').trim() || '未命名心愿';
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'wish-export-option';
+          button.textContent = `${i + 1}. ${fullText.slice(0, 46)}${fullText.length > 46 ? '…' : ''} · ${getWishProgressStep(wish).label}`;
+          button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            finish(wish);
+          });
+          exportPickerList.appendChild(button);
+        });
+
+        exportPickerCancel.addEventListener('click', onCancel);
+        exportPickerOverlay.addEventListener('click', onOverlayClick);
+        exportPickerOverlay.classList.remove('hidden');
+        void exportPickerOverlay.offsetWidth;
+        exportPickerOverlay.classList.add('show');
+      });
+    }
+
+    function getExportCanvasSize() {
+      const sourceWidth = Math.max(1, canvas.width || window.innerWidth || 1200);
+      const sourceHeight = Math.max(1, canvas.height || window.innerHeight || 1600);
+      const ratio = clampNumber(sourceWidth / sourceHeight, 0.42, 2.4);
+      let width;
+      let height;
+
+      if (ratio >= 1) {
+        width = 1600;
+        height = Math.round(width / ratio);
+        if (height < 900) {
+          height = 900;
+          width = Math.round(height * ratio);
+        }
+      } else {
+        height = 1600;
+        width = Math.round(height * ratio);
+        if (width < 860) {
+          width = 860;
+          height = Math.round(width / ratio);
+        }
+      }
+
+      const maxSide = 1920;
+      const longSide = Math.max(width, height);
+      if (longSide > maxSide) {
+        const scale = maxSide / longSide;
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      return { width, height };
+    }
+
+    function drawCanvasIntoExport(ctx2, sourceCanvas, width, height) {
+      const sourceWidth = Math.max(1, sourceCanvas.width || width);
+      const sourceHeight = Math.max(1, sourceCanvas.height || height);
+      const scale = Math.min(width / sourceWidth, height / sourceHeight);
+      const drawWidth = sourceWidth * scale;
+      const drawHeight = sourceHeight * scale;
+      const x = (width - drawWidth) / 2;
+      const y = (height - drawHeight) / 2;
+      ctx2.drawImage(sourceCanvas, x, y, drawWidth, drawHeight);
+      return { x, y, width: drawWidth, height: drawHeight, sourceWidth, sourceHeight };
+    }
+
+    function roundedRectPath(ctx2, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx2.beginPath();
+      ctx2.moveTo(x + r, y);
+      ctx2.lineTo(x + width - r, y);
+      ctx2.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx2.lineTo(x + width, y + height - r);
+      ctx2.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx2.lineTo(x + r, y + height);
+      ctx2.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx2.lineTo(x, y + r);
+      ctx2.quadraticCurveTo(x, y, x + r, y);
+      ctx2.closePath();
+    }
+
+    function drawExportConstellationOnSky(ctx2, constellation, bounds, outWidth) {
+      if (!constellation || !bounds || !Array.isArray(constellation.stars) || constellation.stars.length === 0) return;
+      const stars = constellation.stars.map(star => ({ x: Number(star.x), y: Number(star.y) }));
+      if (stars.some(star => !Number.isFinite(star.x) || !Number.isFinite(star.y))) return;
+      const project = (star) => ({
+        x: bounds.x + (star.x / bounds.sourceWidth) * bounds.width,
+        y: bounds.y + (star.y / bounds.sourceHeight) * bounds.height,
+      });
+
+      ctx2.save();
+      ctx2.lineCap = 'round';
+      ctx2.lineJoin = 'round';
+      ctx2.strokeStyle = 'rgba(255, 224, 128, 0.96)';
+      ctx2.lineWidth = Math.max(3, outWidth * 0.004);
+      ctx2.shadowColor = 'rgba(255, 190, 90, 0.95)';
+      ctx2.shadowBlur = Math.max(14, outWidth * 0.016);
+
+      const lines = Array.isArray(constellation.lines) ? constellation.lines : [];
+      if (lines.length > 0) {
+        lines.forEach(line => {
+          const from = stars[line.from];
+          const to = stars[line.to];
+          if (!from || !to) return;
+          const a = project(from);
+          const b = project(to);
+          ctx2.beginPath();
+          ctx2.moveTo(a.x, a.y);
+          ctx2.lineTo(b.x, b.y);
+          ctx2.stroke();
+        });
+      } else if (stars.length > 1) {
+        ctx2.beginPath();
+        stars.map(project).forEach((point, index) => {
+          if (index === 0) ctx2.moveTo(point.x, point.y);
+          else ctx2.lineTo(point.x, point.y);
+        });
+        ctx2.stroke();
+      }
+
+      stars.map(project).forEach(point => {
+        const glow = ctx2.createRadialGradient(point.x, point.y, 0, point.x, point.y, Math.max(16, outWidth * 0.02));
+        glow.addColorStop(0, 'rgba(255, 248, 210, 0.95)');
+        glow.addColorStop(0.45, 'rgba(255, 198, 90, 0.45)');
+        glow.addColorStop(1, 'rgba(255, 198, 90, 0)');
+        ctx2.fillStyle = glow;
+        ctx2.beginPath();
+        ctx2.arc(point.x, point.y, Math.max(16, outWidth * 0.02), 0, Math.PI * 2);
+        ctx2.fill();
+        ctx2.fillStyle = '#fff7ce';
+        ctx2.beginPath();
+        ctx2.arc(point.x, point.y, Math.max(4, outWidth * 0.005), 0, Math.PI * 2);
+        ctx2.fill();
+      });
+      ctx2.restore();
+    }
+
+    function getExportConstellations() {
+      let saved = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem('constellations') || '[]');
+        if (Array.isArray(parsed)) {
+          saved = parsed.filter(item => Array.isArray(item.stars) && item.stars.length > 0);
+        }
+      } catch(e) { /* ignore malformed saved constellations */ }
+
+      const active = drawnStars.length > 0
+        ? [{ name: '正在绘制的星座', stars: drawnStars, lines: drawnLines }]
+        : [];
+      return saved.slice(active.length ? -3 : -4).concat(active).slice(-4);
+    }
+
+    function drawExportConstellationCell(ctx2, constellation, x, y, width, height, outWidth) {
+      const stars = (constellation.stars || []).map(star => ({ x: Number(star.x), y: Number(star.y) }));
+      if (stars.length === 0 || stars.some(star => !Number.isFinite(star.x) || !Number.isFinite(star.y))) return;
+
+      const xs = stars.map(star => star.x);
+      const ys = stars.map(star => star.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const spanX = Math.max(1, maxX - minX);
+      const spanY = Math.max(1, maxY - minY);
+      const labelHeight = Math.max(24, height * 0.22);
+      const drawWidth = width * 0.9;
+      const drawHeight = Math.max(32, height - labelHeight - 8);
+      const centerX = x + width / 2;
+      const centerY = y + drawHeight / 2 + 6;
+      const sourceCenterX = minX + spanX / 2;
+      const sourceCenterY = minY + spanY / 2;
+      const scale = Math.min(drawWidth / spanX, drawHeight / spanY);
+      const project = (star) => ({
+        x: centerX + (star.x - sourceCenterX) * scale,
+        y: centerY + (star.y - sourceCenterY) * scale,
+      });
+
+      ctx2.save();
+      ctx2.lineCap = 'round';
+      ctx2.lineJoin = 'round';
+      ctx2.strokeStyle = 'rgba(255, 220, 126, 0.96)';
+      ctx2.lineWidth = Math.max(3, outWidth * 0.004);
+      ctx2.shadowColor = 'rgba(255, 184, 80, 0.78)';
+      ctx2.shadowBlur = Math.max(10, outWidth * 0.012);
+
+      const lines = Array.isArray(constellation.lines) ? constellation.lines : [];
+      if (lines.length > 0) {
+        lines.forEach(line => {
+          const from = stars[line.from];
+          const to = stars[line.to];
+          if (!from || !to) return;
+          const a = project(from);
+          const b = project(to);
+          ctx2.beginPath();
+          ctx2.moveTo(a.x, a.y);
+          ctx2.lineTo(b.x, b.y);
+          ctx2.stroke();
+        });
+      } else if (stars.length > 1) {
+        ctx2.beginPath();
+        stars.map(project).forEach((point, index) => {
+          if (index === 0) ctx2.moveTo(point.x, point.y);
+          else ctx2.lineTo(point.x, point.y);
+        });
+        ctx2.stroke();
+      }
+
+      stars.map(project).forEach(point => {
+        ctx2.fillStyle = 'rgba(255, 246, 205, 0.96)';
+        ctx2.beginPath();
+        ctx2.arc(point.x, point.y, Math.max(4, outWidth * 0.0045), 0, Math.PI * 2);
+        ctx2.fill();
+      });
+
+      ctx2.shadowBlur = 0;
+      ctx2.textAlign = 'center';
+      ctx2.fillStyle = 'rgba(236, 244, 255, 0.86)';
+      ctx2.font = `${Math.max(17, Math.round(outWidth * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      ctx2.fillText(String(constellation.name || '我的星座').slice(0, 18), x + width / 2, y + height - 4);
+      ctx2.restore();
+    }
+
+    function drawExportConstellations(ctx2, outWidth, outHeight) {
+      const constellations = getExportConstellations();
+      if (constellations.length === 0) return;
+
+      const panelWidth = Math.min(outWidth * 0.84, 980);
+      const panelHeight = clampNumber(outHeight * 0.24, 220, 380);
+      const panelX = (outWidth - panelWidth) / 2;
+      const panelY = outHeight * 0.58;
+      const padding = Math.max(20, outWidth * 0.03);
+      const headerHeight = Math.max(34, panelHeight * 0.14);
+
+      ctx2.save();
+      roundedRectPath(ctx2, panelX, panelY, panelWidth, panelHeight, Math.max(18, outWidth * 0.025));
+      ctx2.fillStyle = 'rgba(4, 9, 22, 0.58)';
+      ctx2.fill();
+      ctx2.strokeStyle = 'rgba(255, 220, 126, 0.22)';
+      ctx2.lineWidth = Math.max(1, outWidth * 0.0014);
+      ctx2.stroke();
+
+      ctx2.textAlign = 'left';
+      ctx2.fillStyle = 'rgba(255, 235, 170, 0.94)';
+      ctx2.font = `${Math.max(19, Math.round(outWidth * 0.022))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      ctx2.fillText('自绘星座', panelX + padding, panelY + padding + 14);
+
+      const cols = constellations.length === 1 ? 1 : 2;
+      const rows = Math.ceil(constellations.length / cols);
+      const gap = Math.max(14, outWidth * 0.025);
+      const cellWidth = (panelWidth - padding * 2 - gap * (cols - 1)) / cols;
+      const cellHeight = (panelHeight - padding * 2 - headerHeight - gap * (rows - 1)) / rows;
+
+      constellations.forEach((constellation, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const cellX = panelX + padding + col * (cellWidth + gap);
+        const cellY = panelY + padding + headerHeight + row * (cellHeight + gap);
+        drawExportConstellationCell(ctx2, constellation, cellX, cellY, cellWidth, cellHeight, outWidth);
+      });
+      ctx2.restore();
+    }
+
+    async function exportMySky() {
+      const selectedWish = await chooseWishForExport();
       if (selectedWish === undefined) return;
       const out = document.createElement('canvas');
-      out.width = 1200;
-      out.height = 1600;
+      const exportSize = getExportCanvasSize();
+      out.width = exportSize.width;
+      out.height = exportSize.height;
       const octx = out.getContext('2d');
-      const grad = octx.createRadialGradient(600, 520, 0, 600, 700, 1050);
+      const centerX = out.width / 2;
+      const grad = octx.createRadialGradient(centerX, out.height * 0.32, 0, centerX, out.height * 0.44, Math.max(out.width, out.height) * 0.72);
       grad.addColorStop(0, '#162348');
       grad.addColorStop(0.5, '#081024');
       grad.addColorStop(1, '#030410');
       octx.fillStyle = grad;
       octx.fillRect(0, 0, out.width, out.height);
+      let canvasBounds = null;
       try {
         octx.globalAlpha = 0.55;
-        octx.drawImage(canvas, 0, 0, out.width, out.height);
+        canvasBounds = drawCanvasIntoExport(octx, canvas, out.width, out.height);
         octx.globalAlpha = 1;
       } catch(e) { /* ignore canvas export fallback */ }
       octx.fillStyle = 'rgba(255,255,255,0.75)';
-      for (let i = 0; i < 180; i++) {
+      const exportStarCount = clampNumber(Math.round((out.width * out.height) / 9000), 120, 260);
+      for (let i = 0; i < exportStarCount; i++) {
         const x = Math.random() * out.width;
         const y = Math.random() * out.height;
         const r = Math.random() * 2 + 0.5;
@@ -3435,29 +3801,35 @@
         octx.arc(x, y, r, 0, Math.PI * 2);
         octx.fill();
       }
+      if (canvasBounds && drawnStars.length > 0) {
+        drawExportConstellationOnSky(octx, { stars: drawnStars, lines: drawnLines }, canvasBounds, out.width);
+      }
       const visibleWishMessages = getVisibleWishes();
       const doneWishes = visibleWishMessages.filter(w => getWishProgressId(w) === 'done');
       octx.textAlign = 'center';
       octx.fillStyle = 'rgba(245, 250, 255, 0.96)';
-      octx.font = '56px "Microsoft YaHei", "PingFang SC", sans-serif';
-      octx.fillText('我的心愿星空', 600, 180);
-      octx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
+      octx.font = `${Math.max(38, Math.round(out.width * 0.047))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      octx.fillText('我的心愿星空', centerX, out.height * 0.11);
+      octx.font = `${Math.max(22, Math.round(out.width * 0.025))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(200, 220, 245, 0.78)';
-      octx.fillText(`${visibleWishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, 600, 240);
+      octx.fillText(`${visibleWishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, centerX, out.height * 0.15);
       if (selectedWish) {
         const displayRecentWish = getDisplayWish(selectedWish);
         octx.fillStyle = 'rgba(255, 235, 175, 0.95)';
-        octx.font = '40px "Microsoft YaHei", "PingFang SC", sans-serif';
-        drawWrappedText(octx, displayRecentWish.text, 600, 420, 860, 62, 4);
-        octx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
+        const wishFont = Math.max(28, Math.round(out.width * 0.034));
+        const wishLineHeight = Math.max(42, Math.round(wishFont * 1.45));
+        octx.font = `${wishFont}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+        drawWrappedText(octx, displayRecentWish.text, centerX, out.height * 0.27, out.width * 0.74, wishLineHeight, 4);
+        octx.font = `${Math.max(18, Math.round(out.width * 0.02))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
         octx.fillStyle = 'rgba(220, 230, 245, 0.62)';
         const progress = getWishProgressStep(selectedWish).label;
         const completedAt = getWishCompletedAt(selectedWish);
-        octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, 600, 720);
+        octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, centerX, out.height * 0.47);
       }
-      octx.font = '22px "Microsoft YaHei", "PingFang SC", sans-serif';
+      drawExportConstellations(octx, out.width, out.height);
+      octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
-      octx.fillText('wish upon a star', 600, 1460);
+      octx.fillText('wish upon a star', centerX, out.height * 0.93);
       const link = document.createElement('a');
       link.download = 'my-wish-sky.png';
       link.href = out.toDataURL('image/png');
@@ -3817,6 +4189,10 @@
     async function submitBottleMessage() {
       const text = bottleInput.value.trim();
       if (!text) return;
+      if (hasBlockedLanguage(text)) {
+        rejectBlockedLanguage('漂流瓶');
+        return;
+      }
       bottleInput.value = '';
       if (!supabase) return;
       const { data: inserted, error } = await supabase
@@ -5485,6 +5861,10 @@
     async function submitWish() {
       const text = wishInput.value.trim();
       if (!text) return;
+      if (wishPrivacyMode !== 'private' && hasBlockedLanguage(text)) {
+        rejectBlockedLanguage('公开愿望');
+        return;
+      }
       wishInput.value = '';
       // Auto-detect tag from text content; fall back to selectedTag if detection is general
       const detectedTag = detectTag(text);
