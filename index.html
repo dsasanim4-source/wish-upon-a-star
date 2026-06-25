@@ -1078,6 +1078,40 @@
     color: rgba(255, 190, 130, 0.95);
     background: rgba(245, 160, 95, 0.12);
   }
+  .wish-card-private {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(180, 150, 240, 0.22);
+    background: rgba(160, 120, 240, 0.09);
+    color: rgba(220, 205, 255, 0.8);
+  }
+  .wish-card-edit,
+  .wish-card-delete {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(190, 205, 230, 0.55);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1;
+    transition: all 0.25s ease;
+  }
+  .wish-card-edit:hover {
+    border-color: rgba(140, 190, 240, 0.32);
+    color: rgba(210, 235, 255, 0.95);
+    background: rgba(90, 155, 220, 0.1);
+  }
+  .wish-card-delete:hover {
+    border-color: rgba(255, 120, 120, 0.32);
+    color: rgba(255, 165, 165, 0.95);
+    background: rgba(255, 90, 90, 0.08);
+  }
   .wishwall-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1277,6 +1311,27 @@
   .quiet-mode .ripple,
   .quiet-mode .meteor-banner {
     animation: none !important;
+  }
+
+  .wish-privacy-toggle {
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(180, 200, 230, 0.55);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    transition: all 0.25s ease;
+  }
+  .wish-privacy-toggle.private {
+    border-color: rgba(180, 150, 240, 0.35);
+    background: rgba(160, 120, 240, 0.11);
+    color: rgba(225, 210, 255, 0.92);
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -2371,6 +2426,7 @@
         maxlength="50"
         autocomplete="off"
       >
+      <button class="wish-privacy-toggle" id="wishPrivacyBtn" type="button">公开</button>
       <button class="wish-send-btn" id="wishSendBtn" aria-label="发送心愿">✧</button>
     </div>
   </div>
@@ -2589,7 +2645,10 @@
     <button class="toolbox-item" type="button" data-tool="constellation">🔮 协作星座</button>
     <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
     <button class="toolbox-item" type="button" id="toolboxExportBtn">🖼 导出星空</button>
+    <button class="toolbox-item" type="button" id="backupExportBtn">📦 备份数据</button>
+    <button class="toolbox-item" type="button" id="backupImportBtn">📥 恢复备份</button>
   </div>
+  <input type="file" id="backupImportInput" accept="application/json" hidden>
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -2641,6 +2700,7 @@
     const glassCard = document.getElementById('glassCard');
     const wishInput = document.getElementById('wishInput');
     const wishSendBtn = document.getElementById('wishSendBtn');
+    const wishPrivacyBtn = document.getElementById('wishPrivacyBtn');
     const wishInputArea = document.getElementById('wishInputArea');
     const floatingWishes = document.getElementById('floatingWishes');
     const connectionDot = document.getElementById('connectionDot');
@@ -2698,6 +2758,9 @@
     const toolboxPanel = document.getElementById('toolboxPanel');
     const quietModeBtn = document.getElementById('quietModeBtn');
     const toolboxExportBtn = document.getElementById('toolboxExportBtn');
+    const backupExportBtn = document.getElementById('backupExportBtn');
+    const backupImportBtn = document.getElementById('backupImportBtn');
+    const backupImportInput = document.getElementById('backupImportInput');
 
     // Time capsule
     const timecapsuleBtn = document.getElementById('timecapsuleBtn');
@@ -2780,10 +2843,15 @@
     ];
     let wishProgress = {};
     const WISH_REMINDERS_KEY = 'wish_reminder_states';
+    const HIDDEN_WISH_IDS_KEY = 'wish_hidden_ids';
+    const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     let wishReminders = {};
+    let hiddenWishIds = new Set();
+    let wishOverrides = {};
     let wishwallMode = 'all';
     let quietMode = false;
+    let wishPrivacyMode = 'public';
     let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
@@ -2880,11 +2948,12 @@
       loadReadCapsuleIds();
       loadWishProgress();
       loadWishReminders();
+      loadWishVisibilityState();
       loadQuietMode();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
-        totalWishes = wishMessages.length;
+        totalWishes = getVisibleWishes().length;
         lastWishCount = totalWishes;
         wishCountEl.textContent = totalWishes;
       }
@@ -2898,13 +2967,14 @@
           // Merge: Supabase wishes take precedence, dedup by id
           const localIds = new Set(wishMessages.map(w => String(w.id)));
           wishesData.forEach(w => {
+            if (!isWishVisible(w)) return;
             if (!localIds.has(String(w.id))) {
               wishMessages.push(w);
             }
           });
           // Sort by created_at
           wishMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-          totalWishes = wishMessages.length;
+          totalWishes = getVisibleWishes().length;
           lastWishCount = totalWishes;
           wishCountEl.textContent = totalWishes;
           connectionDot.classList.remove('offline');
@@ -2952,6 +3022,7 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes' }, (payload) => {
           const newWish = payload.new;
           if (localInsertIds.has(newWish.id)) { localInsertIds.delete(newWish.id); return; }
+          if (!isWishVisible(newWish)) return;
           // Check if a local wish with same text already exists (dedup)
           const dupIdx = wishMessages.findIndex(w => String(w.id).startsWith('local_') && w.text === newWish.text);
           if (dupIdx >= 0) {
@@ -2963,7 +3034,7 @@
             return;
           }
           wishMessages.push(newWish);
-          totalWishes = wishMessages.length;
+          totalWishes = getVisibleWishes().length;
           lastWishCount = totalWishes;
           wishCountEl.textContent = totalWishes;
           spawnFloatingWish(newWish.text);
@@ -3097,6 +3168,11 @@
         delete wishProgress[fromKey + ':completedAt'];
       }
       migrateWishReminderKey(fromWish, toWish);
+      if (wishOverrides[fromKey]) {
+        wishOverrides[toKey] = wishOverrides[fromKey];
+        delete wishOverrides[fromKey];
+        saveWishVisibilityState();
+      }
       delete wishProgress[fromKey];
       saveWishProgress();
     }
@@ -3164,6 +3240,101 @@
       saveWishReminders();
     }
 
+    function loadWishVisibilityState() {
+      try {
+        const hidden = JSON.parse(localStorage.getItem(HIDDEN_WISH_IDS_KEY) || '[]');
+        if (Array.isArray(hidden)) hiddenWishIds = new Set(hidden.map(String));
+      } catch(e) { /* ignore */ }
+      try {
+        const overrides = JSON.parse(localStorage.getItem(WISH_OVERRIDES_KEY) || '{}');
+        if (overrides && typeof overrides === 'object' && !Array.isArray(overrides)) wishOverrides = overrides;
+      } catch(e) { /* ignore */ }
+    }
+
+    function saveWishVisibilityState() {
+      try {
+        localStorage.setItem(HIDDEN_WISH_IDS_KEY, JSON.stringify([...hiddenWishIds].slice(-500)));
+        localStorage.setItem(WISH_OVERRIDES_KEY, JSON.stringify(wishOverrides));
+      } catch(e) { /* ignore */ }
+    }
+
+    function getWishId(wish) {
+      return wish && wish.id !== undefined && wish.id !== null ? String(wish.id) : '';
+    }
+
+    function isLocalWish(wish) {
+      const id = getWishId(wish);
+      return !id || id.startsWith('local_') || wish.visibility === 'private';
+    }
+
+    function isWishVisible(wish) {
+      const id = getWishId(wish);
+      return !id || !hiddenWishIds.has(id);
+    }
+
+    function getVisibleWishes() {
+      return wishMessages.filter(isWishVisible);
+    }
+
+    function applyWishOverride(wish) {
+      const key = getWishProgressKey(wish);
+      const override = key ? wishOverrides[key] : null;
+      if (!override) return wish;
+      return { ...wish, ...override };
+    }
+
+    function getDisplayWish(wish) {
+      return applyWishOverride(wish);
+    }
+
+    function saveWishOverride(wish, values) {
+      const key = getWishProgressKey(wish);
+      if (!key) return;
+      wishOverrides[key] = { ...(wishOverrides[key] || {}), ...values };
+      saveWishVisibilityState();
+    }
+
+    function editWish(wish) {
+      const displayWish = getDisplayWish(wish);
+      const nextText = window.prompt('编辑这条心愿', displayWish.text || '');
+      if (nextText === null) return;
+      const text = nextText.trim();
+      if (!text) return;
+      if (isLocalWish(wish)) {
+        wish.text = text;
+      } else {
+        saveWishOverride(wish, { text });
+      }
+      saveWishesToStorage();
+      updateTreeWishes();
+      renderWishWall();
+    }
+
+    function deleteWish(wish) {
+      const displayWish = getDisplayWish(wish);
+      if (!window.confirm(`要从这里移除这条心愿吗？\n\n${displayWish.text || ''}`)) return;
+      const id = getWishId(wish);
+      if (isLocalWish(wish)) {
+        const idx = wishMessages.findIndex(w => w === wish || getWishProgressKey(w) === getWishProgressKey(wish));
+        if (idx >= 0) wishMessages.splice(idx, 1);
+      } else if (id) {
+        hiddenWishIds.add(id);
+        saveWishVisibilityState();
+      }
+      totalWishes = getVisibleWishes().length;
+      wishCountEl.textContent = totalWishes;
+      saveWishesToStorage();
+      updateTreeWishes();
+      renderWishWall();
+    }
+
+    function toggleWishPrivacyMode() {
+      wishPrivacyMode = wishPrivacyMode === 'private' ? 'public' : 'private';
+      wishPrivacyBtn.classList.toggle('private', wishPrivacyMode === 'private');
+      wishPrivacyBtn.textContent = wishPrivacyMode === 'private' ? '私密' : '公开';
+      wishInput.placeholder = wishPrivacyMode === 'private' ? '写下只给自己看的心愿…' : '写下你的心愿…';
+    }
+
     function showWishAchievement(wish) {
       if (!wish) return;
       achievementPopupText.textContent = wish.text || '这个心愿已经实现';
@@ -3219,7 +3390,27 @@
       if (line && lines < maxLines) ctx2.fillText(line, x, y);
     }
 
+    function chooseWishForExport() {
+      const options = getVisibleWishes().slice().reverse();
+      if (options.length === 0) return null;
+      const lines = options.map((wish, i) => {
+        const displayWish = getDisplayWish(wish);
+        const text = (displayWish.text || '').replace(/\s+/g, ' ').slice(0, 28);
+        return `${i + 1}. ${text}${(displayWish.text || '').length > 28 ? '…' : ''}`;
+      });
+      const answer = window.prompt('选择导出图中的心愿编号：\n\n' + lines.join('\n'), '1');
+      if (answer === null) return undefined;
+      const index = Number.parseInt(answer, 10) - 1;
+      if (!Number.isInteger(index) || index < 0 || index >= options.length) {
+        window.alert('没有找到这个编号，请重新导出并选择列表里的数字。');
+        return undefined;
+      }
+      return options[index];
+    }
+
     function exportMySky() {
+      const selectedWish = chooseWishForExport();
+      if (selectedWish === undefined) return;
       const out = document.createElement('canvas');
       out.width = 1200;
       out.height = 1600;
@@ -3244,23 +3435,24 @@
         octx.arc(x, y, r, 0, Math.PI * 2);
         octx.fill();
       }
-      const doneWishes = wishMessages.filter(w => getWishProgressId(w) === 'done');
-      const recentWish = lastCompletedWish || doneWishes[doneWishes.length - 1] || wishMessages[wishMessages.length - 1];
+      const visibleWishMessages = getVisibleWishes();
+      const doneWishes = visibleWishMessages.filter(w => getWishProgressId(w) === 'done');
       octx.textAlign = 'center';
       octx.fillStyle = 'rgba(245, 250, 255, 0.96)';
       octx.font = '56px "Microsoft YaHei", "PingFang SC", sans-serif';
       octx.fillText('我的心愿星空', 600, 180);
       octx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
       octx.fillStyle = 'rgba(200, 220, 245, 0.78)';
-      octx.fillText(`${wishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, 600, 240);
-      if (recentWish) {
+      octx.fillText(`${visibleWishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, 600, 240);
+      if (selectedWish) {
+        const displayRecentWish = getDisplayWish(selectedWish);
         octx.fillStyle = 'rgba(255, 235, 175, 0.95)';
         octx.font = '40px "Microsoft YaHei", "PingFang SC", sans-serif';
-        drawWrappedText(octx, recentWish.text, 600, 420, 860, 62, 4);
+        drawWrappedText(octx, displayRecentWish.text, 600, 420, 860, 62, 4);
         octx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
         octx.fillStyle = 'rgba(220, 230, 245, 0.62)';
-        const progress = getWishProgressStep(recentWish).label;
-        const completedAt = getWishCompletedAt(recentWish);
+        const progress = getWishProgressStep(selectedWish).label;
+        const completedAt = getWishCompletedAt(selectedWish);
         octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, 600, 720);
       }
       octx.font = '22px "Microsoft YaHei", "PingFang SC", sans-serif';
@@ -3322,6 +3514,99 @@
       if (tool === 'ai') openAIPanel();
       if (tool === 'tree') openTreePanel();
       if (tool === 'constellation') toggleConstellationMode();
+    }
+
+    function exportBackupData() {
+      const backup = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        localWishes: wishMessages.filter(isLocalWish),
+        wishProgress,
+        wishReminders,
+        hiddenWishIds: [...hiddenWishIds],
+        wishOverrides,
+        timeCapsules: timeCapsules.filter(isCapsuleActive),
+        readCapsuleIds: [...readCapsuleIds],
+        deviceId: localStorage.getItem('wish_device_id'),
+        constellations: JSON.parse(localStorage.getItem('constellations') || '[]'),
+        quietMode,
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'wish-upon-a-star-backup.json';
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function mergeByIdOrKey(existing, incoming, keyFn) {
+      const keys = new Set(existing.map(keyFn));
+      incoming.forEach(item => {
+        const key = keyFn(item);
+        if (!keys.has(key)) {
+          existing.push(item);
+          keys.add(key);
+        }
+      });
+    }
+
+    function importBackupData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const backup = JSON.parse(reader.result);
+          if (!backup || typeof backup !== 'object') throw new Error('Invalid backup');
+          if (Array.isArray(backup.localWishes)) {
+            mergeByIdOrKey(wishMessages, backup.localWishes, getWishProgressKey);
+          }
+          if (backup.wishProgress && typeof backup.wishProgress === 'object') {
+            wishProgress = { ...wishProgress, ...backup.wishProgress };
+            saveWishProgress();
+          }
+          if (backup.wishReminders && typeof backup.wishReminders === 'object') {
+            wishReminders = { ...wishReminders, ...backup.wishReminders };
+            saveWishReminders();
+          }
+          if (Array.isArray(backup.hiddenWishIds)) {
+            backup.hiddenWishIds.forEach(id => hiddenWishIds.add(String(id)));
+          }
+          if (backup.wishOverrides && typeof backup.wishOverrides === 'object') {
+            wishOverrides = { ...wishOverrides, ...backup.wishOverrides };
+          }
+          saveWishVisibilityState();
+          if (Array.isArray(backup.timeCapsules)) {
+            mergeByIdOrKey(timeCapsules, backup.timeCapsules, getCapsuleId);
+            saveTimeCapsulesToStorage();
+          }
+          if (Array.isArray(backup.readCapsuleIds)) {
+            backup.readCapsuleIds.forEach(id => readCapsuleIds.add(String(id)));
+            saveReadCapsuleIds();
+          }
+          if (backup.deviceId) localStorage.setItem('wish_device_id', String(backup.deviceId));
+          if (Array.isArray(backup.constellations)) {
+            localStorage.setItem('constellations', JSON.stringify(backup.constellations));
+          }
+          if (typeof backup.quietMode === 'boolean') {
+            quietMode = backup.quietMode;
+            localStorage.setItem(QUIET_MODE_KEY, quietMode ? '1' : '0');
+            applyQuietMode();
+          }
+          totalWishes = getVisibleWishes().length;
+          wishCountEl.textContent = totalWishes;
+          saveWishesToStorage();
+          updateTimeCapsuleBadge();
+          updateTreeWishes();
+          renderWishWall();
+          alert('备份已恢复');
+        } catch(e) {
+          alert('备份文件无法读取');
+        } finally {
+          backupImportInput.value = '';
+        }
+      };
+      reader.readAsText(file);
     }
 
     function formatTime(ts) {
@@ -3561,7 +3846,7 @@
       wishwallAllBtn.classList.toggle('active', wishwallMode === 'all');
       wishwallArchiveBtn.classList.toggle('active', wishwallMode === 'archive');
 
-      const dueWishes = wishMessages.filter(isReminderDue);
+      const dueWishes = wishMessages.filter(wish => isWishVisible(wish) && isReminderDue(wish));
       if (wishwallMode === 'all' && dueWishes.length > 0) {
         const summary = document.createElement('div');
         summary.className = 'wishwall-reminder-summary';
@@ -3570,6 +3855,7 @@
       }
 
       const visibleWishes = wishMessages.filter(wish => {
+        if (!isWishVisible(wish)) return false;
         if (wishwallMode === 'archive') return getWishProgressId(wish) === 'done';
         return true;
       });
@@ -3586,13 +3872,14 @@
       const sorted = [...visibleWishes].reverse();
       const stars = ['⭐', '🌟', '✨', '💫', '🌠', '⭐', '✨', '🌟', '💫', '🌠'];
       sorted.forEach((wish, i) => {
+        const displayWish = getDisplayWish(wish);
         const card = document.createElement('div');
         card.className = 'wish-card';
         const star = stars[i % stars.length];
-        const time = formatTime(wish.created_at);
-        let tag = wish.tag;
+        const time = formatTime(displayWish.created_at);
+        let tag = displayWish.tag;
         if (!tag || tag === 'general') {
-          tag = detectTag(wish.text || '');
+          tag = detectTag(displayWish.text || '');
         }
         const cat = CATEGORIES[tag] || CATEGORIES.general;
         const progress = getWishProgressStep(wish);
@@ -3601,10 +3888,13 @@
         const reminderDueClass = isReminderDue(wish) ? ' due' : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
-          <span class="wish-card-text">${escapeHTML(wish.text)}</span>
+          <span class="wish-card-text">${escapeHTML(displayWish.text)}</span>
           <span class="wish-card-tag">${cat.icon} ${cat.name}</span>
+          ${displayWish.visibility === 'private' ? '<span class="wish-card-private">私密</span>' : ''}
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" aria-label="更新心愿进度：${progress.label}">${progress.label}</button>
           <button class="wish-card-reminder${reminderDueClass}" type="button" aria-label="设置心愿回访">${reminderLabel}</button>
+          <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
+          <button class="wish-card-delete" type="button" aria-label="删除心愿">×</button>
           <span class="wish-card-time">${time}</span>
         `;
         const progressBtn = card.querySelector('.wish-card-progress');
@@ -3616,6 +3906,14 @@
         reminderBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           advanceWishReminder(wish);
+        });
+        card.querySelector('.wish-card-edit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          editWish(wish);
+        });
+        card.querySelector('.wish-card-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteWish(wish);
         });
         wishwallBody.appendChild(card);
       });
@@ -3660,6 +3958,9 @@
     });
     quietModeBtn.addEventListener('click', toggleQuietMode);
     toolboxExportBtn.addEventListener('click', exportMySky);
+    backupExportBtn.addEventListener('click', exportBackupData);
+    backupImportBtn.addEventListener('click', () => backupImportInput.click());
+    backupImportInput.addEventListener('change', (e) => importBackupData(e.target.files && e.target.files[0]));
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 3: TIME CAPSULE
@@ -3845,7 +4146,7 @@
     function saveWishesToStorage() {
       try {
         // Only save non-Supabase wishes (those with local_ prefix)
-        const localWishes = wishMessages.filter(w => String(w.id).startsWith('local_'));
+        const localWishes = wishMessages.filter(w => isLocalWish(w) && isWishVisible(w));
         if (localWishes.length > 0) {
           localStorage.setItem('wish_wishes', JSON.stringify(localWishes));
         } else {
@@ -4043,13 +4344,14 @@
 
       // Group wishes by tag (use detectTag as fallback if tag is 'general')
       const groups = {};
-      wishMessages.forEach(w => {
-        let tag = w.tag;
+      getVisibleWishes().forEach(w => {
+        const displayWish = getDisplayWish(w);
+        let tag = displayWish.tag;
         if (!tag || tag === 'general') {
-          tag = detectTag(w.text || '');
+          tag = detectTag(displayWish.text || '');
         }
         if (!groups[tag]) groups[tag] = [];
-        groups[tag].push(w);
+        groups[tag].push(displayWish);
       });
 
       // Draw galaxy clusters
@@ -4363,7 +4665,7 @@
     }
 
     function updateTreeWishes() {
-      treeWishes = wishMessages.slice(-20);
+      treeWishes = getVisibleWishes().map(getDisplayWish).slice(-20);
       if (treePanel.classList.contains('show')) renderTree();
     }
 
@@ -4383,7 +4685,8 @@
       // Draw tree
       const trunkX = cw / 2;
       const trunkBase = groundY;
-      const growth = Math.min(1, 0.3 + (wishMessages.length / 50) * 0.7);
+      const visibleWishes = getVisibleWishes();
+      const growth = Math.min(1, 0.3 + (visibleWishes.length / 50) * 0.7);
       const trunkHeight = ch * 0.5 * growth;
 
       // Trunk
@@ -4413,8 +4716,8 @@
         // Leaves at tips
         if (depth >= maxDepth - 1) {
           // Wish leaves
-          const wishIdx = Math.floor(Math.random() * wishMessages.length);
-          if (wishMessages.length > 0) {
+          const wishIdx = Math.floor(Math.random() * visibleWishes.length);
+          if (visibleWishes.length > 0) {
             const leafGrad = treeCtx.createRadialGradient(endX, endY, 0, endX, endY, 8);
             const colors = ['rgba(100,200,100,0.4)', 'rgba(150,220,150,0.35)', 'rgba(80,180,120,0.4)', 'rgba(200,230,100,0.35)'];
             leafGrad.addColorStop(0, colors[depth % colors.length]);
@@ -4440,7 +4743,7 @@
       treeCtx.fillStyle = 'rgba(255,255,255,0.5)';
       treeCtx.font = '20px "PingFang SC","Microsoft YaHei",sans-serif';
       treeCtx.textAlign = 'center';
-      treeCtx.fillText(`🌱 ${wishMessages.length} 个愿望滋养着这棵树`, cw / 2, 40);
+      treeCtx.fillText(`🌱 ${visibleWishes.length} 个愿望滋养着这棵树`, cw / 2, 40);
     }
 
     growthTreeBtn.addEventListener('click', (e) => { e.stopPropagation(); openTreePanel(); });
@@ -4692,10 +4995,12 @@
     function drawCategoryConstellations() {
       // Group settled stars by category from wish messages
       const tagStars = {};
-      wishMessages.forEach((wish, i) => {
-        let tag = wish.tag;
+      const visibleWishes = getVisibleWishes();
+      visibleWishes.forEach((wish, i) => {
+        const displayWish = getDisplayWish(wish);
+        let tag = displayWish.tag;
         if (!tag || tag === 'general') {
-          tag = detectTag(wish.text || '');
+          tag = detectTag(displayWish.text || '');
         }
         if (!tagStars[tag]) tagStars[tag] = [];
         if (i < settledStars.length) {
@@ -4908,8 +5213,9 @@
       ctx.setLineDash([2, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
+      const visibleWishes = getVisibleWishes();
       settledStars.forEach((s, i) => {
-        const completed = getWishProgressId(wishMessages[i]) === 'done';
+        const completed = getWishProgressId(visibleWishes[i]) === 'done';
         const pulse = 1 + Math.sin(time * 0.03 + s.pulseOffset) * (completed ? 0.38 : 0.25);
         const alpha = completed
           ? 0.85 + Math.sin(time * 0.03 + s.pulseOffset) * 0.12
@@ -5190,10 +5496,11 @@
         text,
         tag,
         progress: 'new',
+        visibility: wishPrivacyMode,
         created_at: new Date().toISOString(),
       };
       wishMessages.push(localWish);
-      totalWishes = wishMessages.length;
+      totalWishes = getVisibleWishes().length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
       saveWishesToStorage();
@@ -5208,7 +5515,7 @@
       handleInteraction(cx, cy, text, tag);
 
       // Try to sync with Supabase
-      if (supabase) {
+      if (supabase && wishPrivacyMode !== 'private') {
         const { data: inserted, error } = await supabase
           .from('wishes').insert({ text, tag }).select().single();
         if (inserted) {
@@ -5306,6 +5613,7 @@
     });
 
     wishSendBtn.addEventListener('click', (e) => { e.stopPropagation(); submitWish(); });
+    wishPrivacyBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleWishPrivacyMode(); });
     wishInput.addEventListener('click', (e) => { e.stopPropagation(); });
 
     document.addEventListener('mousemove', (e) => {
@@ -5337,20 +5645,22 @@
     }
 
     function scheduleFloatingWishes() {
-      if (wishMessages.length === 0) return;
-      const idx = Math.floor(Math.random() * wishMessages.length);
-      spawnFloatingWish(wishMessages[idx].text);
+      const visibleWishes = getVisibleWishes();
+      if (visibleWishes.length === 0) return;
+      const idx = Math.floor(Math.random() * visibleWishes.length);
+      spawnFloatingWish(getDisplayWish(visibleWishes[idx]).text);
       const delay = 3000 + Math.random() * 5000;
       setTimeout(scheduleFloatingWishes, delay);
     }
 
     function burstFloatingWishes() {
-      if (wishMessages.length === 0) return;
-      const count = Math.min(5, wishMessages.length);
-      const shuffled = [...wishMessages].sort(() => Math.random() - 0.5);
+      const visibleWishes = getVisibleWishes();
+      if (visibleWishes.length === 0) return;
+      const count = Math.min(5, visibleWishes.length);
+      const shuffled = [...visibleWishes].sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, count);
       selected.forEach((wish, i) => {
-        setTimeout(() => spawnFloatingWish(wish.text), i * 400);
+        setTimeout(() => spawnFloatingWish(getDisplayWish(wish).text), i * 400);
       });
     }
 
@@ -5387,11 +5697,12 @@
       loadReadCapsuleIds();
       loadWishProgress();
       loadWishReminders();
+      loadWishVisibilityState();
       loadQuietMode();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
-        totalWishes = wishMessages.length;
+        totalWishes = getVisibleWishes().length;
         lastWishCount = totalWishes;
         wishCountEl.textContent = totalWishes;
       }
@@ -5425,9 +5736,10 @@
       updateBottleBadge();
       updateTimeCapsuleBadge();
       if (timeCapsules.filter(isCapsuleActive).length > 0) capsuleCounter.classList.add('visible');
-      if (wishMessages.length > 0) {
+      const visibleWishes = getVisibleWishes();
+      if (visibleWishes.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
-        setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
+        setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, visibleWishes.length) * 400 + 1000);
       }
       setTimeout(() => spawnShootingStar(), 1500);
       updateTreeWishes();
