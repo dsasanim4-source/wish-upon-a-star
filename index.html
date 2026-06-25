@@ -3828,41 +3828,18 @@
 
       const sourceWidth = Math.max(1, canvas.width || window.innerWidth || 1200);
       const sourceHeight = Math.max(1, canvas.height || window.innerHeight || 1600);
-      const ratio = clampNumber(sourceWidth / sourceHeight, 0.42, 2.4);
-      let width;
-      let height;
-
-      if (ratio >= 1) {
-        width = 1600;
-        height = Math.round(width / ratio);
-        if (height < 900) {
-          height = 900;
-          width = Math.round(height * ratio);
-        }
-      } else {
-        height = 1600;
-        width = Math.round(height * ratio);
-        if (width < 860) {
-          width = 860;
-          height = Math.round(width / ratio);
-        }
-      }
-
-      const maxSide = 1920;
-      const longSide = Math.max(width, height);
-      if (longSide > maxSide) {
-        const scale = maxSide / longSide;
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
-
-      return { width, height };
+      const sourceRatio = sourceWidth / sourceHeight;
+      if (sourceRatio >= 1.15) return { width: 1200, height: 1600 };
+      if (sourceRatio <= 0.72) return { width: 1080, height: 1920 };
+      return { width: 1400, height: 1600 };
     }
 
-    function drawCanvasIntoExport(ctx2, sourceCanvas, width, height) {
+    function drawCanvasIntoExport(ctx2, sourceCanvas, width, height, fit = 'cover') {
       const sourceWidth = Math.max(1, sourceCanvas.width || width);
       const sourceHeight = Math.max(1, sourceCanvas.height || height);
-      const scale = Math.min(width / sourceWidth, height / sourceHeight);
+      const scale = fit === 'contain'
+        ? Math.min(width / sourceWidth, height / sourceHeight)
+        : Math.max(width / sourceWidth, height / sourceHeight);
       const drawWidth = sourceWidth * scale;
       const drawHeight = sourceHeight * scale;
       const x = (width - drawWidth) / 2;
