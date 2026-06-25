@@ -1009,15 +1009,50 @@
     padding: 14px 16px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     transition: all 0.3s;
   }
 
   .wish-card:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.08); }
+  .wish-card[data-progress="done"] {
+    border-color: rgba(245, 210, 120, 0.22);
+    background: rgba(245, 210, 120, 0.06);
+    box-shadow: 0 0 24px rgba(245, 210, 120, 0.08);
+  }
   .wish-card-star { font-size: 16px; flex-shrink: 0; opacity: 0.6; }
-  .wish-card-text { flex: 1; font-size: 14px; color: rgba(200, 210, 230, 0.8); letter-spacing: 0.05em; line-height: 1.4; }
+  .wish-card[data-progress="done"] .wish-card-star {
+    opacity: 1;
+    text-shadow: 0 0 14px rgba(255, 225, 140, 0.85);
+  }
+  .wish-card-text { flex: 1; min-width: 160px; font-size: 14px; color: rgba(200, 210, 230, 0.8); letter-spacing: 0.05em; line-height: 1.4; }
   .wish-card-time { font-size: 10px; color: rgba(255, 255, 255, 0.2); flex-shrink: 0; white-space: nowrap; }
   .wish-card-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(120,180,240,0.1); color: rgba(140,190,240,0.6); flex-shrink: 0; }
+  .wish-card-progress {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(180, 200, 230, 0.58);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+  }
+  .wish-card-progress:hover {
+    border-color: rgba(160, 210, 255, 0.28);
+    color: rgba(200, 230, 255, 0.88);
+    background: rgba(120, 180, 240, 0.1);
+  }
+  .wish-card-progress[data-progress="done"] {
+    border-color: rgba(245, 210, 120, 0.35);
+    background: rgba(245, 210, 120, 0.12);
+    color: rgba(255, 230, 160, 0.95);
+  }
 
   .wishwall-empty {
     text-align: center;
@@ -2452,6 +2487,14 @@
     let shootingStars = [];
     let nebulaBlobs = [];
     let wishMessages = [];
+    const WISH_PROGRESS_KEY = 'wish_progress_states';
+    const WISH_PROGRESS_STEPS = [
+      { id: 'new', label: '刚许下' },
+      { id: 'doing', label: '正在努力' },
+      { id: 'close', label: '快实现了' },
+      { id: 'done', label: '实现啦' },
+    ];
+    let wishProgress = {};
     let audioCtx = null;
     let lastWishCount = 0;
     let lastUnreadCount = 0;
@@ -2545,6 +2588,7 @@
     async function loadFromSupabase() {
       // Always load local data first
       loadReadCapsuleIds();
+      loadWishProgress();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -2620,6 +2664,7 @@
           const dupIdx = wishMessages.findIndex(w => String(w.id).startsWith('local_') && w.text === newWish.text);
           if (dupIdx >= 0) {
             // Replace local placeholder with server version
+            migrateWishProgressKey(wishMessages[dupIdx], newWish);
             wishMessages[dupIdx] = newWish;
             localInsertIds.add(newWish.id);
             if (wishwallPanel.classList.contains('show')) renderWishWall();
@@ -2671,6 +2716,70 @@
       const div = document.createElement('div');
       div.textContent = str;
       return div.innerHTML;
+    }
+
+    function getWishProgressKey(wish) {
+      if (!wish) return '';
+      if (wish.id !== undefined && wish.id !== null) return 'id:' + String(wish.id);
+      return 'text:' + (wish.text || '') + '|' + (wish.created_at || '');
+    }
+
+    function loadWishProgress() {
+      try {
+        const stored = localStorage.getItem(WISH_PROGRESS_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) wishProgress = parsed;
+      } catch(e) { /* ignore */ }
+    }
+
+    function saveWishProgress() {
+      try {
+        localStorage.setItem(WISH_PROGRESS_KEY, JSON.stringify(wishProgress));
+      } catch(e) { /* ignore */ }
+    }
+
+    function getWishProgressId(wish) {
+      if (!wish) return 'new';
+      const key = getWishProgressKey(wish);
+      const saved = key ? wishProgress[key] : null;
+      const id = saved || wish.progress || 'new';
+      return WISH_PROGRESS_STEPS.some(step => step.id === id) ? id : 'new';
+    }
+
+    function getWishProgressStep(wish) {
+      const id = getWishProgressId(wish);
+      return WISH_PROGRESS_STEPS.find(step => step.id === id) || WISH_PROGRESS_STEPS[0];
+    }
+
+    function setWishProgress(wish, progressId) {
+      if (!wish) return;
+      const key = getWishProgressKey(wish);
+      if (!key) return;
+      wish.progress = progressId;
+      wishProgress[key] = progressId;
+      saveWishProgress();
+      saveWishesToStorage();
+      updateTreeWishes();
+    }
+
+    function advanceWishProgress(wish) {
+      const currentId = getWishProgressId(wish);
+      const currentIndex = WISH_PROGRESS_STEPS.findIndex(step => step.id === currentId);
+      const next = WISH_PROGRESS_STEPS[(currentIndex + 1) % WISH_PROGRESS_STEPS.length];
+      setWishProgress(wish, next.id);
+      renderWishWall();
+    }
+
+    function migrateWishProgressKey(fromWish, toWish) {
+      const fromKey = getWishProgressKey(fromWish);
+      const toKey = getWishProgressKey(toWish);
+      if (!fromKey || !toKey || fromKey === toKey) return;
+      const progressId = wishProgress[fromKey] || fromWish.progress;
+      if (!progressId) return;
+      wishProgress[toKey] = progressId;
+      toWish.progress = progressId;
+      delete wishProgress[fromKey];
+      saveWishProgress();
     }
 
     function formatTime(ts) {
@@ -2925,12 +3034,20 @@
           tag = detectTag(wish.text || '');
         }
         const cat = CATEGORIES[tag] || CATEGORIES.general;
+        const progress = getWishProgressStep(wish);
+        card.dataset.progress = progress.id;
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(wish.text)}</span>
           <span class="wish-card-tag">${cat.icon} ${cat.name}</span>
+          <button class="wish-card-progress" type="button" data-progress="${progress.id}" aria-label="更新心愿进度：${progress.label}">${progress.label}</button>
           <span class="wish-card-time">${time}</span>
         `;
+        const progressBtn = card.querySelector('.wish-card-progress');
+        progressBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          advanceWishProgress(wish);
+        });
         wishwallBody.appendChild(card);
       });
     }
@@ -3143,6 +3260,8 @@
         const localWishes = wishMessages.filter(w => String(w.id).startsWith('local_'));
         if (localWishes.length > 0) {
           localStorage.setItem('wish_wishes', JSON.stringify(localWishes));
+        } else {
+          localStorage.removeItem('wish_wishes');
         }
       } catch(e) { /* quota exceeded */ }
     }
@@ -3154,13 +3273,19 @@
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             const existingTexts = new Set(wishMessages.map(w => w.text + '_' + w.created_at));
+            let migratedProgress = false;
             parsed.forEach(w => {
+              if (w.progress) {
+                wishProgress[getWishProgressKey(w)] = w.progress;
+                migratedProgress = true;
+              }
               const key = (w.text || '') + '_' + (w.created_at || '');
               if (!existingTexts.has(key)) {
                 wishMessages.push(w);
                 existingTexts.add(key);
               }
             });
+            if (migratedProgress) saveWishProgress();
           }
         }
       } catch(e) { /* ignore */ }
@@ -4194,24 +4319,27 @@
       ctx.setLineDash([2, 6]);
       ctx.stroke();
       ctx.setLineDash([]);
-      settledStars.forEach(s => {
-        const pulse = 1 + Math.sin(time * 0.03 + s.pulseOffset) * 0.25;
-        const alpha = 0.55 + Math.sin(time * 0.03 + s.pulseOffset) * 0.3;
-        const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 8 * pulse);
-        glow.addColorStop(0, `rgba(120, 180, 240, ${alpha * 0.5})`);
-        glow.addColorStop(0.5, `rgba(90, 150, 220, ${alpha * 0.12})`);
+      settledStars.forEach((s, i) => {
+        const completed = getWishProgressId(wishMessages[i]) === 'done';
+        const pulse = 1 + Math.sin(time * 0.03 + s.pulseOffset) * (completed ? 0.38 : 0.25);
+        const alpha = completed
+          ? 0.85 + Math.sin(time * 0.03 + s.pulseOffset) * 0.12
+          : 0.55 + Math.sin(time * 0.03 + s.pulseOffset) * 0.3;
+        const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * (completed ? 14 : 8) * pulse);
+        glow.addColorStop(0, completed ? `rgba(255, 225, 140, ${alpha * 0.65})` : `rgba(120, 180, 240, ${alpha * 0.5})`);
+        glow.addColorStop(0.5, completed ? `rgba(245, 190, 90, ${alpha * 0.18})` : `rgba(90, 150, 220, ${alpha * 0.12})`);
         glow.addColorStop(1, 'transparent');
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r * 8 * pulse, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, s.r * (completed ? 14 : 8) * pulse, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200, 225, 255, ${alpha})`;
+        ctx.fillStyle = completed ? `rgba(255, 235, 175, ${alpha})` : `rgba(200, 225, 255, ${alpha})`;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r * 0.4 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(230, 245, 255, ${alpha + 0.2})`;
+        ctx.fillStyle = completed ? `rgba(255, 250, 220, ${Math.min(1, alpha + 0.18)})` : `rgba(230, 245, 255, ${alpha + 0.2})`;
         ctx.fill();
       });
     }
@@ -4469,6 +4597,7 @@
         id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         text,
         tag,
+        progress: 'new',
         created_at: new Date().toISOString(),
       };
       wishMessages.push(localWish);
@@ -4499,6 +4628,7 @@
           localInsertIds.add(inserted.id);
           const idx = wishMessages.findIndex(w => w.id === localWish.id);
           if (idx >= 0) {
+            migrateWishProgressKey(localWish, inserted);
             wishMessages[idx] = inserted;
             saveWishesToStorage(); // Remove local wish since it's now server-side
           }
@@ -4656,6 +4786,7 @@
       window.addEventListener('resize', resize);
       // Always load local data first
       loadReadCapsuleIds();
+      loadWishProgress();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
