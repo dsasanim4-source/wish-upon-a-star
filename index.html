@@ -1053,6 +1053,70 @@
     background: rgba(245, 210, 120, 0.12);
     color: rgba(255, 230, 160, 0.95);
   }
+  .wish-card-reminder {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(180, 200, 230, 0.52);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+  }
+  .wish-card-reminder:hover {
+    border-color: rgba(180, 150, 240, 0.3);
+    color: rgba(220, 205, 255, 0.9);
+    background: rgba(160, 120, 240, 0.1);
+  }
+  .wish-card-reminder.due {
+    border-color: rgba(245, 160, 95, 0.4);
+    color: rgba(255, 190, 130, 0.95);
+    background: rgba(245, 160, 95, 0.12);
+  }
+  .wishwall-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px 0;
+    flex-shrink: 0;
+  }
+  .wishwall-action {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(190, 205, 230, 0.62);
+    border-radius: 16px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    transition: all 0.25s ease;
+  }
+  .wishwall-action:hover,
+  .wishwall-action.active {
+    border-color: rgba(140, 190, 240, 0.34);
+    background: rgba(90, 155, 220, 0.11);
+    color: rgba(210, 230, 255, 0.92);
+  }
+  .wishwall-reminder-summary {
+    margin: 4px 20px 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(245, 160, 95, 0.18);
+    background: rgba(245, 160, 95, 0.07);
+    color: rgba(255, 210, 165, 0.84);
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    flex-shrink: 0;
+  }
 
   .wishwall-empty {
     text-align: center;
@@ -1060,6 +1124,159 @@
     color: rgba(255, 255, 255, 0.2);
     font-size: 14px;
     letter-spacing: 0.08em;
+  }
+
+  .achievement-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .achievement-action {
+    border: 1px solid rgba(245, 210, 120, 0.28);
+    background: rgba(245, 210, 120, 0.1);
+    color: rgba(255, 235, 175, 0.92);
+    border-radius: 18px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+  }
+
+  .achievement-burst {
+    position: fixed;
+    inset: 0;
+    z-index: 12;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(255, 235, 160, 0.26), transparent 24%),
+      radial-gradient(circle at 35% 55%, rgba(120, 190, 255, 0.12), transparent 20%),
+      radial-gradient(circle at 65% 58%, rgba(245, 150, 220, 0.1), transparent 22%);
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .achievement-burst.show {
+    opacity: 1;
+  }
+
+  .bottle-btn,
+  .timecapsule-btn,
+  .constellation-btn,
+  .galaxy-btn,
+  .ai-btn,
+  .growth-tree-btn {
+    display: none;
+  }
+
+  .toolbox-btn {
+    position: fixed;
+    bottom: clamp(80px, 12vh, 110px);
+    right: clamp(20px, 4vw, 32px);
+    z-index: 7;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(14, 16, 28, 0.78);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    color: rgba(190, 220, 255, 0.9);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.38);
+    transition: all 0.3s ease;
+  }
+
+  .toolbox-btn:hover {
+    border-color: rgba(140, 200, 255, 0.36);
+    box-shadow: 0 6px 28px rgba(80, 140, 220, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .toolbox-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: rgba(90, 155, 220, 0.95);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+  }
+
+  .toolbox-panel {
+    position: fixed;
+    bottom: clamp(138px, 20vh, 170px);
+    right: clamp(18px, 4vw, 32px);
+    z-index: 7;
+    width: min(280px, calc(100vw - 36px));
+    padding: 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(10, 12, 24, 0.9);
+    backdrop-filter: blur(26px) saturate(135%);
+    -webkit-backdrop-filter: blur(26px) saturate(135%);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    transition: all 0.25s ease;
+    pointer-events: none;
+  }
+
+  .toolbox-panel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .toolbox-item {
+    min-height: 46px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(210, 225, 245, 0.78);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+  }
+
+  .toolbox-item:hover,
+  .toolbox-item.active {
+    border-color: rgba(140, 200, 255, 0.28);
+    background: rgba(90, 155, 220, 0.1);
+    color: rgba(225, 240, 255, 0.95);
+  }
+
+  .quiet-mode .star-icon,
+  .quiet-mode .main-title,
+  .quiet-mode .instruction,
+  .quiet-mode .floating-wish,
+  .quiet-mode .ripple,
+  .quiet-mode .meteor-banner {
+    animation: none !important;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -2081,6 +2298,19 @@
     .constellation-mgmt-body { padding: 12px 16px; }
     .constellation-mgmt-title { font-size: 14px; }
     .constellation-toolbar { bottom: 245px; }
+    .toolbox-btn { bottom: 70px; right: 16px; width: 44px; height: 44px; }
+    .toolbox-panel { bottom: 124px; right: 12px; }
+    .wishwall-actions { padding: 10px 14px 0; }
+    .wishwall-reminder-summary { margin: 4px 14px 0; }
+  }
+
+  body .bottle-btn,
+  body .timecapsule-btn,
+  body .constellation-btn,
+  body .galaxy-btn,
+  body .ai-btn,
+  body .growth-tree-btn {
+    display: none;
   }
 </style>
 </head>
@@ -2177,6 +2407,21 @@
     </div>
   </div>
 
+  <!-- Wish Achievement Popup -->
+  <div class="achievement-burst" id="achievementBurst"></div>
+  <div class="msg-popup-overlay hidden" id="achievementPopupOverlay">
+    <div class="msg-popup" style="border-color: rgba(245,210,120,0.24);">
+      <div class="msg-popup-icon">🌟</div>
+      <div class="msg-popup-title">心愿实现啦</div>
+      <div class="msg-popup-text" id="achievementPopupText"></div>
+      <div class="msg-popup-time" id="achievementPopupTime"></div>
+      <div class="achievement-actions">
+        <button class="achievement-action" id="achievementExportBtn" type="button">导出星空</button>
+        <button class="achievement-action" id="achievementCloseBtn" type="button">收好这颗星</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottle Backdrop -->
   <div class="bottle-backdrop hidden" id="bottleBackdrop"></div>
 
@@ -2210,6 +2455,11 @@
     <div class="wishwall-header">
       <span class="wishwall-title">🌟 心愿墙</span>
       <button class="wishwall-close" id="wishwallClose">✕</button>
+    </div>
+    <div class="wishwall-actions">
+      <button class="wishwall-action active" id="wishwallAllBtn" type="button">全部心愿</button>
+      <button class="wishwall-action" id="wishwallArchiveBtn" type="button">已实现星册</button>
+      <button class="wishwall-action" id="wishwallExportBtn" type="button">导出星空</button>
     </div>
     <div class="wishwall-body" id="wishwallBody">
       <div class="wishwall-empty">还没有心愿，快来许一个吧 ✨</div>
@@ -2325,6 +2575,22 @@
   <!-- Growth Tree Button -->
   <button class="growth-tree-btn" id="growthTreeBtn" aria-label="生长树">🌱</button>
 
+  <!-- Star Toolbox -->
+  <button class="toolbox-btn" id="toolboxBtn" aria-label="星空工具箱">
+    ✦
+    <span class="toolbox-badge" id="toolboxBadge"></span>
+  </button>
+  <div class="toolbox-panel hidden" id="toolboxPanel">
+    <button class="toolbox-item" type="button" data-tool="bottle">💌 漂流瓶</button>
+    <button class="toolbox-item" type="button" data-tool="capsule">⏳ 时光胶囊</button>
+    <button class="toolbox-item" type="button" data-tool="galaxy">🌌 星系地图</button>
+    <button class="toolbox-item" type="button" data-tool="ai">🧚 愿望精灵</button>
+    <button class="toolbox-item" type="button" data-tool="tree">🌱 生长树</button>
+    <button class="toolbox-item" type="button" data-tool="constellation">🔮 协作星座</button>
+    <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
+    <button class="toolbox-item" type="button" id="toolboxExportBtn">🖼 导出星空</button>
+  </div>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
@@ -2414,6 +2680,24 @@
     const wishwallPanel = document.getElementById('wishwallPanel');
     const wishwallClose = document.getElementById('wishwallClose');
     const wishwallBody = document.getElementById('wishwallBody');
+    const wishwallAllBtn = document.getElementById('wishwallAllBtn');
+    const wishwallArchiveBtn = document.getElementById('wishwallArchiveBtn');
+    const wishwallExportBtn = document.getElementById('wishwallExportBtn');
+
+    // Achievement popup
+    const achievementBurst = document.getElementById('achievementBurst');
+    const achievementPopupOverlay = document.getElementById('achievementPopupOverlay');
+    const achievementPopupText = document.getElementById('achievementPopupText');
+    const achievementPopupTime = document.getElementById('achievementPopupTime');
+    const achievementExportBtn = document.getElementById('achievementExportBtn');
+    const achievementCloseBtn = document.getElementById('achievementCloseBtn');
+
+    // Toolbox
+    const toolboxBtn = document.getElementById('toolboxBtn');
+    const toolboxBadge = document.getElementById('toolboxBadge');
+    const toolboxPanel = document.getElementById('toolboxPanel');
+    const quietModeBtn = document.getElementById('quietModeBtn');
+    const toolboxExportBtn = document.getElementById('toolboxExportBtn');
 
     // Time capsule
     const timecapsuleBtn = document.getElementById('timecapsuleBtn');
@@ -2495,6 +2779,12 @@
       { id: 'done', label: '实现啦' },
     ];
     let wishProgress = {};
+    const WISH_REMINDERS_KEY = 'wish_reminder_states';
+    const QUIET_MODE_KEY = 'wish_quiet_mode';
+    let wishReminders = {};
+    let wishwallMode = 'all';
+    let quietMode = false;
+    let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
     let lastUnreadCount = 0;
@@ -2589,6 +2879,8 @@
       // Always load local data first
       loadReadCapsuleIds();
       loadWishProgress();
+      loadWishReminders();
+      loadQuietMode();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -2738,6 +3030,19 @@
       } catch(e) { /* ignore */ }
     }
 
+    function getWishCompletedAt(wish) {
+      const key = getWishProgressKey(wish);
+      return key ? wishProgress[key + ':completedAt'] : null;
+    }
+
+    function setWishCompletedAt(wish, ts) {
+      const key = getWishProgressKey(wish);
+      if (!key) return;
+      if (ts) wishProgress[key + ':completedAt'] = ts;
+      else delete wishProgress[key + ':completedAt'];
+      saveWishProgress();
+    }
+
     function getWishProgressId(wish) {
       if (!wish) return 'new';
       const key = getWishProgressKey(wish);
@@ -2755,8 +3060,17 @@
       if (!wish) return;
       const key = getWishProgressKey(wish);
       if (!key) return;
+      const previousId = getWishProgressId(wish);
       wish.progress = progressId;
       wishProgress[key] = progressId;
+      if (progressId === 'done' && previousId !== 'done') {
+        setWishCompletedAt(wish, new Date().toISOString());
+        lastCompletedWish = wish;
+        showWishAchievement(wish);
+      }
+      if (progressId !== 'done' && previousId === 'done') {
+        setWishCompletedAt(wish, null);
+      }
       saveWishProgress();
       saveWishesToStorage();
       updateTreeWishes();
@@ -2778,8 +3092,236 @@
       if (!progressId) return;
       wishProgress[toKey] = progressId;
       toWish.progress = progressId;
+      if (wishProgress[fromKey + ':completedAt']) {
+        wishProgress[toKey + ':completedAt'] = wishProgress[fromKey + ':completedAt'];
+        delete wishProgress[fromKey + ':completedAt'];
+      }
+      migrateWishReminderKey(fromWish, toWish);
       delete wishProgress[fromKey];
       saveWishProgress();
+    }
+
+    function loadWishReminders() {
+      try {
+        const stored = localStorage.getItem(WISH_REMINDERS_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) wishReminders = parsed;
+      } catch(e) { /* ignore */ }
+    }
+
+    function saveWishReminders() {
+      try {
+        localStorage.setItem(WISH_REMINDERS_KEY, JSON.stringify(wishReminders));
+      } catch(e) { /* ignore */ }
+    }
+
+    function addDays(days) {
+      const d = new Date();
+      d.setHours(9, 0, 0, 0);
+      d.setDate(d.getDate() + days);
+      return d.toISOString();
+    }
+
+    function getWishReminder(wish) {
+      const key = getWishProgressKey(wish);
+      return key ? wishReminders[key] : null;
+    }
+
+    function isReminderDue(wish) {
+      const reminder = getWishReminder(wish);
+      return !!(reminder && reminder.dueAt && new Date(reminder.dueAt) <= new Date());
+    }
+
+    function getWishReminderLabel(wish) {
+      const reminder = getWishReminder(wish);
+      if (!reminder || !reminder.dueAt) return '回访';
+      if (isReminderDue(wish)) return '待回访';
+      const days = Math.max(1, Math.ceil((new Date(reminder.dueAt) - new Date()) / 86400000));
+      return days + '天后';
+    }
+
+    function advanceWishReminder(wish) {
+      const key = getWishProgressKey(wish);
+      if (!key) return;
+      const current = wishReminders[key];
+      if (!current) {
+        wishReminders[key] = { dueAt: addDays(7), label: '7天后' };
+      } else if (current.label === '7天后') {
+        wishReminders[key] = { dueAt: addDays(30), label: '30天后' };
+      } else {
+        delete wishReminders[key];
+      }
+      saveWishReminders();
+      renderWishWall();
+    }
+
+    function migrateWishReminderKey(fromWish, toWish) {
+      const fromKey = getWishProgressKey(fromWish);
+      const toKey = getWishProgressKey(toWish);
+      if (!fromKey || !toKey || fromKey === toKey || !wishReminders[fromKey]) return;
+      wishReminders[toKey] = wishReminders[fromKey];
+      delete wishReminders[fromKey];
+      saveWishReminders();
+    }
+
+    function showWishAchievement(wish) {
+      if (!wish) return;
+      achievementPopupText.textContent = wish.text || '这个心愿已经实现';
+      achievementPopupTime.textContent = '完成于 ' + formatDate(getWishCompletedAt(wish) || new Date().toISOString());
+      achievementBurst.classList.add('show');
+      achievementPopupOverlay.classList.remove('hidden');
+      void achievementPopupOverlay.offsetWidth;
+      achievementPopupOverlay.classList.add('show');
+      spawnAchievementStars();
+      setTimeout(() => achievementBurst.classList.remove('show'), 1200);
+    }
+
+    function closeWishAchievement() {
+      achievementPopupOverlay.classList.remove('show');
+      achievementPopupOverlay.addEventListener('transitionend', function handler() {
+        achievementPopupOverlay.classList.add('hidden');
+        achievementPopupOverlay.removeEventListener('transitionend', handler);
+      });
+    }
+
+    function spawnAchievementStars() {
+      const cx = W * 0.5;
+      const cy = H * 0.42;
+      for (let i = 0; i < 18; i++) {
+        particles.push({
+          x: cx + (Math.random() - 0.5) * 160,
+          y: cy + (Math.random() - 0.5) * 90,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -Math.random() * 1.4 - 0.2,
+          life: 1,
+          decay: 0.015 + Math.random() * 0.015,
+          r: 1.2 + Math.random() * 2.2,
+        });
+      }
+    }
+
+    function drawWrappedText(ctx2, text, x, y, maxWidth, lineHeight, maxLines) {
+      const chars = String(text || '').split('');
+      let line = '';
+      let lines = 0;
+      for (const ch of chars) {
+        const test = line + ch;
+        if (ctx2.measureText(test).width > maxWidth && line) {
+          ctx2.fillText(line, x, y);
+          y += lineHeight;
+          line = ch;
+          lines++;
+          if (lines >= maxLines - 1) break;
+        } else {
+          line = test;
+        }
+      }
+      if (line && lines < maxLines) ctx2.fillText(line, x, y);
+    }
+
+    function exportMySky() {
+      const out = document.createElement('canvas');
+      out.width = 1200;
+      out.height = 1600;
+      const octx = out.getContext('2d');
+      const grad = octx.createRadialGradient(600, 520, 0, 600, 700, 1050);
+      grad.addColorStop(0, '#162348');
+      grad.addColorStop(0.5, '#081024');
+      grad.addColorStop(1, '#030410');
+      octx.fillStyle = grad;
+      octx.fillRect(0, 0, out.width, out.height);
+      try {
+        octx.globalAlpha = 0.55;
+        octx.drawImage(canvas, 0, 0, out.width, out.height);
+        octx.globalAlpha = 1;
+      } catch(e) { /* ignore canvas export fallback */ }
+      octx.fillStyle = 'rgba(255,255,255,0.75)';
+      for (let i = 0; i < 180; i++) {
+        const x = Math.random() * out.width;
+        const y = Math.random() * out.height;
+        const r = Math.random() * 2 + 0.5;
+        octx.beginPath();
+        octx.arc(x, y, r, 0, Math.PI * 2);
+        octx.fill();
+      }
+      const doneWishes = wishMessages.filter(w => getWishProgressId(w) === 'done');
+      const recentWish = lastCompletedWish || doneWishes[doneWishes.length - 1] || wishMessages[wishMessages.length - 1];
+      octx.textAlign = 'center';
+      octx.fillStyle = 'rgba(245, 250, 255, 0.96)';
+      octx.font = '56px "Microsoft YaHei", "PingFang SC", sans-serif';
+      octx.fillText('我的心愿星空', 600, 180);
+      octx.font = '30px "Microsoft YaHei", "PingFang SC", sans-serif';
+      octx.fillStyle = 'rgba(200, 220, 245, 0.78)';
+      octx.fillText(`${wishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, 600, 240);
+      if (recentWish) {
+        octx.fillStyle = 'rgba(255, 235, 175, 0.95)';
+        octx.font = '40px "Microsoft YaHei", "PingFang SC", sans-serif';
+        drawWrappedText(octx, recentWish.text, 600, 420, 860, 62, 4);
+        octx.font = '24px "Microsoft YaHei", "PingFang SC", sans-serif';
+        octx.fillStyle = 'rgba(220, 230, 245, 0.62)';
+        const progress = getWishProgressStep(recentWish).label;
+        const completedAt = getWishCompletedAt(recentWish);
+        octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, 600, 720);
+      }
+      octx.font = '22px "Microsoft YaHei", "PingFang SC", sans-serif';
+      octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
+      octx.fillText('wish upon a star', 600, 1460);
+      const link = document.createElement('a');
+      link.download = 'my-wish-sky.png';
+      link.href = out.toDataURL('image/png');
+      link.click();
+    }
+
+    function loadQuietMode() {
+      quietMode = localStorage.getItem(QUIET_MODE_KEY) === '1';
+      applyQuietMode();
+    }
+
+    function applyQuietMode() {
+      document.body.classList.toggle('quiet-mode', quietMode);
+      quietModeBtn.classList.toggle('active', quietMode);
+      quietModeBtn.textContent = quietMode ? '🌙 静谧中' : '🌙 静谧模式';
+    }
+
+    function toggleQuietMode() {
+      quietMode = !quietMode;
+      localStorage.setItem(QUIET_MODE_KEY, quietMode ? '1' : '0');
+      applyQuietMode();
+    }
+
+    function toggleToolbox() {
+      const open = !toolboxPanel.classList.contains('open');
+      toolboxPanel.classList.toggle('hidden', !open);
+      void toolboxPanel.offsetWidth;
+      toolboxPanel.classList.toggle('open', open);
+    }
+
+    function closeToolbox() {
+      toolboxPanel.classList.remove('open');
+      setTimeout(() => toolboxPanel.classList.add('hidden'), 260);
+    }
+
+    function updateToolboxBadge() {
+      if (!toolboxBadge) return;
+      const capsuleTotal = timeCapsules.filter(isCapsuleActive).length;
+      const total = totalUnreadMessages + capsuleTotal;
+      if (total > 0) {
+        toolboxBadge.textContent = total > 99 ? '99+' : total;
+        toolboxBadge.style.display = 'flex';
+      } else {
+        toolboxBadge.textContent = '';
+        toolboxBadge.style.display = 'none';
+      }
+    }
+
+    function openToolboxTool(tool) {
+      closeToolbox();
+      if (tool === 'bottle') openBottlePanel();
+      if (tool === 'capsule') openTimeCapsulePanel();
+      if (tool === 'galaxy') openGalaxyMap();
+      if (tool === 'ai') openAIPanel();
+      if (tool === 'tree') openTreePanel();
+      if (tool === 'constellation') toggleConstellationMode();
     }
 
     function formatTime(ts) {
@@ -2948,6 +3490,7 @@
         bottleBadge.textContent = '';
         bottleBadge.style.display = 'none';
       }
+      updateToolboxBadge();
     }
 
     function updateBottlePanel() {
@@ -3015,14 +3558,32 @@
        ═══════════════════════════════════════════════════════════════════════ */
     function renderWishWall() {
       wishwallBody.innerHTML = '';
-      if (wishMessages.length === 0) {
+      wishwallAllBtn.classList.toggle('active', wishwallMode === 'all');
+      wishwallArchiveBtn.classList.toggle('active', wishwallMode === 'archive');
+
+      const dueWishes = wishMessages.filter(isReminderDue);
+      if (wishwallMode === 'all' && dueWishes.length > 0) {
+        const summary = document.createElement('div');
+        summary.className = 'wishwall-reminder-summary';
+        summary.textContent = `有 ${dueWishes.length} 个旧心愿等你回头看看`;
+        wishwallBody.appendChild(summary);
+      }
+
+      const visibleWishes = wishMessages.filter(wish => {
+        if (wishwallMode === 'archive') return getWishProgressId(wish) === 'done';
+        return true;
+      });
+
+      if (visibleWishes.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'wishwall-empty';
-        empty.textContent = '还没有心愿，快来许一个吧 ✨';
+        empty.textContent = wishwallMode === 'archive'
+          ? '还没有实现的心愿，等第一颗星变亮吧 ✨'
+          : '还没有心愿，快来许一个吧 ✨';
         wishwallBody.appendChild(empty);
         return;
       }
-      const sorted = [...wishMessages].reverse();
+      const sorted = [...visibleWishes].reverse();
       const stars = ['⭐', '🌟', '✨', '💫', '🌠', '⭐', '✨', '🌟', '💫', '🌠'];
       sorted.forEach((wish, i) => {
         const card = document.createElement('div');
@@ -3036,11 +3597,14 @@
         const cat = CATEGORIES[tag] || CATEGORIES.general;
         const progress = getWishProgressStep(wish);
         card.dataset.progress = progress.id;
+        const reminderLabel = getWishReminderLabel(wish);
+        const reminderDueClass = isReminderDue(wish) ? ' due' : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(wish.text)}</span>
           <span class="wish-card-tag">${cat.icon} ${cat.name}</span>
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" aria-label="更新心愿进度：${progress.label}">${progress.label}</button>
+          <button class="wish-card-reminder${reminderDueClass}" type="button" aria-label="设置心愿回访">${reminderLabel}</button>
           <span class="wish-card-time">${time}</span>
         `;
         const progressBtn = card.querySelector('.wish-card-progress');
@@ -3048,8 +3612,18 @@
           e.stopPropagation();
           advanceWishProgress(wish);
         });
+        const reminderBtn = card.querySelector('.wish-card-reminder');
+        reminderBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          advanceWishReminder(wish);
+        });
         wishwallBody.appendChild(card);
       });
+    }
+
+    function setWishwallMode(mode) {
+      wishwallMode = mode;
+      renderWishWall();
     }
 
     function openWishwall() {
@@ -3073,6 +3647,19 @@
     wishwallClose.addEventListener('click', () => closeWishwall());
     wishwallBackdrop.addEventListener('click', () => closeWishwall());
     wishwallPanel.addEventListener('click', (e) => e.stopPropagation());
+    wishwallAllBtn.addEventListener('click', () => setWishwallMode('all'));
+    wishwallArchiveBtn.addEventListener('click', () => setWishwallMode('archive'));
+    wishwallExportBtn.addEventListener('click', exportMySky);
+    achievementCloseBtn.addEventListener('click', closeWishAchievement);
+    achievementExportBtn.addEventListener('click', exportMySky);
+    achievementPopupOverlay.addEventListener('click', (e) => { if (e.target === achievementPopupOverlay) closeWishAchievement(); });
+    toolboxBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleToolbox(); });
+    toolboxPanel.addEventListener('click', (e) => e.stopPropagation());
+    toolboxPanel.querySelectorAll('[data-tool]').forEach(btn => {
+      btn.addEventListener('click', () => openToolboxTool(btn.dataset.tool));
+    });
+    quietModeBtn.addEventListener('click', toggleQuietMode);
+    toolboxExportBtn.addEventListener('click', exportMySky);
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 3: TIME CAPSULE
@@ -3122,6 +3709,7 @@
       } else {
         capsuleCountEl.textContent = '0';
       }
+      updateToolboxBadge();
     }
 
     function renderTimeCapsules() {
@@ -4189,6 +4777,7 @@
     }
 
     function playChime() {
+      if (quietMode) return;
       if (!audioCtx) return;
       if (audioCtx.state === 'suspended') { audioCtx.resume(); }
       const now = audioCtx.currentTime;
@@ -4348,6 +4937,7 @@
        SHOOTING STARS
        ═══════════════════════════════════════════════════════════════════════ */
     function spawnShootingStar() {
+      if (quietMode) return;
       const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.35;
       const speed = meteorShowerActive ? 8 + Math.random() * 14 : 6 + Math.random() * 10;
       const len = meteorShowerActive ? 80 + Math.random() * 140 : 60 + Math.random() * 100;
@@ -4529,12 +5119,14 @@
       bgGrad.addColorStop(1, skyColors.bgBottom);
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, W, H);
-      drawNebula();
+      if (!quietMode) drawNebula();
       drawBgStars();
-      drawCategoryConstellations();
+      if (!quietMode) drawCategoryConstellations();
       drawHeartConstellation();
-      drawShootingStars();
-      drawParticles();
+      if (!quietMode) {
+        drawShootingStars();
+        drawParticles();
+      }
       drawLanterns();
       drawDrawnConstellation();
       const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.35, W * 0.5, H * 0.5, W * 0.75);
@@ -4671,6 +5263,9 @@
       if (e.target.closest('.constellation-btn')) return;
       if (e.target.closest('.constellation-toolbar')) return;
       if (e.target.closest('.constellation-mgmt-panel')) return;
+      if (e.target.closest('.toolbox-btn')) return;
+      if (e.target.closest('.toolbox-panel')) return;
+      if (toolboxPanel.classList.contains('open')) { closeToolbox(); return; }
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       handleInteraction(e.clientX, e.clientY);
@@ -4696,6 +5291,9 @@
       if (e.target.closest('.constellation-btn')) return;
       if (e.target.closest('.constellation-toolbar')) return;
       if (e.target.closest('.constellation-mgmt-panel')) return;
+      if (e.target.closest('.toolbox-btn')) return;
+      if (e.target.closest('.toolbox-panel')) return;
+      if (toolboxPanel.classList.contains('open')) { closeToolbox(); return; }
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       if (e.touches.length === 1) {
@@ -4726,6 +5324,7 @@
        FLOATING WISH MESSAGES
        ═══════════════════════════════════════════════════════════════════════ */
     function spawnFloatingWish(text) {
+      if (quietMode) return;
       const el = document.createElement('span');
       el.className = 'floating-wish';
       el.textContent = text;
@@ -4787,6 +5386,8 @@
       // Always load local data first
       loadReadCapsuleIds();
       loadWishProgress();
+      loadWishReminders();
+      loadQuietMode();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
