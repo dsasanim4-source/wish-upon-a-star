@@ -2487,6 +2487,43 @@
     let supabase = null;
     let localInsertIds = new Set();
     let localUpdateIds = new Set();
+    const READ_CAPSULE_IDS_KEY = 'wish_read_capsule_ids';
+    let readCapsuleIds = new Set();
+
+    function getCapsuleId(capsule) {
+      return capsule && capsule.id !== undefined && capsule.id !== null ? String(capsule.id) : '';
+    }
+
+    function loadReadCapsuleIds() {
+      try {
+        const stored = localStorage.getItem(READ_CAPSULE_IDS_KEY);
+        if (!stored) return;
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) readCapsuleIds = new Set(parsed.map(String));
+      } catch(e) { /* ignore */ }
+    }
+
+    function saveReadCapsuleIds() {
+      try {
+        localStorage.setItem(READ_CAPSULE_IDS_KEY, JSON.stringify([...readCapsuleIds].slice(-500)));
+      } catch(e) { /* ignore */ }
+    }
+
+    function markCapsuleReadLocally(capsule) {
+      if (!capsule) return;
+      capsule.revealed = true;
+      const id = getCapsuleId(capsule);
+      if (id) {
+        readCapsuleIds.add(id);
+        saveReadCapsuleIds();
+      }
+    }
+
+    function isCapsuleActive(capsule) {
+      if (!capsule || capsule.revealed) return false;
+      const id = getCapsuleId(capsule);
+      return !id || !readCapsuleIds.has(id);
+    }
 
     function initSupabase() {
       if (CONFIG.supabaseUrl.includes('YOUR_')) {
@@ -2507,6 +2544,7 @@
        ═══════════════════════════════════════════════════════════════════════ */
     async function loadFromSupabase() {
       // Always load local data first
+      loadReadCapsuleIds();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -2540,10 +2578,13 @@
         const { data: capsData } = await supabase
           .from('time_capsules').select('*').order('reveal_date', { ascending: true });
         if (capsData && capsData.length > 0) {
-          const localCapIds = new Set(timeCapsules.map(c => String(c.id)));
+          const localCapIds = new Set(timeCapsules.map(c => getCapsuleId(c)));
           capsData.forEach(c => {
-            if (!localCapIds.has(String(c.id))) {
+            const id = getCapsuleId(c);
+            if (!isCapsuleActive(c) || (id && localCapIds.has(id))) return;
+            if (!id || !localCapIds.has(id)) {
               timeCapsules.push(c);
+              if (id) localCapIds.add(id);
             }
           });
           saveTimeCapsulesToStorage();
@@ -2611,7 +2652,12 @@
 
       supabase.channel('capsules-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'time_capsules' }, (payload) => {
-          timeCapsules.push(payload.new);
+          const newCapsule = payload.new;
+          const id = getCapsuleId(newCapsule);
+          if (id && localInsertIds.has(id)) { localInsertIds.delete(id); return; }
+          if (!isCapsuleActive(newCapsule)) return;
+          if (id && timeCapsules.some(c => getCapsuleId(c) === id)) return;
+          timeCapsules.push(newCapsule);
           saveTimeCapsulesToStorage();
           updateTimeCapsuleBadge();
           if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
@@ -2703,8 +2749,8 @@
       if (capsulePopupTimer) clearTimeout(capsulePopupTimer);
       burningCapsule = capsule;
 
-      // Mark as revealed immediately so it won't show again
-      capsule.revealed = true;
+      // Mark as read immediately so it is hidden even if network sync is slow.
+      markCapsuleReadLocally(capsule);
       saveTimeCapsulesToStorage();
 
       const displayText = getCapsuleDisplayText(capsule);
@@ -2716,30 +2762,49 @@
       capsulePopupOverlay.classList.add('show');
       capsulePopupTimer = setTimeout(burnCapsule, 15000); // Auto-burn after 15s
       // Re-render list to hide revealed capsule
+      updateTimeCapsuleBadge();
       renderTimeCapsules();
     }
 
-    async function burnCapsule() {
-      if (capsulePopupTimer) clearTimeout(capsulePopupTimer);
+    function finishCapsulePopupHide() {
+      capsulePopupOverlay.classList.add('hidden');
+      capsulePopupOverlay.removeEventListener('transitionend', finishCapsulePopupHide);
+    }
+
+    async function syncBurnedCapsule(cap) {
+      if (!supabase || !cap) return;
+      const id = getCapsuleId(cap);
+      if (!id || id.startsWith('local_')) return;
+      try {
+        await supabase.from('time_capsules').update({ revealed: true }).eq('id', id);
+        await supabase.from('time_capsules').delete().eq('id', id);
+      } catch(e) {
+        console.warn('Time capsule sync failed; keeping it hidden locally:', e);
+      }
+    }
+
+    function burnCapsule() {
+      if (capsulePopupTimer) {
+        clearTimeout(capsulePopupTimer);
+        capsulePopupTimer = null;
+      }
       capsulePopupOverlay.classList.remove('show');
+      capsulePopupOverlay.addEventListener('transitionend', finishCapsulePopupHide);
+      setTimeout(finishCapsulePopupHide, 500);
+
       const cap = burningCapsule;
       burningCapsule = null;
       if (cap) {
-        // Delete from Supabase
-        if (supabase) {
-          await supabase.from('time_capsules').delete().eq('id', cap.id);
-        }
+        markCapsuleReadLocally(cap);
         // Remove from local array
-        const idx = timeCapsules.findIndex(c => c.id === cap.id);
+        const capId = getCapsuleId(cap);
+        const idx = timeCapsules.findIndex(c => getCapsuleId(c) === capId);
         if (idx >= 0) timeCapsules.splice(idx, 1);
         saveTimeCapsulesToStorage();
         updateTimeCapsuleBadge();
         renderTimeCapsules();
+        syncBurnedCapsule(cap);
       }
-      capsulePopupOverlay.addEventListener('transitionend', function handler() {
-        capsulePopupOverlay.classList.add('hidden');
-        capsulePopupOverlay.removeEventListener('transitionend', handler);
-      });
     }
 
     capsulePopupDismiss.addEventListener('click', (e) => { e.stopPropagation(); burnCapsule(); });
@@ -2904,7 +2969,7 @@
       timecapsuleDate.value = minDateStr;
       timecapsuleDate.setAttribute('min', minDateStr);
       // Update title with active count (exclude revealed)
-      const activeCount = timeCapsules.filter(c => !c.revealed).length;
+      const activeCount = timeCapsules.filter(isCapsuleActive).length;
       document.querySelector('.timecapsule-title').textContent = `⏳ 时光胶囊 · ${activeCount} 个`;
       renderTimeCapsules();
       timecapsulePanel.classList.add('open');
@@ -2924,7 +2989,7 @@
     }
 
     function updateTimeCapsuleBadge() {
-      const active = timeCapsules.filter(c => !c.revealed);
+      const active = timeCapsules.filter(isCapsuleActive);
       const total = active.length;
       if (total > 0) {
         timecapsuleBadge.textContent = total > 99 ? '99+' : total;
@@ -2947,7 +3012,7 @@
       const now = new Date();
       // Filter out revealed (already viewed) capsules
       const sorted = [...timeCapsules]
-        .filter(cap => !cap.revealed)
+        .filter(isCapsuleActive)
         .sort((a, b) => new Date(a.reveal_date) - new Date(b.reveal_date));
       if (sorted.length === 0) {
         const empty = document.createElement('div');
@@ -3103,7 +3168,7 @@
 
     function saveTimeCapsulesToStorage() {
       try {
-        localStorage.setItem('wish_time_capsules', JSON.stringify(timeCapsules));
+        localStorage.setItem('wish_time_capsules', JSON.stringify(timeCapsules.filter(isCapsuleActive)));
       } catch(e) { /* quota exceeded, ignore */ }
     }
 
@@ -3114,11 +3179,12 @@
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             // Merge with existing (Supabase-loaded) capsules, dedup by id
-            const existingIds = new Set(timeCapsules.map(c => c.id));
+            const existingIds = new Set(timeCapsules.map(c => getCapsuleId(c)));
             parsed.forEach(c => {
-              if (!existingIds.has(c.id)) {
+              const id = getCapsuleId(c);
+              if (isCapsuleActive(c) && (!id || !existingIds.has(id))) {
                 timeCapsules.push(c);
-                existingIds.add(c.id);
+                if (id) existingIds.add(id);
               }
             });
           }
@@ -4585,6 +4651,7 @@
       resize();
       window.addEventListener('resize', resize);
       // Always load local data first
+      loadReadCapsuleIds();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
       if (wishMessages.length > 0) {
@@ -4621,7 +4688,7 @@
       wishTags.classList.add('visible');
       updateBottleBadge();
       updateTimeCapsuleBadge();
-      if (timeCapsules.filter(c => !c.revealed).length > 0) capsuleCounter.classList.add('visible');
+      if (timeCapsules.filter(isCapsuleActive).length > 0) capsuleCounter.classList.add('visible');
       if (wishMessages.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
         setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, wishMessages.length) * 400 + 1000);
