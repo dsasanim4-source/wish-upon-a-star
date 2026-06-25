@@ -3181,6 +3181,10 @@
             // Merge with existing (Supabase-loaded) capsules, dedup by id
             const existingIds = new Set(timeCapsules.map(c => getCapsuleId(c)));
             parsed.forEach(c => {
+              if (c && c.revealed) {
+                markCapsuleReadLocally(c);
+                return;
+              }
               const id = getCapsuleId(c);
               if (isCapsuleActive(c) && (!id || !existingIds.has(id))) {
                 timeCapsules.push(c);
