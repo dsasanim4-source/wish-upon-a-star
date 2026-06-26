@@ -3320,7 +3320,7 @@
   <!-- Wish Review Panel -->
   <div class="tree-panel" id="treePanel">
     <div class="tree-header">
-      <span class="tree-title">🧭 愿望复盘</span>
+      <span class="tree-title">🧭 本设备愿望复盘</span>
       <button class="tree-close" id="treeClose">✕</button>
     </div>
     <div class="tree-body" id="treeBody">
@@ -3656,12 +3656,14 @@
     const HIDDEN_WISH_IDS_KEY = 'wish_hidden_ids';
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const BLESSED_WISH_IDS_KEY = 'wish_blessed_ids';
+    const OWNED_WISH_IDS_KEY = 'wish_owned_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
     const ADMIN_PASSWORD = 'LJXNB';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let blessedWishIds = new Set();
+    let ownedWishIds = new Set();
     let wishOverrides = {};
     let wishwallMode = 'all';
     let quietMode = false;
@@ -3787,6 +3789,7 @@
       loadWishReminders();
       loadWishVisibilityState();
       loadBlessedWishIds();
+      loadOwnedWishIds();
       loadQuietMode();
       loadRoomState();
       loadWishesFromStorage();
@@ -3873,9 +3876,12 @@
           const dupIdx = wishMessages.findIndex(w => String(w.id).startsWith('local_') && w.text === newWish.text);
           if (dupIdx >= 0) {
             // Replace local placeholder with server version
-            migrateWishProgressKey(wishMessages[dupIdx], newWish);
+            const pendingWish = wishMessages[dupIdx];
+            migrateWishProgressKey(pendingWish, newWish);
             wishMessages[dupIdx] = newWish;
             localInsertIds.add(newWish.id);
+            unmarkWishOwned(pendingWish);
+            markWishOwned(newWish.id);
             if (wishwallPanel.classList.contains('show')) renderWishWall();
             return;
           }
@@ -3919,6 +3925,7 @@
           const idx = wishMessages.findIndex(w => getWishId(w) === id);
           if (idx >= 0) wishMessages.splice(idx, 1);
           hiddenWishIds.delete(id);
+          unmarkWishOwned(id);
           totalWishes = getVisibleWishes().length;
           lastWishCount = totalWishes;
           wishCountEl.textContent = totalWishes;
@@ -4258,6 +4265,35 @@
       } catch(e) { /* ignore */ }
     }
 
+    function loadOwnedWishIds() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(OWNED_WISH_IDS_KEY) || '[]');
+        if (Array.isArray(stored)) ownedWishIds = new Set(stored.map(String));
+      } catch(e) {
+        ownedWishIds = new Set();
+      }
+    }
+
+    function saveOwnedWishIds() {
+      try {
+        localStorage.setItem(OWNED_WISH_IDS_KEY, JSON.stringify([...ownedWishIds].slice(-1000)));
+      } catch(e) { /* ignore */ }
+    }
+
+    function markWishOwned(wishOrId) {
+      const id = typeof wishOrId === 'object' ? getWishId(wishOrId) : String(wishOrId || '');
+      if (!id) return;
+      ownedWishIds.add(id);
+      saveOwnedWishIds();
+    }
+
+    function unmarkWishOwned(wishOrId) {
+      const id = typeof wishOrId === 'object' ? getWishId(wishOrId) : String(wishOrId || '');
+      if (!id) return;
+      ownedWishIds.delete(id);
+      saveOwnedWishIds();
+    }
+
     function saveWishVisibilityState() {
       try {
         localStorage.setItem(HIDDEN_WISH_IDS_KEY, JSON.stringify([...hiddenWishIds].slice(-500)));
@@ -4272,6 +4308,11 @@
     function isLocalWish(wish) {
       const id = getWishId(wish);
       return !id || id.startsWith('local_') || wish.visibility === 'private';
+    }
+
+    function isDeviceWish(wish) {
+      const id = getWishId(wish);
+      return isLocalWish(wish) || (!!id && ownedWishIds.has(id));
     }
 
     function getWishActionKey(wish) {
@@ -4301,6 +4342,10 @@
 
     function getVisibleWishes() {
       return wishMessages.filter(isWishVisible);
+    }
+
+    function getDeviceVisibleWishes() {
+      return getVisibleWishes().filter(isDeviceWish);
     }
 
     function applyWishOverride(wish) {
@@ -4356,6 +4401,7 @@
       const idx = wishMessages.findIndex(w => w === wish || getWishId(w) === id || getWishProgressKey(w) === key);
       if (idx >= 0) wishMessages.splice(idx, 1);
       if (id) hiddenWishIds.delete(id);
+      if (id) unmarkWishOwned(id);
     }
 
     async function blessWish(wish) {
@@ -5061,6 +5107,7 @@
         wishReminders,
         hiddenWishIds: [...hiddenWishIds],
         blessedWishIds: [...blessedWishIds],
+        ownedWishIds: [...ownedWishIds],
         wishOverrides,
         timeCapsules: timeCapsules.filter(isCapsuleActive),
         readCapsuleIds: [...readCapsuleIds],
@@ -5112,6 +5159,10 @@
           if (Array.isArray(backup.blessedWishIds)) {
             backup.blessedWishIds.forEach(id => blessedWishIds.add(String(id)));
             saveBlessedWishIds();
+          }
+          if (Array.isArray(backup.ownedWishIds)) {
+            backup.ownedWishIds.forEach(id => ownedWishIds.add(String(id)));
+            saveOwnedWishIds();
           }
           if (backup.wishOverrides && typeof backup.wishOverrides === 'object') {
             wishOverrides = { ...wishOverrides, ...backup.wishOverrides };
@@ -6326,6 +6377,7 @@
       const idx = wishMessages.findIndex(wish => getWishId(wish) === idStr);
       if (idx >= 0) wishMessages.splice(idx, 1);
       hiddenWishIds.delete(idStr);
+      unmarkWishOwned(idStr);
       totalWishes = getVisibleWishes().length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
@@ -6497,7 +6549,7 @@
     }
 
     function updateTreeWishes() {
-      treeWishes = getVisibleWishes().slice(-20);
+      treeWishes = getDeviceVisibleWishes().slice(-20);
       if (treePanel.classList.contains('show')) renderTree();
     }
 
@@ -6509,7 +6561,7 @@
     }
 
     function getWishReviewStats() {
-      const visibleWishes = getVisibleWishes();
+      const visibleWishes = getDeviceVisibleWishes();
       const progressCounts = WISH_PROGRESS_STEPS.reduce((acc, step) => {
         acc[step.id] = 0;
         return acc;
@@ -6598,7 +6650,7 @@
       const stats = getWishReviewStats();
       if (stats.visibleWishes.length === 0) {
         wishReview.innerHTML = `
-          <div class="review-empty">还没有可以复盘的愿望。写下第一个愿望后，这里会变成你的行动清单。</div>
+          <div class="review-empty">这台设备还没有可以复盘的愿望。写下第一个愿望后，这里会变成你的行动清单。</div>
         `;
         return;
       }
@@ -7537,6 +7589,7 @@
         created_at: new Date().toISOString(),
       };
       wishMessages.push(localWish);
+      markWishOwned(localWish.id);
       totalWishes = getVisibleWishes().length;
       lastWishCount = totalWishes;
       wishCountEl.textContent = totalWishes;
@@ -7562,6 +7615,8 @@
           }
           // Replace local wish with server version
           localInsertIds.add(inserted.id);
+          unmarkWishOwned(localWish.id);
+          markWishOwned(inserted.id);
           const idx = wishMessages.findIndex(w => w.id === localWish.id);
           if (idx >= 0) {
             migrateWishProgressKey(localWish, inserted);
@@ -7754,6 +7809,8 @@
       loadWishProgress();
       loadWishReminders();
       loadWishVisibilityState();
+      loadBlessedWishIds();
+      loadOwnedWishIds();
       loadQuietMode();
       loadRoomState();
       loadWishesFromStorage();
