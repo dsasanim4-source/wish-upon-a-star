@@ -1,6 +1,6 @@
-# 祈愿·天天开心 ✨🌟
+# 星愿回声 ✨🌟
 
-一个黑蓝主题的祈愿网站，集成了 10 大创意功能。
+一个黑蓝主题的星空许愿网站，把愿望交给星星，让未来轻轻回应。
 
 **🌐 永久网址：[dsasanim4-source.github.io/wish-upon-a-star](https://dsasanim4-source.github.io/wish-upon-a-star/)**
 

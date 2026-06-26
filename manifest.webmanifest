@@ -1,7 +1,7 @@
 {
-  "name": "祈愿天天开心",
-  "short_name": "祈愿",
-  "description": "在星空里许愿、封存时光胶囊、绘制自己的星座。",
+  "name": "星愿回声",
+  "short_name": "星愿",
+  "description": "把愿望交给星星，让未来轻轻回应。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
