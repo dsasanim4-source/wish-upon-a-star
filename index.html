@@ -3795,6 +3795,15 @@
       return String(email || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
     }
 
+    function extractEmail(text) {
+      const match = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+      return match ? match[0].toLowerCase() : '';
+    }
+
+    function getAdminLoginEmail(text) {
+      return extractEmail(text) || ADMIN_EMAIL;
+    }
+
     function isAdminLoginCommand(text) {
       const value = String(text || '').trim().toLowerCase();
       return value === '管理员登录'
@@ -3802,7 +3811,26 @@
         || value === '后台登录'
         || value === 'admin'
         || value === 'admin login'
-        || isAdminEmail(value);
+        || value.startsWith('管理员登录 ')
+        || value.startsWith('admin ')
+        || value === extractEmail(value);
+    }
+
+    async function isAdminSession(session) {
+      const email = getSessionEmail(session);
+      if (!email) return false;
+      if (isAdminEmail(email)) return true;
+      try {
+        const { data, error } = await supabase.rpc('is_admin');
+        if (error) {
+          console.warn('Admin RPC check failed:', error);
+          return false;
+        }
+        return data === true;
+      } catch(e) {
+        console.warn('Admin RPC check crashed:', e);
+        return false;
+      }
     }
 
     function getAdminLoginErrorHint(error) {
@@ -3821,25 +3849,29 @@
       if (lower.includes('smtp') || lower.includes('mailer')) {
         return `邮件服务配置异常。请检查 Supabase Authentication → SMTP Settings。原始错误：${message}`;
       }
+      if (lower.includes('email not sent') || lower.includes('error sending') || message.includes('未成功发送邮件')) {
+        return `Resend 没有成功投递。请确认 Supabase 的 Sender email 不是 Gmail/QQ，而是 Resend 已验证域名下的地址，例如 noreply@你的域名；SMTP Host 用 smtp.resend.com，Port 用 465，Username 用 resend，Password 用 Resend API Key。原始错误：${message}`;
+      }
       return `Supabase 返回：${message}`;
     }
 
-    async function requestAdminLogin() {
+    async function requestAdminLogin(text = '') {
       if (!supabase) {
         addAIMessage('当前没有连接 Supabase，暂时无法进行管理员邮箱验证。', 'assistant');
         return;
       }
 
+      const targetEmail = getAdminLoginEmail(text);
       const { data } = await supabase.auth.getSession();
       const sessionEmail = getSessionEmail(data?.session);
-      if (isAdminEmail(sessionEmail)) {
+      if (await isAdminSession(data?.session)) {
         adminEmail = sessionEmail;
         setAdminMode(true);
         return;
       }
 
       const { error } = await supabase.auth.signInWithOtp({
-        email: ADMIN_EMAIL,
+        email: targetEmail,
         options: {
           emailRedirectTo: getAuthRedirectUrl(),
         },
@@ -3851,7 +3883,7 @@
         return;
       }
 
-      addAIMessage(`我已经把管理员登录邮件发送到 ${ADMIN_EMAIL}。打开邮件里的链接回到网站后，就会进入管理员模式。`, 'assistant');
+      addAIMessage(`我已经把管理员登录邮件发送到 ${targetEmail}。打开邮件里的链接回到网站后，就会进入管理员模式。`, 'assistant');
     }
 
     async function syncAdminSession(options = {}) {
@@ -3864,7 +3896,7 @@
       }
 
       const email = getSessionEmail(data?.session);
-      if (isAdminEmail(email)) {
+      if (await isAdminSession(data?.session)) {
         adminEmail = email;
         setAdminMode(true, { silent: !announce, openPanel });
         return true;
@@ -3880,9 +3912,9 @@
 
     function setupAdminAuthListener() {
       if (!supabase) return;
-      supabase.auth.onAuthStateChange((event, session) => {
+      supabase.auth.onAuthStateChange(async (event, session) => {
         const email = getSessionEmail(session);
-        if (isAdminEmail(email)) {
+        if (await isAdminSession(session)) {
           adminEmail = email;
           const returnedFromAuth = /access_token|refresh_token|code=/.test(window.location.hash + window.location.search);
           const shouldOpen = returnedFromAuth || (event === 'SIGNED_IN' && !adminMode);
@@ -6611,7 +6643,7 @@
       if (!text) return;
       aiInput.value = '';
       if (isAdminLoginCommand(text)) {
-        requestAdminLogin();
+        requestAdminLogin(text);
         return;
       }
       if (adminMode && /^(退出管理员|管理员退出|退出后台|退出管理)$/.test(text)) {
