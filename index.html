@@ -4713,15 +4713,10 @@
       if (canvasBounds && drawnStars.length > 0) {
         drawExportConstellationOnSky(octx, { stars: drawnStars, lines: drawnLines }, canvasBounds, out.width);
       }
-      const visibleWishMessages = getVisibleWishes();
-      const doneWishes = visibleWishMessages.filter(w => getWishProgressId(w) === 'done');
       octx.textAlign = 'center';
       octx.fillStyle = template.accent;
       octx.font = `${Math.max(38, Math.round(out.width * 0.047))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillText(template.title, centerX, out.height * 0.11);
-      octx.font = `${Math.max(22, Math.round(out.width * 0.025))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillStyle = template.sub;
-      octx.fillText(`${visibleWishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, centerX, out.height * 0.15);
       if (selectedWish) {
         const displayRecentWish = getDisplayWish(selectedWish);
         octx.fillStyle = template.accent;
