@@ -584,6 +584,73 @@
     color: rgba(160, 210, 255, 0.9);
   }
 
+  .msg-popup-secondary {
+    display: block;
+    margin: -2px auto 8px;
+    padding: 8px 18px;
+    border: 1px solid rgba(255, 205, 140, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 180, 120, 0.08);
+    color: rgba(255, 214, 170, 0.78);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    transition: all 0.3s ease;
+  }
+
+  .msg-popup-secondary:hover {
+    border-color: rgba(255, 220, 170, 0.42);
+    background: rgba(255, 190, 130, 0.14);
+    color: rgba(255, 232, 205, 0.95);
+  }
+
+  .msg-popup-overlay.capsule-portal-open {
+    background:
+      radial-gradient(circle at 50% 42%, rgba(255, 190, 120, 0.16), transparent 34%),
+      radial-gradient(circle at 50% 58%, rgba(120, 100, 240, 0.14), transparent 42%),
+      rgba(0, 0, 0, 0.62);
+  }
+
+  .msg-popup-overlay.capsule-portal-open .msg-popup {
+    overflow: hidden;
+    border-color: rgba(255, 185, 125, 0.28) !important;
+    box-shadow:
+      0 0 0 1px rgba(255, 220, 170, 0.05) inset,
+      0 28px 72px rgba(0, 0, 0, 0.66),
+      0 0 90px rgba(255, 165, 100, 0.14),
+      0 0 120px rgba(120, 100, 240, 0.12);
+  }
+
+  .msg-popup-overlay.capsule-portal-open .msg-popup > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .msg-popup-overlay.capsule-portal-open .msg-popup::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 220, 160, 0.12);
+    box-shadow:
+      0 0 0 18px rgba(255, 205, 140, 0.025),
+      0 0 0 38px rgba(130, 120, 255, 0.025),
+      0 0 42px rgba(255, 180, 120, 0.08);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: capsule-portal-pulse 4.5s ease-in-out infinite;
+  }
+
+  @keyframes capsule-portal-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.46; }
+    50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.82; }
+  }
+
   /* ── Bottle Button ────────────────────── */
   .bottle-btn {
     position: fixed;
@@ -752,7 +819,17 @@
     font-weight: 300;
     letter-spacing: 0.1em;
     color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .bottle-unread-hint {
+    min-height: 18px;
     margin-bottom: 14px;
+    color: rgba(180, 205, 235, 0.46);
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
   }
 
   .bottle-open-btn {
@@ -1466,7 +1543,7 @@
   }
 
   .export-preview-templates {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .export-preview-actions {
@@ -3011,7 +3088,7 @@
     .wishwall-reminder-summary { margin: 4px 14px 0; }
     .export-preview-popup { width: 94%; padding: 20px 16px 18px; }
     .export-preview-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .export-preview-templates { grid-template-columns: 1fr; }
+    .export-preview-templates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .export-preview-frame,
     .export-preview-img { max-height: 48vh; }
     .wish-detail-meta { grid-template-columns: 1fr; }
@@ -3132,6 +3209,7 @@
       <div class="msg-popup-title" id="capsulePopupTitle">阅后即焚 · 来自过去的你</div>
       <div class="msg-popup-text" id="capsulePopupText"></div>
       <div class="msg-popup-time" id="capsulePopupTime"></div>
+      <button class="msg-popup-secondary" id="capsuleReplyBtn" type="button">写一封回信</button>
       <button class="msg-popup-dismiss" id="capsulePopupDismiss" style="color: rgba(240,160,100,0.7);">我已阅读 · 让它消散 ✨</button>
     </div>
   </div>
@@ -3170,6 +3248,7 @@
         <button class="export-preview-btn active" type="button" data-export-template="dream">梦幻海报</button>
         <button class="export-preview-btn" type="button" data-export-template="clean">简洁卡片</button>
         <button class="export-preview-btn" type="button" data-export-template="blessing">祝福星笺</button>
+        <button class="export-preview-btn" type="button" data-export-template="year">年度总结</button>
       </div>
       <div class="export-preview-label">比例</div>
       <div class="export-preview-presets" id="exportPreviewPresets">
@@ -3217,6 +3296,7 @@
     <div class="bottle-body" id="bottleBody">
       <div class="bottle-unread-section" id="bottleUnreadSection">
         <div class="bottle-unread-count" id="bottleUnreadCount">…</div>
+        <div class="bottle-unread-hint" id="bottleUnreadHint"></div>
         <button class="bottle-open-btn" id="bottleOpenBtn">
           <span>📭</span> 打开漂流瓶
         </button>
@@ -3466,6 +3546,17 @@
         panel: 'rgba(18, 11, 32, 0.66)',
         starAlpha: 0.82,
       },
+      year: {
+        name: '年度总结',
+        title: '这一年的心愿回声',
+        footer: 'every wish leaves a light',
+        grad: ['#24304d', '#10182d', '#050711'],
+        accent: 'rgba(255, 226, 178, 0.96)',
+        sub: 'rgba(210, 225, 248, 0.76)',
+        panel: 'rgba(9, 14, 28, 0.7)',
+        starAlpha: 0.7,
+        summary: true,
+      },
     };
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -3500,6 +3591,7 @@
     const capsulePopupTitle = document.getElementById('capsulePopupTitle');
     const capsulePopupText = document.getElementById('capsulePopupText');
     const capsulePopupTime = document.getElementById('capsulePopupTime');
+    const capsuleReplyBtn = document.getElementById('capsuleReplyBtn');
     const capsulePopupDismiss = document.getElementById('capsulePopupDismiss');
 
     // Bottle
@@ -3511,6 +3603,7 @@
     const bottleBody = document.getElementById('bottleBody');
     const bottleUnreadSection = document.getElementById('bottleUnreadSection');
     const bottleUnreadCount = document.getElementById('bottleUnreadCount');
+    const bottleUnreadHint = document.getElementById('bottleUnreadHint');
     const bottleOpenBtn = document.getElementById('bottleOpenBtn');
     const bottleInput = document.getElementById('bottleInput');
     const bottleSendBtn = document.getElementById('bottleSendBtn');
@@ -4994,14 +5087,78 @@
       ctx2.restore();
     }
 
-    function drawExportConstellations(ctx2, outWidth, outHeight, template = EXPORT_TEMPLATES.dream) {
+    function drawExportYearSummary(ctx2, outWidth, outHeight, template = EXPORT_TEMPLATES.year) {
+      let stats = null;
+      try {
+        stats = getWishReviewStats();
+      } catch(e) { /* keep export available even if review stats fail */ }
+      const visibleWishes = stats?.visibleWishes || [];
+      const activeCount = stats?.activeWishes?.length || 0;
+      const dueCount = stats?.dueWishes?.length || 0;
+      const completionRate = stats?.completionRate || 0;
+      const blessingTotal = stats?.blessingTotal || 0;
+      const topTag = stats?.topTag || 'general';
+      const topCategory = CATEGORIES[topTag] || CATEGORIES.general;
+
+      const panelWidth = Math.min(outWidth * 0.78, 900);
+      const panelHeight = clampNumber(outHeight * 0.145, 142, 205);
+      const panelX = (outWidth - panelWidth) / 2;
+      const panelY = outHeight * 0.155;
+      const padding = Math.max(22, outWidth * 0.026);
+      const itemCount = 4;
+      const itemWidth = (panelWidth - padding * 2) / itemCount;
+      const statsItems = [
+        { value: visibleWishes.length, label: '本机记录' },
+        { value: `${completionRate}%`, label: '完成率' },
+        { value: dueCount || activeCount, label: dueCount ? '待回访' : '进行中' },
+        { value: blessingTotal, label: '收到祝福' },
+      ];
+
+      ctx2.save();
+      roundedRectPath(ctx2, panelX, panelY, panelWidth, panelHeight, Math.max(18, outWidth * 0.018));
+      ctx2.fillStyle = template.panel || 'rgba(9, 14, 28, 0.7)';
+      ctx2.fill();
+      ctx2.strokeStyle = 'rgba(255, 220, 170, 0.18)';
+      ctx2.lineWidth = Math.max(1, outWidth * 0.0012);
+      ctx2.stroke();
+
+      ctx2.textAlign = 'center';
+      ctx2.fillStyle = template.sub || 'rgba(210, 225, 248, 0.76)';
+      ctx2.font = `${Math.max(15, Math.round(outWidth * 0.017))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      const summaryTitle = visibleWishes.length
+        ? `今年最亮的方向：${topCategory.icon} ${topCategory.name}`
+        : '先写下一个愿望，让星图开始发光';
+      ctx2.fillText(summaryTitle, panelX + panelWidth / 2, panelY + padding);
+
+      const statsY = panelY + panelHeight * 0.66;
+      statsItems.forEach((item, index) => {
+        const x = panelX + padding + itemWidth * index + itemWidth / 2;
+        if (index > 0) {
+          ctx2.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx2.beginPath();
+          ctx2.moveTo(panelX + padding + itemWidth * index, panelY + panelHeight * 0.42);
+          ctx2.lineTo(panelX + padding + itemWidth * index, panelY + panelHeight * 0.82);
+          ctx2.stroke();
+        }
+        ctx2.fillStyle = index === 1 ? template.accent : 'rgba(238, 246, 255, 0.92)';
+        ctx2.font = `${Math.max(22, Math.round(outWidth * 0.027))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+        ctx2.fillText(String(item.value), x, statsY);
+        ctx2.fillStyle = 'rgba(205, 218, 240, 0.54)';
+        ctx2.font = `${Math.max(12, Math.round(outWidth * 0.014))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+        ctx2.fillText(item.label, x, statsY + Math.max(26, outWidth * 0.026));
+      });
+      ctx2.restore();
+    }
+
+    function drawExportConstellations(ctx2, outWidth, outHeight, template = EXPORT_TEMPLATES.dream, preferredY = null) {
       const constellations = getExportConstellations();
       if (constellations.length === 0) return;
 
       const panelWidth = Math.min(outWidth * 0.84, 980);
       const panelHeight = clampNumber(outHeight * 0.24, 220, 380);
       const panelX = (outWidth - panelWidth) / 2;
-      const panelY = outHeight * 0.58;
+      const requestedY = Number.isFinite(preferredY) ? preferredY : outHeight * 0.58;
+      const panelY = Math.min(requestedY, outHeight - panelHeight - outHeight * 0.08);
       const padding = Math.max(20, outWidth * 0.03);
       const headerHeight = Math.max(34, panelHeight * 0.14);
 
@@ -5036,6 +5193,7 @@
 
     function createWishSkyExportCanvas(selectedWish, preset = 'adaptive', templateId = 'dream') {
       const template = EXPORT_TEMPLATES[templateId] || EXPORT_TEMPLATES.dream;
+      const isYearTemplate = template.summary === true;
       const out = document.createElement('canvas');
       const exportSize = getExportCanvasSize(preset);
       out.width = exportSize.width;
@@ -5070,21 +5228,24 @@
       octx.textAlign = 'center';
       octx.fillStyle = template.accent;
       octx.font = `${Math.max(38, Math.round(out.width * 0.047))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillText(template.title, centerX, out.height * 0.11);
+      octx.fillText(template.title, centerX, out.height * (isYearTemplate ? 0.09 : 0.11));
+      if (isYearTemplate) {
+        drawExportYearSummary(octx, out.width, out.height, template);
+      }
       if (selectedWish) {
         const displayRecentWish = getDisplayWish(selectedWish);
         octx.fillStyle = template.accent;
         const wishFont = Math.max(28, Math.round(out.width * 0.034));
         const wishLineHeight = Math.max(42, Math.round(wishFont * 1.45));
         octx.font = `${wishFont}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-        drawWrappedText(octx, displayRecentWish.text, centerX, out.height * 0.27, out.width * 0.74, wishLineHeight, 4);
+        drawWrappedText(octx, displayRecentWish.text, centerX, out.height * (isYearTemplate ? 0.36 : 0.27), out.width * 0.74, wishLineHeight, isYearTemplate ? 3 : 4);
         octx.font = `${Math.max(18, Math.round(out.width * 0.02))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
         octx.fillStyle = 'rgba(220, 230, 245, 0.62)';
         const progress = getWishProgressStep(selectedWish).label;
         const completedAt = getWishCompletedAt(selectedWish);
-        octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, centerX, out.height * 0.47);
+        octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, centerX, out.height * (isYearTemplate ? 0.52 : 0.47));
       }
-      drawExportConstellations(octx, out.width, out.height, template);
+      drawExportConstellations(octx, out.width, out.height, template, isYearTemplate ? out.height * 0.63 : null);
       octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
       octx.fillText(template.footer, centerX, out.height * 0.93);
@@ -5342,15 +5503,40 @@
     /* ═══════════════════════════════════════════════════════════════════════
        MESSAGE POPUP (漂流瓶)
        ═══════════════════════════════════════════════════════════════════════ */
+    function spawnBottleEchoStar(message) {
+      const text = String(message?.text || '').trim();
+      if (!text || !W || !H) return;
+      const tag = CATEGORIES[message?.tag] ? message.tag : detectTag(text);
+      const startX = W * (0.18 + Math.random() * 0.64);
+      const startY = H * (0.62 + Math.random() * 0.2);
+      createLantern(startX, startY, `回声：${text.slice(0, 46)}`, tag);
+      if (!quietMode) {
+        const echoText = text.length > 18 ? `${text.slice(0, 18)}…` : text;
+        spawnFloatingWish(`回声：${echoText}`);
+      }
+      for (let i = 0; i < 14; i++) {
+        particles.push({
+          x: startX + (Math.random() - 0.5) * 34,
+          y: startY + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 0.7,
+          vy: -Math.random() * 1.2 - 0.2,
+          life: 1,
+          decay: 0.018 + Math.random() * 0.018,
+          r: 0.8 + Math.random() * 1.6,
+        });
+      }
+    }
+
     function showMessagePopup(message) {
       if (!message) return;
       if (popupTimer) clearTimeout(popupTimer);
-      msgPopupTitle.textContent = '💌 漂流瓶 · 来自上一个人的留言';
+      msgPopupTitle.textContent = '💌 漂流瓶 · 回声星已点亮';
       msgPopupText.textContent = message.text;
-      msgPopupTime.textContent = formatTime(message.created_at);
+      msgPopupTime.textContent = `${formatTime(message.created_at)} · 打开后即消散`;
       msgPopupOverlay.classList.remove('hidden');
       void msgPopupOverlay.offsetWidth;
       msgPopupOverlay.classList.add('show');
+      spawnBottleEchoStar(message);
       popupTimer = setTimeout(dismissMsgPopup, 8000);
     }
 
@@ -5382,11 +5568,13 @@
       saveTimeCapsulesToStorage();
 
       const displayText = getCapsuleDisplayText(capsule);
-      capsulePopupTitle.textContent = '🔥 阅后即焚 · 来自过去的你';
+      capsulePopupTitle.textContent = '🌌 星门开启 · 来自过去的你';
       capsulePopupText.textContent = displayText;
-      capsulePopupTime.textContent = formatDate(capsule.reveal_date) + ' 封存';
+      capsulePopupTime.textContent = formatDate(capsule.reveal_date) + ' 封存 · 15 秒后化作星光';
+      capsulePopupDismiss.textContent = '封存为回忆 · 让它化作星光 ✨';
       capsulePopupOverlay.classList.remove('hidden');
       void capsulePopupOverlay.offsetWidth;
+      capsulePopupOverlay.classList.add('capsule-portal-open');
       capsulePopupOverlay.classList.add('show');
       capsulePopupTimer = setTimeout(burnCapsule, 15000); // Auto-burn after 15s
       // Re-render list to hide revealed capsule
@@ -5396,6 +5584,7 @@
 
     function finishCapsulePopupHide() {
       capsulePopupOverlay.classList.add('hidden');
+      capsulePopupOverlay.classList.remove('capsule-portal-open');
       capsulePopupOverlay.removeEventListener('transitionend', finishCapsulePopupHide);
     }
 
@@ -5435,6 +5624,21 @@
       }
     }
 
+    function replyToCapsule() {
+      const cap = burningCapsule;
+      const displayText = cap ? getCapsuleDisplayText(cap) : '';
+      const shortText = displayText.length > 34 ? `${displayText.slice(0, 34)}…` : displayText;
+      burnCapsule();
+      setTimeout(() => {
+        openTimeCapsulePanel();
+        timecapsuleInput.value = shortText ? `给未来的回信：\n关于“${shortText}”\n` : '给未来的回信：\n';
+        timecapsuleInput.focus();
+        const end = timecapsuleInput.value.length;
+        timecapsuleInput.setSelectionRange(end, end);
+      }, 280);
+    }
+
+    capsuleReplyBtn.addEventListener('click', (e) => { e.stopPropagation(); replyToCapsule(); });
     capsulePopupDismiss.addEventListener('click', (e) => { e.stopPropagation(); burnCapsule(); });
     capsulePopupOverlay.addEventListener('click', (e) => { if (e.target === capsulePopupOverlay) burnCapsule(); });
 
@@ -5473,11 +5677,15 @@
     function updateBottlePanel() {
       if (totalUnreadMessages > 0) {
         bottleUnreadCount.textContent = `有 ${totalUnreadMessages} 封漂流信等待开启`;
+        bottleUnreadHint.textContent = '打开后会在星空里点亮一颗回声星';
         bottleOpenBtn.disabled = false;
+        bottleOpenBtn.innerHTML = '<span>📭</span> 打开最早漂流瓶';
         bottleOpenBtn.style.opacity = '1';
       } else {
         bottleUnreadCount.textContent = '暂无未读的漂流信';
+        bottleUnreadHint.textContent = '写下一句温柔的话，下一位访客会收到它';
         bottleOpenBtn.disabled = true;
+        bottleOpenBtn.innerHTML = '<span>📭</span> 打开漂流瓶';
         bottleOpenBtn.style.opacity = '0.35';
       }
     }
