@@ -153,56 +153,185 @@ CREATE POLICY "允许任何人更新时光胶囊" ON time_capsules
   FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ============================================================
--- Admin email login migration
--- Re-run safe. Admin delete now checks Supabase Auth email.
+-- Admin dynamic password migration
+-- Re-run safe. Uses a TOTP code from an authenticator app.
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS public.admin_users (
-  email TEXT PRIMARY KEY,
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS public.admin_totp_settings (
+  id BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id),
+  secret_base32 TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_sessions (
+  token_hash TEXT PRIMARY KEY,
+  expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO public.admin_users (email)
-VALUES ('2507997974@qq.com')
-ON CONFLICT (email) DO NOTHING;
+ALTER TABLE public.admin_totp_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_sessions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.admin_totp_settings FROM anon, authenticated;
+REVOKE ALL ON public.admin_sessions FROM anon, authenticated;
+REVOKE DELETE ON public.wishes FROM anon, authenticated;
 
-ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.admin_users FROM anon, authenticated;
+DROP POLICY IF EXISTS "allow_admin_delete_wishes" ON public.wishes;
 
-DROP POLICY IF EXISTS "allow_admin_users_self_read" ON public.admin_users;
-CREATE POLICY "allow_admin_users_self_read" ON public.admin_users
-  FOR SELECT
-  USING (LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', '')));
+CREATE OR REPLACE FUNCTION public.base32_decode(input TEXT)
+RETURNS BYTEA
+LANGUAGE plpgsql
+IMMUTABLE
+STRICT
+SET search_path = public
+AS $$
+DECLARE
+  alphabet CONSTANT TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  clean TEXT := UPPER(REGEXP_REPLACE(input, '[^A-Z2-7]', '', 'g'));
+  bits TEXT := '';
+  out_bytes BYTEA := DECODE('', 'hex');
+  ch TEXT;
+  val INTEGER;
+  byte_bits TEXT;
+  byte_val INTEGER;
+  i INTEGER;
+BEGIN
+  FOR i IN 1..LENGTH(clean) LOOP
+    ch := SUBSTRING(clean FROM i FOR 1);
+    val := POSITION(ch IN alphabet) - 1;
+    IF val < 0 THEN
+      RAISE EXCEPTION 'invalid base32 secret';
+    END IF;
+    bits := bits || (val::BIT(5))::TEXT;
+  END LOOP;
 
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
+  WHILE LENGTH(bits) >= 8 LOOP
+    byte_bits := SUBSTRING(bits FROM 1 FOR 8);
+    bits := SUBSTRING(bits FROM 9);
+    byte_val := byte_bits::BIT(8)::INTEGER;
+    out_bytes := out_bytes || DECODE(LPAD(TO_HEX(byte_val), 2, '0'), 'hex');
+  END LOOP;
+
+  RETURN out_bytes;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.bigint_to_big_endian(value BIGINT)
+RETURNS BYTEA
 LANGUAGE sql
-STABLE
+IMMUTABLE
+STRICT
+SET search_path = public
+AS $$
+  SELECT DECODE(LPAD(TO_HEX(value), 16, '0'), 'hex');
+$$;
+
+CREATE OR REPLACE FUNCTION public.totp_code(secret_base32 TEXT, counter_value BIGINT)
+RETURNS TEXT
+LANGUAGE plpgsql
+IMMUTABLE
+STRICT
+SET search_path = public
+AS $$
+DECLARE
+  mac BYTEA;
+  offset INTEGER;
+  binary_code INTEGER;
+BEGIN
+  mac := HMAC(public.bigint_to_big_endian(counter_value), public.base32_decode(secret_base32), 'sha1');
+  offset := GET_BYTE(mac, OCTET_LENGTH(mac) - 1) & 15;
+  binary_code :=
+    ((GET_BYTE(mac, offset) & 127) << 24) |
+    ((GET_BYTE(mac, offset + 1) & 255) << 16) |
+    ((GET_BYTE(mac, offset + 2) & 255) << 8) |
+    (GET_BYTE(mac, offset + 3) & 255);
+
+  RETURN LPAD((binary_code % 1000000)::TEXT, 6, '0');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.verify_admin_session(admin_token TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+DECLARE
+  hash TEXT;
+BEGIN
+  DELETE FROM public.admin_sessions WHERE expires_at <= NOW();
+  IF admin_token IS NULL OR LENGTH(admin_token) < 20 THEN
+    RETURN FALSE;
+  END IF;
+  hash := ENCODE(DIGEST(admin_token, 'sha256'), 'hex');
+  RETURN EXISTS (
     SELECT 1
-    FROM public.admin_users
-    WHERE LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+    FROM public.admin_sessions
+    WHERE token_hash = hash
+      AND expires_at > NOW()
   );
+END;
 $$;
 
-REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO anon;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+CREATE OR REPLACE FUNCTION public.verify_admin_code(admin_code TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  normalized TEXT := REGEXP_REPLACE(COALESCE(admin_code, ''), '\D', '', 'g');
+  secret TEXT;
+  counter_value BIGINT := FLOOR(EXTRACT(EPOCH FROM NOW()) / 30)::BIGINT;
+  skew INTEGER;
+  session_token TEXT;
+BEGIN
+  SELECT secret_base32 INTO secret
+  FROM public.admin_totp_settings
+  WHERE id = TRUE
+  LIMIT 1;
 
-DROP POLICY IF EXISTS "allow_admin_delete_wishes" ON public.wishes;
-CREATE POLICY "allow_admin_delete_wishes" ON public.wishes
-  FOR DELETE
-  USING (public.is_admin());
+  IF secret IS NULL OR LENGTH(REGEXP_REPLACE(secret, '[^A-Z2-7]', '', 'gi')) < 16 THEN
+    RAISE EXCEPTION 'admin totp secret not configured';
+  END IF;
 
-GRANT DELETE ON public.wishes TO authenticated;
+  IF LENGTH(normalized) <> 6 THEN
+    RAISE EXCEPTION 'invalid admin code';
+  END IF;
+
+  FOR skew IN -1..1 LOOP
+    IF public.totp_code(secret, counter_value + skew) = normalized THEN
+      session_token := ENCODE(GEN_RANDOM_BYTES(32), 'hex');
+      INSERT INTO public.admin_sessions (token_hash, expires_at)
+      VALUES (ENCODE(DIGEST(session_token, 'sha256'), 'hex'), NOW() + INTERVAL '30 minutes');
+      RETURN session_token;
+    END IF;
+  END LOOP;
+
+  RAISE EXCEPTION 'invalid admin code';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_logout(admin_token TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM public.admin_sessions
+  WHERE token_hash = ENCODE(DIGEST(COALESCE(admin_token, ''), 'sha256'), 'hex');
+  RETURN TRUE;
+END;
+$$;
 
 DROP FUNCTION IF EXISTS public.admin_delete_wish(TEXT, BIGINT);
 DROP FUNCTION IF EXISTS public.admin_delete_wish(BIGINT);
+DROP FUNCTION IF EXISTS public.admin_delete_wish(BIGINT, TEXT);
 
-CREATE OR REPLACE FUNCTION public.admin_delete_wish(wish_id BIGINT)
+CREATE OR REPLACE FUNCTION public.admin_delete_wish(wish_id BIGINT, admin_token TEXT)
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -211,7 +340,7 @@ AS $$
 DECLARE
   deleted_count INTEGER;
 BEGIN
-  IF NOT public.is_admin() THEN
+  IF NOT public.verify_admin_session(admin_token) THEN
     RAISE EXCEPTION 'not authorized';
   END IF;
 
@@ -221,5 +350,15 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_delete_wish(BIGINT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.admin_delete_wish(BIGINT) TO authenticated;
+REVOKE ALL ON FUNCTION public.base32_decode(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.bigint_to_big_endian(BIGINT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.totp_code(TEXT, BIGINT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.verify_admin_session(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.verify_admin_code(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.admin_logout(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.admin_delete_wish(BIGINT, TEXT) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.verify_admin_session(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.verify_admin_code(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_logout(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_wish(BIGINT, TEXT) TO anon, authenticated;

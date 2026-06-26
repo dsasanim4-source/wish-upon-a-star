@@ -3659,7 +3659,6 @@
     const OWNED_WISH_IDS_KEY = 'wish_owned_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
-    const ADMIN_EMAIL = '2507997974@qq.com';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let blessedWishIds = new Set();
@@ -3670,8 +3669,8 @@
     let wishPrivacyMode = 'public';
     let activeRoomCode = '';
     let adminMode = false;
-    let adminEmail = '';
-    let pendingAdminOtpEmail = '';
+    let adminSessionToken = sessionStorage.getItem('wish_admin_session') || '';
+    let adminAwaitingCode = false;
     let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
@@ -3784,27 +3783,6 @@
     /* ═══════════════════════════════════════════════════════════════════════
        DATA LOADING
        ═══════════════════════════════════════════════════════════════════════ */
-    function getAuthRedirectUrl() {
-      return window.location.origin + window.location.pathname;
-    }
-
-    function getSessionEmail(session) {
-      return String(session?.user?.email || '').trim().toLowerCase();
-    }
-
-    function isAdminEmail(email) {
-      return String(email || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    }
-
-    function extractEmail(text) {
-      const match = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-      return match ? match[0].toLowerCase() : '';
-    }
-
-    function getAdminLoginEmail(text) {
-      return extractEmail(text) || ADMIN_EMAIL;
-    }
-
     function isAdminLoginCommand(text) {
       const value = String(text || '').trim().toLowerCase();
       return value === '管理员登录'
@@ -3813,167 +3791,102 @@
         || value === 'admin'
         || value === 'admin login'
         || value.startsWith('管理员登录 ')
-        || value.startsWith('admin ')
-        || value === extractEmail(value);
+        || value.startsWith('admin ');
     }
 
-    function isOtpCode(text) {
+    function extractAdminCode(text) {
+      const match = String(text || '').match(/\b\d{6}\b/);
+      return match ? match[0] : '';
+    }
+
+    function isAdminCode(text) {
       return /^\d{6}$/.test(String(text || '').trim());
     }
 
-    async function isAdminSession(session) {
-      const email = getSessionEmail(session);
-      if (!email) return false;
-      if (isAdminEmail(email)) return true;
-      try {
-        const { data, error } = await supabase.rpc('is_admin');
-        if (error) {
-          console.warn('Admin RPC check failed:', error);
-          return false;
-        }
-        return data === true;
-      } catch(e) {
-        console.warn('Admin RPC check crashed:', e);
-        return false;
-      }
-    }
-
-    function getAdminLoginErrorHint(error) {
+    function getAdminErrorHint(error) {
       const message = String(error?.message || error?.error_description || error || '').trim();
       const lower = message.toLowerCase();
       if (!message) return '没有收到 Supabase 返回的具体错误。';
-      if (lower.includes('rate') || lower.includes('security purposes') || lower.includes('too many')) {
-        return `请求太频繁了，请等 1 分钟再试。原始错误：${message}`;
+      if (lower.includes('not configured') || lower.includes('secret')) {
+        return '动态密码密钥还没有配置。请先在 Supabase SQL Editor 执行 README 里的管理员动态密码配置 SQL。';
       }
-      if (lower.includes('redirect') || lower.includes('url')) {
-        return `跳转地址没有放行。请在 Supabase Authentication → URL Configuration 里加入：${getAuthRedirectUrl()}。原始错误：${message}`;
-      }
-      if (lower.includes('email') && lower.includes('disabled')) {
-        return `Supabase 邮箱登录没有启用。请在 Authentication → Providers → Email 里启用 Email provider。原始错误：${message}`;
-      }
-      if (lower.includes('smtp') || lower.includes('mailer')) {
-        return `邮件服务配置异常。请检查 Supabase Authentication → SMTP Settings。原始错误：${message}`;
-      }
-      if (lower.includes('email not sent') || lower.includes('error sending') || message.includes('未成功发送邮件')) {
-        return `邮件服务没有成功投递。验证码方式也需要可用的发件渠道；如果你没有 Resend 验证域名，请先关闭 Supabase 的 Custom SMTP，改用 Supabase 默认邮件服务，或使用已验证域名的发件邮箱。原始错误：${message}`;
+      if (lower.includes('invalid') || lower.includes('authorized')) {
+        return '动态密码不正确，或 30 秒窗口已经过期。请看验证器 App 的最新 6 位数字再试。';
       }
       return `Supabase 返回：${message}`;
     }
 
-    async function verifyAdminOtpCode(codeText) {
+    async function verifyAdminDynamicCode(codeText) {
       if (!supabase) {
-        addAIMessage('当前没有连接 Supabase，暂时无法验证管理员验证码。', 'assistant');
+        addAIMessage('当前没有连接 Supabase，暂时无法验证管理员动态密码。', 'assistant');
         return;
       }
-      const token = String(codeText || '').trim();
-      if (!pendingAdminOtpEmail) {
-        addAIMessage('请先输入“管理员登录 你的邮箱”获取验证码。', 'assistant');
+      const code = extractAdminCode(codeText);
+      if (!code) {
+        adminAwaitingCode = true;
+        addAIMessage('请输入验证器 App 里显示的 6 位管理员动态密码。', 'assistant');
         return;
       }
 
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: pendingAdminOtpEmail,
-        token,
-        type: 'email',
+      const { data, error } = await supabase.rpc('verify_admin_code', {
+        admin_code: code,
       });
       if (error) {
-        console.warn('Admin OTP verify failed:', error);
-        addAIMessage(`验证码验证失败。${getAdminLoginErrorHint(error)}`, 'assistant');
+        console.warn('Admin dynamic code verify failed:', error);
+        addAIMessage(`动态密码验证失败。${getAdminErrorHint(error)}`, 'assistant');
         return;
       }
 
-      const email = getSessionEmail(data?.session);
-      if (await isAdminSession(data?.session)) {
-        adminEmail = email || pendingAdminOtpEmail;
-        pendingAdminOtpEmail = '';
+      if (typeof data === 'string' && data.length > 20) {
+        adminSessionToken = data;
+        sessionStorage.setItem('wish_admin_session', adminSessionToken);
+        adminAwaitingCode = false;
         setAdminMode(true);
         return;
       }
 
-      pendingAdminOtpEmail = '';
-      if (supabase) await supabase.auth.signOut();
-      addAIMessage(`验证码正确，但 ${email || '这个邮箱'} 不在管理员名单里。请先把该邮箱加入 Supabase 的 admin_users 表。`, 'assistant');
+      addAIMessage('动态密码验证失败：数据库没有返回管理员会话令牌。', 'assistant');
     }
 
     async function requestAdminLogin(text = '') {
-      if (!supabase) {
-        addAIMessage('当前没有连接 Supabase，暂时无法进行管理员邮箱验证。', 'assistant');
+      const code = extractAdminCode(text);
+      if (code) {
+        await verifyAdminDynamicCode(code);
         return;
       }
-
-      const targetEmail = getAdminLoginEmail(text);
-      const { data } = await supabase.auth.getSession();
-      const sessionEmail = getSessionEmail(data?.session);
-      if (await isAdminSession(data?.session)) {
-        adminEmail = sessionEmail;
-        setAdminMode(true);
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email: targetEmail,
-        options: {
-          emailRedirectTo: getAuthRedirectUrl(),
-          shouldCreateUser: true,
-        },
-      });
-
-      if (error) {
-        console.warn('Admin login email failed:', error);
-        addAIMessage(`管理员登录邮件发送失败。${getAdminLoginErrorHint(error)}`, 'assistant');
-        return;
-      }
-
-      pendingAdminOtpEmail = targetEmail;
-      addAIMessage(`我已经把 6 位管理员验证码发送到 ${targetEmail}。收到后直接在这里输入验证码即可进入管理员模式；如果邮件里只有链接，也可以点击链接回到网站。`, 'assistant');
+      adminAwaitingCode = true;
+      addAIMessage('请输入验证器 App 中的 6 位管理员动态密码。你也可以直接输入“管理员登录 123456”。', 'assistant');
     }
 
     async function syncAdminSession(options = {}) {
-      if (!supabase) return false;
+      if (!supabase || !adminSessionToken) return false;
       const { announce = false, openPanel = false } = options;
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.rpc('verify_admin_session', {
+        admin_token: adminSessionToken,
+      });
       if (error) {
         console.warn('Admin session check failed:', error);
+        sessionStorage.removeItem('wish_admin_session');
+        adminSessionToken = '';
         return false;
       }
-
-      const email = getSessionEmail(data?.session);
-      if (await isAdminSession(data?.session)) {
-        adminEmail = email;
+      if (data === true) {
         setAdminMode(true, { silent: !announce, openPanel });
         return true;
       }
-
-      adminEmail = '';
-      if (adminMode) setAdminMode(false, { silent: true });
-      if (email && announce) {
-        addAIMessage('这个邮箱不是管理员邮箱，无法进入管理员模式。', 'assistant');
-      }
+      sessionStorage.removeItem('wish_admin_session');
+      adminSessionToken = '';
       return false;
     }
 
-    function setupAdminAuthListener() {
-      if (!supabase) return;
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        const email = getSessionEmail(session);
-        if (await isAdminSession(session)) {
-          adminEmail = email;
-          const returnedFromAuth = /access_token|refresh_token|code=/.test(window.location.hash + window.location.search);
-          const shouldOpen = returnedFromAuth || (event === 'SIGNED_IN' && !adminMode);
-          setAdminMode(true, { silent: !shouldOpen, openPanel: shouldOpen });
-        } else {
-          adminEmail = '';
-          if (adminMode) setAdminMode(false, { silent: true });
-        }
-      });
-    }
-
     async function exitAdminMode() {
-      if (supabase) {
-        const { error } = await supabase.auth.signOut();
-        if (error) console.warn('Admin sign out failed:', error);
+      if (supabase && adminSessionToken) {
+        const { error } = await supabase.rpc('admin_logout', { admin_token: adminSessionToken });
+        if (error) console.warn('Admin logout failed:', error);
       }
-      adminEmail = '';
+      adminSessionToken = '';
+      adminAwaitingCode = false;
+      sessionStorage.removeItem('wish_admin_session');
       setAdminMode(false);
     }
 
@@ -4646,6 +4559,7 @@
 
       const rpcResult = await supabase.rpc('admin_delete_wish', {
         wish_id: numericId,
+        admin_token: adminSessionToken,
       });
       if (!rpcResult.error) {
         const deletedCount = Number(rpcResult.data || 0);
@@ -4655,16 +4569,8 @@
         return { ok: true };
       }
 
-      console.warn('Admin delete RPC failed, trying direct delete fallback:', rpcResult.error);
-      const directResult = await supabase.from('wishes').delete().eq('id', id).select('id');
-      if (directResult.error) {
-        console.warn('Admin direct delete failed:', directResult.error);
-        return { ok: false, message: '云端删除失败。请先在 Supabase SQL Editor 执行最新 schema.sql。' };
-      }
-      if (!directResult.data || directResult.data.length === 0) {
-        return { ok: false, message: '云端删除没有生效。请先在 Supabase SQL Editor 执行最新 schema.sql。' };
-      }
-      return { ok: true };
+      console.warn('Admin delete RPC failed:', rpcResult.error);
+      return { ok: false, message: '云端删除失败。请确认已执行最新 schema.sql，并重新输入管理员动态密码。' };
     }
 
     async function deleteWish(wish) {
@@ -6669,7 +6575,7 @@
       adminMode = !!enabled;
       if (!silent) {
         addAIMessage(adminMode
-          ? `管理员模式已开启。已验证邮箱：${adminEmail || ADMIN_EMAIL}。可以查看公共愿望、漂流瓶和时光胶囊，也可以删除云端公共愿望。`
+          ? '管理员模式已开启。动态密码会话将在约 30 分钟后失效；可以查看公共愿望、漂流瓶和时光胶囊，也可以删除云端公共愿望。'
           : '管理员模式已关闭。',
           'assistant'
         );
@@ -6684,8 +6590,8 @@
       const text = aiInput.value.trim();
       if (!text) return;
       aiInput.value = '';
-      if (isOtpCode(text)) {
-        verifyAdminOtpCode(text);
+      if ((adminAwaitingCode && isAdminCode(text)) || (isAdminLoginCommand(text) && extractAdminCode(text))) {
+        verifyAdminDynamicCode(text);
         return;
       }
       if (isAdminLoginCommand(text)) {
@@ -8023,9 +7929,7 @@
       }
       const ok = initSupabase();
       if (ok) {
-        const returnedFromAuth = /access_token|refresh_token|code=/.test(window.location.hash + window.location.search);
-        await syncAdminSession({ announce: returnedFromAuth, openPanel: returnedFromAuth });
-        setupAdminAuthListener();
+        await syncAdminSession({ announce: false, openPanel: false });
         await loadFromSupabase();
         setupRealtime();
       } else {
