@@ -3805,6 +3805,25 @@
         || isAdminEmail(value);
     }
 
+    function getAdminLoginErrorHint(error) {
+      const message = String(error?.message || error?.error_description || error || '').trim();
+      const lower = message.toLowerCase();
+      if (!message) return '没有收到 Supabase 返回的具体错误。';
+      if (lower.includes('rate') || lower.includes('security purposes') || lower.includes('too many')) {
+        return `请求太频繁了，请等 1 分钟再试。原始错误：${message}`;
+      }
+      if (lower.includes('redirect') || lower.includes('url')) {
+        return `跳转地址没有放行。请在 Supabase Authentication → URL Configuration 里加入：${getAuthRedirectUrl()}。原始错误：${message}`;
+      }
+      if (lower.includes('email') && lower.includes('disabled')) {
+        return `Supabase 邮箱登录没有启用。请在 Authentication → Providers → Email 里启用 Email provider。原始错误：${message}`;
+      }
+      if (lower.includes('smtp') || lower.includes('mailer')) {
+        return `邮件服务配置异常。请检查 Supabase Authentication → SMTP Settings。原始错误：${message}`;
+      }
+      return `Supabase 返回：${message}`;
+    }
+
     async function requestAdminLogin() {
       if (!supabase) {
         addAIMessage('当前没有连接 Supabase，暂时无法进行管理员邮箱验证。', 'assistant');
@@ -3828,7 +3847,7 @@
 
       if (error) {
         console.warn('Admin login email failed:', error);
-        addAIMessage('管理员登录邮件发送失败，请检查 Supabase Auth 邮箱登录设置。', 'assistant');
+        addAIMessage(`管理员登录邮件发送失败。${getAdminLoginErrorHint(error)}`, 'assistant');
         return;
       }
 

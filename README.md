@@ -63,6 +63,12 @@
 
 管理员邮箱已设为 `2507997974@qq.com`。打开愿望精灵后输入 `管理员登录`，系统会向该邮箱发送登录邮件；点击邮件链接回到网站后进入管理员模式。云端删除公共愿望需要先执行最新版 `schema.sql`。
 
+如果发送失败，页面会显示 Supabase 返回的具体原因。常见处理：
+- 提示请求太频繁：等待 1 分钟后再试。
+- 提示 redirect / URL：在 **Authentication → URL Configuration** 加入 `https://dsasanim4-source.github.io/wish-upon-a-star/`。
+- 提示 email disabled：在 **Authentication → Providers → Email** 启用 Email provider。
+- 提示 SMTP / mailer：检查 **Authentication → SMTP Settings**。
+
 ### 2. 部署到 GitHub Pages
 
 1. Fork 或 Push 本项目到你的 GitHub 仓库
