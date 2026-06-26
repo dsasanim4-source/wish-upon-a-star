@@ -2397,7 +2397,7 @@
     color: rgba(140, 230, 210, 0.9);
   }
 
-  /* ── Growth Tree ──────────────────────── */
+  /* ── Wish Review ──────────────────────── */
   .growth-tree-btn {
     position: fixed;
     bottom: clamp(260px, 36vh, 290px);
@@ -2438,8 +2438,8 @@
     left: 0;
     right: 0;
     z-index: 9;
-    height: 50vh;
-    max-height: 420px;
+    height: 62vh;
+    max-height: 620px;
     background: rgba(10, 12, 28, 0.92);
     backdrop-filter: blur(28px) saturate(140%);
     -webkit-backdrop-filter: blur(28px) saturate(140%);
@@ -2495,7 +2495,184 @@
   .tree-body {
     flex: 1;
     position: relative;
+    overflow-y: auto;
+    padding: 18px 22px 26px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tree-body::-webkit-scrollbar { width: 3px; }
+  .tree-body::-webkit-scrollbar-track { background: transparent; }
+  .tree-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 3px; }
+
+  .wish-review {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .review-hero {
+    border: 1px solid rgba(120, 220, 160, 0.16);
+    background: rgba(80, 180, 130, 0.06);
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  .review-hero-title {
+    color: rgba(190, 245, 205, 0.94);
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .review-hero-text {
+    color: rgba(205, 225, 215, 0.72);
+    font-size: 12px;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+  }
+
+  .review-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .review-stat,
+  .review-section,
+  .review-wish {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 14px;
+  }
+
+  .review-stat {
+    padding: 12px;
+    text-align: center;
+  }
+
+  .review-stat-value {
+    display: block;
+    color: rgba(180, 245, 205, 0.96);
+    font-size: 24px;
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .review-stat-label {
+    display: block;
+    color: rgba(190, 210, 200, 0.58);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    margin-top: 4px;
+  }
+
+  .review-section {
+    padding: 14px;
+  }
+
+  .review-section-title {
+    color: rgba(225, 238, 232, 0.88);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+
+  .review-row {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 10px;
+    margin: 9px 0;
+  }
+
+  .review-row-label,
+  .review-row-count {
+    color: rgba(200, 220, 210, 0.64);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .review-row-count { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .review-bar {
+    height: 8px;
+    border-radius: 999px;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .review-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(120, 220, 160, 0.75), rgba(255, 220, 126, 0.85));
+  }
+
+  .review-wish-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .review-wish {
+    padding: 11px 12px;
+  }
+
+  .review-wish-text {
+    color: rgba(225, 238, 232, 0.86);
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    word-break: break-word;
+  }
+
+  .review-wish-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .review-pill {
+    border-radius: 999px;
+    padding: 3px 8px;
+    background: rgba(120, 180, 240, 0.09);
+    color: rgba(190, 215, 240, 0.68);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .review-empty {
+    padding: 26px 16px;
+    text-align: center;
+    color: rgba(210, 225, 218, 0.42);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+
+  .review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .review-action {
+    flex: 1 1 140px;
+    min-height: 38px;
+    border-radius: 14px;
+    border: 1px solid rgba(120, 220, 160, 0.2);
+    background: rgba(80, 180, 130, 0.08);
+    color: rgba(205, 245, 220, 0.88);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    transition: all 0.25s ease;
+  }
+
+  .review-action:hover {
+    border-color: rgba(120, 220, 160, 0.38);
+    background: rgba(80, 180, 130, 0.14);
   }
 
   .tree-body canvas {
@@ -2843,6 +3020,11 @@
     .admin-tabs { padding: 10px 16px 0; gap: 6px; }
     .admin-tab { font-size: 11px; min-height: 36px; }
     .admin-body { padding: 14px 16px 24px; }
+    .tree-panel { height: 66vh; max-height: 640px; }
+    .tree-body { padding: 14px 16px 22px; }
+    .review-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .review-row { grid-template-columns: 74px minmax(0, 1fr) 28px; }
+    .review-action { flex-basis: 100%; }
     .room-chip { top: 62px; left: 12px; min-height: 32px; font-size: 11px; }
   }
 
@@ -3135,14 +3317,14 @@
     <div class="admin-body" id="adminBody"></div>
   </div>
 
-  <!-- Growth Tree Panel -->
+  <!-- Wish Review Panel -->
   <div class="tree-panel" id="treePanel">
     <div class="tree-header">
-      <span class="tree-title">🌳 愿望生长树</span>
+      <span class="tree-title">🧭 愿望复盘</span>
       <button class="tree-close" id="treeClose">✕</button>
     </div>
     <div class="tree-body" id="treeBody">
-      <canvas id="treeCanvas"></canvas>
+      <div class="wish-review" id="wishReview"></div>
     </div>
   </div>
 
@@ -3192,8 +3374,8 @@
   <!-- AI精灵 Button -->
   <button class="ai-btn" id="aiBtn" aria-label="愿望精灵">🧚</button>
 
-  <!-- Growth Tree Button -->
-  <button class="growth-tree-btn" id="growthTreeBtn" aria-label="生长树">🌱</button>
+  <!-- Wish Review Button -->
+  <button class="growth-tree-btn" id="growthTreeBtn" aria-label="愿望复盘">🧭</button>
 
   <!-- Star Toolbox -->
   <button class="toolbox-btn" id="toolboxBtn" aria-label="星空工具箱">
@@ -3205,7 +3387,7 @@
     <button class="toolbox-item" type="button" data-tool="capsule">⏳ 时光胶囊</button>
     <button class="toolbox-item" type="button" data-tool="galaxy">🌌 星系地图</button>
     <button class="toolbox-item" type="button" data-tool="ai">🧚 愿望精灵</button>
-    <button class="toolbox-item" type="button" data-tool="tree">🌱 生长树</button>
+    <button class="toolbox-item" type="button" data-tool="tree">🧭 愿望复盘</button>
     <button class="toolbox-item" type="button" data-tool="constellation">🔮 协作星座</button>
     <button class="toolbox-item" type="button" data-tool="room">🔗 心愿房间</button>
     <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
@@ -3428,8 +3610,8 @@
     const growthTreeBtn = document.getElementById('growthTreeBtn');
     const treePanel = document.getElementById('treePanel');
     const treeClose = document.getElementById('treeClose');
-    const treeCanvas = document.getElementById('treeCanvas');
-    const treeCtx = treeCanvas.getContext('2d');
+    const treeBody = document.getElementById('treeBody');
+    const wishReview = document.getElementById('wishReview');
 
     // Constellation drawing
     const constellationBtn = document.getElementById('constellationBtn');
@@ -6303,11 +6485,10 @@
     });
 
     /* ═══════════════════════════════════════════════════════════════════════
-       FEATURE 8: GROWTH TREE
+       FEATURE 8: WISH REVIEW
        ═══════════════════════════════════════════════════════════════════════ */
     function openTreePanel() {
       treePanel.classList.add('show');
-      resizeTreeCanvas();
       renderTree();
     }
 
@@ -6315,97 +6496,183 @@
       treePanel.classList.remove('show');
     }
 
-    function resizeTreeCanvas() {
-      const body = document.getElementById('treeBody');
-      treeCanvas.width = body.clientWidth * 2;
-      treeCanvas.height = body.clientHeight * 2;
-    }
-
     function updateTreeWishes() {
-      treeWishes = getVisibleWishes().map(getDisplayWish).slice(-20);
+      treeWishes = getVisibleWishes().slice(-20);
       if (treePanel.classList.contains('show')) renderTree();
     }
 
-    function renderTree() {
-      const cw = treeCanvas.width;
-      const ch = treeCanvas.height;
-      treeCtx.clearRect(0, 0, cw, ch);
+    function getWishReviewTag(wish) {
+      const displayWish = getDisplayWish(wish);
+      let tag = displayWish.tag;
+      if (!tag || tag === 'general') tag = detectTag(displayWish.text || '');
+      return CATEGORIES[tag] ? tag : 'general';
+    }
 
-      // Draw ground
-      const groundY = ch * 0.85;
-      const groundGrad = treeCtx.createLinearGradient(0, groundY, 0, ch);
-      groundGrad.addColorStop(0, 'rgba(20,40,30,0.3)');
-      groundGrad.addColorStop(1, 'rgba(10,20,15,0.6)');
-      treeCtx.fillStyle = groundGrad;
-      treeCtx.fillRect(0, groundY, cw, ch - groundY);
-
-      // Draw tree
-      const trunkX = cw / 2;
-      const trunkBase = groundY;
+    function getWishReviewStats() {
       const visibleWishes = getVisibleWishes();
-      const growth = Math.min(1, 0.3 + (visibleWishes.length / 50) * 0.7);
-      const trunkHeight = ch * 0.5 * growth;
+      const progressCounts = WISH_PROGRESS_STEPS.reduce((acc, step) => {
+        acc[step.id] = 0;
+        return acc;
+      }, {});
+      const tagCounts = {};
+      let blessingTotal = 0;
 
-      // Trunk
-      treeCtx.strokeStyle = 'rgba(80,120,80,0.7)';
-      treeCtx.lineWidth = 8 * growth;
-      treeCtx.lineCap = 'round';
-      treeCtx.beginPath();
-      treeCtx.moveTo(trunkX, trunkBase);
-      treeCtx.lineTo(trunkX, trunkBase - trunkHeight);
-      treeCtx.stroke();
+      visibleWishes.forEach(wish => {
+        const progressId = getWishProgressId(wish);
+        progressCounts[progressId] = (progressCounts[progressId] || 0) + 1;
+        const tag = getWishReviewTag(wish);
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        blessingTotal += getWishBlessingCount(wish);
+      });
 
-      // Draw branches recursively
-      function drawBranch(x, y, length, angle, depth, maxDepth) {
-        if (depth > maxDepth || length < 5) return;
-
-        const endX = x + Math.cos(angle) * length;
-        const endY = y + Math.sin(angle) * length;
-
-        const alpha = 0.5 + depth / maxDepth * 0.3;
-        treeCtx.strokeStyle = `rgba(80,140,80,${alpha})`;
-        treeCtx.lineWidth = Math.max(1, length * 0.08);
-        treeCtx.beginPath();
-        treeCtx.moveTo(x, y);
-        treeCtx.lineTo(endX, endY);
-        treeCtx.stroke();
-
-        // Leaves at tips
-        if (depth >= maxDepth - 1) {
-          // Wish leaves
-          const wishIdx = Math.floor(Math.random() * visibleWishes.length);
-          if (visibleWishes.length > 0) {
-            const leafGrad = treeCtx.createRadialGradient(endX, endY, 0, endX, endY, 8);
-            const colors = ['rgba(100,200,100,0.4)', 'rgba(150,220,150,0.35)', 'rgba(80,180,120,0.4)', 'rgba(200,230,100,0.35)'];
-            leafGrad.addColorStop(0, colors[depth % colors.length]);
-            leafGrad.addColorStop(1, 'transparent');
-            treeCtx.fillStyle = leafGrad;
-            treeCtx.beginPath();
-            treeCtx.arc(endX, endY, 8, 0, Math.PI * 2);
-            treeCtx.fill();
-          }
-        }
-
-        drawBranch(endX, endY, length * 0.7, angle - 0.5, depth + 1, maxDepth);
-        drawBranch(endX, endY, length * 0.7, angle + 0.5, depth + 1, maxDepth);
-        if (depth < maxDepth - 1) {
-          drawBranch(endX, endY, length * 0.5, angle - 0.2, depth + 1, maxDepth);
-        }
+      const dueWishes = visibleWishes
+        .filter(isReminderDue)
+        .sort((a, b) => new Date(getWishReminder(a)?.dueAt || 0) - new Date(getWishReminder(b)?.dueAt || 0));
+      const doneWishes = visibleWishes
+        .filter(wish => getWishProgressId(wish) === 'done')
+        .sort((a, b) => new Date(getWishCompletedAt(b) || getDisplayWish(b).created_at || 0) - new Date(getWishCompletedAt(a) || getDisplayWish(a).created_at || 0));
+      const activeWishes = visibleWishes.filter(wish => getWishProgressId(wish) !== 'done');
+      const recentWishes = [...visibleWishes]
+        .sort((a, b) => new Date(getDisplayWish(b).created_at || 0) - new Date(getDisplayWish(a).created_at || 0));
+      const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'general';
+      const completionRate = visibleWishes.length ? Math.round((doneWishes.length / visibleWishes.length) * 100) : 0;
+      let reviewText = '先写下一个真实的小愿望，让它成为下一次回看的起点。';
+      if (dueWishes.length > 0) {
+        reviewText = `有 ${dueWishes.length} 个旧心愿到了回访时间，今天适合回头看看它们。`;
+      } else if (activeWishes.length > 0) {
+        reviewText = `还有 ${activeWishes.length} 个心愿正在路上，挑一个写下下一步行动。`;
+      } else if (visibleWishes.length > 0) {
+        reviewText = '这批心愿都已经实现了，可以把新的愿望交给星星。';
       }
 
-      const maxDepth = Math.floor(3 + growth * 4);
-      drawBranch(trunkX, trunkBase - trunkHeight, trunkHeight * 0.6, -Math.PI / 2, 0, maxDepth);
+      return {
+        visibleWishes,
+        progressCounts,
+        dueWishes,
+        doneWishes,
+        activeWishes,
+        recentWishes,
+        topTag,
+        blessingTotal,
+        completionRate,
+        reviewText,
+      };
+    }
 
-      // Draw wish count
-      treeCtx.fillStyle = 'rgba(255,255,255,0.5)';
-      treeCtx.font = '20px "PingFang SC","Microsoft YaHei",sans-serif';
-      treeCtx.textAlign = 'center';
-      treeCtx.fillText(`🌱 ${visibleWishes.length} 个愿望滋养着这棵树`, cw / 2, 40);
+    function renderReviewWish(wish) {
+      const displayWish = getDisplayWish(wish);
+      const tag = getWishReviewTag(wish);
+      const cat = CATEGORIES[tag] || CATEGORIES.general;
+      const progress = getWishProgressStep(wish);
+      const reminderLabel = getWishReminderLabel(wish);
+      const time = formatTime(displayWish.created_at);
+      return `
+        <div class="review-wish">
+          <div class="review-wish-text">${escapeHTML(displayWish.text || '')}</div>
+          <div class="review-wish-meta">
+            <span class="review-pill">${cat.icon} ${cat.name}</span>
+            <span class="review-pill">${progress.label}</span>
+            <span class="review-pill">${reminderLabel}</span>
+            <span class="review-pill">${time}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProgressRows(stats) {
+      const total = Math.max(1, stats.visibleWishes.length);
+      return WISH_PROGRESS_STEPS.map(step => {
+        const count = stats.progressCounts[step.id] || 0;
+        const width = count ? Math.max(4, Math.round((count / total) * 100)) : 0;
+        return `
+          <div class="review-row">
+            <span class="review-row-label">${step.label}</span>
+            <div class="review-bar"><span style="width:${width}%"></span></div>
+            <span class="review-row-count">${count}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTree() {
+      const stats = getWishReviewStats();
+      if (stats.visibleWishes.length === 0) {
+        wishReview.innerHTML = `
+          <div class="review-empty">还没有可以复盘的愿望。写下第一个愿望后，这里会变成你的行动清单。</div>
+        `;
+        return;
+      }
+
+      const topCat = CATEGORIES[stats.topTag] || CATEGORIES.general;
+      const dueList = stats.dueWishes.slice(0, 3).map(renderReviewWish).join('');
+      const recentList = stats.recentWishes.slice(0, 3).map(renderReviewWish).join('');
+      const doneList = stats.doneWishes.slice(0, 3).map(renderReviewWish).join('');
+
+      wishReview.innerHTML = `
+        <div class="review-hero">
+          <div class="review-hero-title">本次复盘</div>
+          <div class="review-hero-text">${escapeHTML(stats.reviewText)}</div>
+        </div>
+        <div class="review-stats">
+          <div class="review-stat"><span class="review-stat-value">${stats.visibleWishes.length}</span><span class="review-stat-label">全部心愿</span></div>
+          <div class="review-stat"><span class="review-stat-value">${stats.completionRate}%</span><span class="review-stat-label">完成率</span></div>
+          <div class="review-stat"><span class="review-stat-value">${stats.dueWishes.length}</span><span class="review-stat-label">待回访</span></div>
+          <div class="review-stat"><span class="review-stat-value">${stats.blessingTotal}</span><span class="review-stat-label">收到祝福</span></div>
+        </div>
+        <div class="review-section">
+          <div class="review-section-title">进度分布</div>
+          ${renderProgressRows(stats)}
+        </div>
+        <div class="review-section">
+          <div class="review-section-title">本阶段主题</div>
+          <div class="review-hero-text">${topCat.icon} ${topCat.name} 是最近最常出现的愿望方向。</div>
+        </div>
+        ${stats.dueWishes.length ? `
+          <div class="review-section">
+            <div class="review-section-title">今天值得回看的心愿</div>
+            <div class="review-wish-list">${dueList}</div>
+          </div>
+        ` : ''}
+        <div class="review-section">
+          <div class="review-section-title">最近许下的心愿</div>
+          <div class="review-wish-list">${recentList}</div>
+        </div>
+        ${stats.doneWishes.length ? `
+          <div class="review-section">
+            <div class="review-section-title">已经实现的星星</div>
+            <div class="review-wish-list">${doneList}</div>
+          </div>
+        ` : ''}
+        <div class="review-actions">
+          <button class="review-action" type="button" data-review-action="all">打开心愿墙</button>
+          <button class="review-action" type="button" data-review-action="archive">查看已实现</button>
+          <button class="review-action" type="button" data-review-action="export">导出星图</button>
+        </div>
+      `;
+    }
+
+    function handleWishReviewAction(action) {
+      if (action === 'all') {
+        closeTreePanel();
+        setWishwallMode('all');
+        openWishwall();
+      } else if (action === 'archive') {
+        closeTreePanel();
+        setWishwallMode('archive');
+        openWishwall();
+      } else if (action === 'export') {
+        closeTreePanel();
+        exportMySky();
+      }
     }
 
     growthTreeBtn.addEventListener('click', (e) => { e.stopPropagation(); openTreePanel(); });
     treeClose.addEventListener('click', () => closeTreePanel());
-    treePanel.addEventListener('click', (e) => e.stopPropagation());
+    treePanel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const actionBtn = e.target.closest('[data-review-action]');
+      if (actionBtn) handleWishReviewAction(actionBtn.dataset.reviewAction);
+    });
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 9: SUNRISE / SUNSET CYCLE
