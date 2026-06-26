@@ -1704,6 +1704,32 @@
     margin-top: 9px;
   }
 
+  .admin-item-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .admin-danger {
+    min-height: 32px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 120, 120, 0.22);
+    background: rgba(255, 80, 80, 0.07);
+    color: rgba(255, 178, 178, 0.92);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 0 12px;
+    transition: all 0.25s ease;
+  }
+
+  .admin-danger:hover {
+    border-color: rgba(255, 130, 130, 0.44);
+    background: rgba(255, 80, 80, 0.14);
+    color: rgba(255, 220, 220, 0.98);
+  }
+
   .admin-pill {
     border-radius: 999px;
     padding: 3px 8px;
@@ -6079,6 +6105,9 @@
             <span class="admin-pill">${formatTime(displayWish.created_at)}</span>
             <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
           </div>
+          <div class="admin-item-actions">
+            <button class="admin-danger" type="button" data-admin-delete-wish="${escapeHTML(item.id)}">删除公共愿望</button>
+          </div>
         </div>
       `;
     }
@@ -6102,9 +6131,46 @@
         return;
       }
       adminBody.innerHTML = `
-        <div class="admin-summary">共 ${rows.length} 条${tabName} · 只读查看，不改变原功能状态</div>
+        <div class="admin-summary">${adminPanelState.tab === 'wishes'
+          ? `共 ${rows.length} 条${tabName} · 管理员可删除公共愿望`
+          : `共 ${rows.length} 条${tabName} · 只读查看，不改变原功能状态`}</div>
         ${rows.map(renderAdminItem).join('')}
       `;
+    }
+
+    function removeCloudWishAfterAdminDelete(id) {
+      const idStr = String(id);
+      adminPanelState.wishes = adminPanelState.wishes.filter(wish => getWishId(wish) !== idStr);
+      const idx = wishMessages.findIndex(wish => getWishId(wish) === idStr);
+      if (idx >= 0) wishMessages.splice(idx, 1);
+      hiddenWishIds.delete(idStr);
+      totalWishes = getVisibleWishes().length;
+      lastWishCount = totalWishes;
+      wishCountEl.textContent = totalWishes;
+      saveWishVisibilityState();
+      saveWishesToStorage();
+      updateTreeWishes();
+      if (activeWishDetail && getWishId(activeWishDetail) === idStr) closeWishDetail();
+      if (wishwallPanel.classList.contains('show')) renderWishWall();
+      renderAdminPanel();
+    }
+
+    async function deleteAdminPanelWish(id) {
+      if (!adminMode) return;
+      if (!supabase) {
+        alert('当前没有连接 Supabase，无法删除云端公共愿望。');
+        return;
+      }
+      const wish = adminPanelState.wishes.find(item => getWishId(item) === String(id));
+      const displayWish = wish ? getDisplayWish(wish) : null;
+      const text = displayWish && displayWish.text ? `\n\n${displayWish.text}` : '';
+      if (!window.confirm(`管理员模式：确定要从云端永久删除这条公共愿望吗？${text}`)) return;
+      const result = await adminDeleteCloudWish(id);
+      if (!result.ok) {
+        alert(result.message || '云端删除失败。');
+        return;
+      }
+      removeCloudWishAfterAdminDelete(id);
     }
 
     async function refreshAdminPanel(showLoading = true) {
@@ -6216,6 +6282,12 @@
     aiPanel.addEventListener('click', (e) => e.stopPropagation());
     adminClose.addEventListener('click', closeAdminPanel);
     adminRefreshBtn.addEventListener('click', () => refreshAdminPanel());
+    adminBody.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('[data-admin-delete-wish]');
+      if (!deleteBtn) return;
+      e.stopPropagation();
+      deleteAdminPanelWish(deleteBtn.dataset.adminDeleteWish);
+    });
     adminPanelBtn.addEventListener('click', () => {
       closeToolbox();
       openAdminPanel('wishes');
