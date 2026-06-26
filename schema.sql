@@ -13,11 +13,14 @@ CREATE TABLE IF NOT EXISTS wishes (
   id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   text      TEXT NOT NULL,
   tag       TEXT DEFAULT 'general',
+  blessing_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ── 如果 wishes 表已存在但没有 tag 列，则添加 ────
 ALTER TABLE wishes ADD COLUMN IF NOT EXISTS tag TEXT DEFAULT 'general';
+ALTER TABLE wishes ADD COLUMN IF NOT EXISTS blessing_count INTEGER DEFAULT 0;
+UPDATE wishes SET blessing_count = 0 WHERE blessing_count IS NULL;
 
 -- ── 留言表 ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS messages (
@@ -88,6 +91,7 @@ DROP POLICY IF EXISTS "允许任何人更新时光胶囊" ON time_capsules;
 DROP POLICY IF EXISTS "允许任何人读取星座" ON constellations;
 DROP POLICY IF EXISTS "允许任何人写入星座" ON constellations;
 DROP FUNCTION IF EXISTS admin_delete_wish(TEXT, BIGINT);
+DROP FUNCTION IF EXISTS bless_wish(BIGINT);
 
 -- ── 公开读取 ────────────────────────────────────────────
 CREATE POLICY "允许任何人读取心愿" ON wishes
@@ -137,6 +141,32 @@ $$;
 
 GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO anon;
 GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO authenticated;
+
+-- 公开心愿祝福计数（只允许通过函数累加）
+CREATE OR REPLACE FUNCTION bless_wish(wish_id BIGINT)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  next_count INTEGER;
+BEGIN
+  UPDATE wishes
+  SET blessing_count = COALESCE(blessing_count, 0) + 1
+  WHERE id = wish_id
+  RETURNING blessing_count INTO next_count;
+
+  IF next_count IS NULL THEN
+    RAISE EXCEPTION 'wish not found';
+  END IF;
+
+  RETURN next_count;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION bless_wish(BIGINT) TO anon;
+GRANT EXECUTE ON FUNCTION bless_wish(BIGINT) TO authenticated;
 
 -- ── 允许更新 ────────────────────────────────────────────
 CREATE POLICY "允许任何人更新留言" ON messages

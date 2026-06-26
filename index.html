@@ -1082,6 +1082,30 @@
     color: rgba(255, 190, 130, 0.95);
     background: rgba(245, 160, 95, 0.12);
   }
+  .wish-card-bless {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 220, 126, 0.16);
+    background: rgba(255, 210, 90, 0.05);
+    color: rgba(255, 230, 170, 0.72);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+  }
+  .wish-card-bless:hover,
+  .wish-card-bless.blessed {
+    border-color: rgba(255, 220, 126, 0.36);
+    background: rgba(255, 210, 90, 0.13);
+    color: rgba(255, 240, 190, 0.96);
+  }
+  .wish-card-bless.blessed {
+    cursor: default;
+  }
   .wish-card-private {
     flex-shrink: 0;
     font-size: 10px;
@@ -1388,6 +1412,15 @@
     padding: 24px 22px 22px;
   }
 
+  .export-preview-label {
+    width: 100%;
+    margin: 14px 0 8px;
+    color: rgba(190, 210, 235, 0.6);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-align: left;
+  }
+
   .export-preview-frame {
     width: 100%;
     max-height: 52vh;
@@ -1414,6 +1447,10 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     width: 100%;
+  }
+
+  .export-preview-templates {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .export-preview-actions {
@@ -1453,6 +1490,211 @@
     color: rgba(190, 210, 235, 0.6);
     font-size: 11px;
     letter-spacing: 0.05em;
+  }
+
+  .wish-detail-popup {
+    max-width: min(92vw, 520px);
+  }
+
+  .wish-detail-text {
+    margin-top: 12px;
+    color: rgba(245, 235, 205, 0.96);
+    font-size: 18px;
+    line-height: 1.65;
+    letter-spacing: 0.05em;
+    word-break: break-word;
+  }
+
+  .wish-detail-meta {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .wish-detail-meta-item {
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.035);
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .wish-detail-meta-label {
+    display: block;
+    color: rgba(190, 210, 235, 0.45);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+
+  .wish-detail-meta-value {
+    display: block;
+    color: rgba(220, 232, 250, 0.86);
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .wish-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .admin-only.hidden {
+    display: none !important;
+  }
+
+  .admin-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 11;
+    background: rgba(5, 7, 18, 0.92);
+    backdrop-filter: blur(26px) saturate(125%);
+    -webkit-backdrop-filter: blur(26px) saturate(125%);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+  }
+
+  .admin-panel.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .admin-panel.hidden {
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+  }
+
+  .admin-title {
+    color: rgba(255, 225, 170, 0.92);
+    font-size: 16px;
+    letter-spacing: 0.1em;
+  }
+
+  .admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .admin-refresh,
+  .admin-close,
+  .admin-tab {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(220, 232, 250, 0.75);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.25s ease;
+  }
+
+  .admin-refresh {
+    min-height: 32px;
+    border-radius: 16px;
+    padding: 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .admin-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .admin-refresh:hover,
+  .admin-close:hover,
+  .admin-tab:hover,
+  .admin-tab.active {
+    border-color: rgba(255, 210, 120, 0.34);
+    background: rgba(255, 190, 90, 0.1);
+    color: rgba(255, 235, 190, 0.95);
+  }
+
+  .admin-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 22px 0;
+    flex-shrink: 0;
+  }
+
+  .admin-tab {
+    min-height: 38px;
+    border-radius: 14px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .admin-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 22px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-summary {
+    color: rgba(190, 210, 235, 0.65);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    margin-bottom: 4px;
+  }
+
+  .admin-item {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.035);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+
+  .admin-item-text {
+    color: rgba(225, 235, 250, 0.88);
+    font-size: 13px;
+    line-height: 1.55;
+    letter-spacing: 0.04em;
+    word-break: break-word;
+  }
+
+  .admin-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+  }
+
+  .admin-pill {
+    border-radius: 999px;
+    padding: 3px 8px;
+    background: rgba(120, 180, 240, 0.09);
+    color: rgba(180, 210, 245, 0.68);
+    font-size: 10px;
+    letter-spacing: 0.08em;
   }
 
   .room-chip {
@@ -2550,8 +2792,15 @@
     .wishwall-reminder-summary { margin: 4px 14px 0; }
     .export-preview-popup { width: 94%; padding: 20px 16px 18px; }
     .export-preview-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .export-preview-templates { grid-template-columns: 1fr; }
     .export-preview-frame,
     .export-preview-img { max-height: 48vh; }
+    .wish-detail-meta { grid-template-columns: 1fr; }
+    .wish-detail-actions .achievement-action { flex: 1 1 42%; padding-inline: 8px; }
+    .admin-header { padding: 16px 16px 12px; }
+    .admin-tabs { padding: 10px 16px 0; gap: 6px; }
+    .admin-tab { font-size: 11px; min-height: 36px; }
+    .admin-body { padding: 14px 16px 24px; }
     .room-chip { top: 62px; left: 12px; min-height: 32px; font-size: 11px; }
   }
 
@@ -2692,6 +2941,13 @@
   <div class="msg-popup-overlay hidden" id="exportPreviewOverlay">
     <div class="msg-popup export-preview-popup">
       <div class="msg-popup-title">导出预览</div>
+      <div class="export-preview-label">模板</div>
+      <div class="export-preview-presets export-preview-templates" id="exportPreviewTemplates">
+        <button class="export-preview-btn active" type="button" data-export-template="dream">梦幻海报</button>
+        <button class="export-preview-btn" type="button" data-export-template="clean">简洁卡片</button>
+        <button class="export-preview-btn" type="button" data-export-template="blessing">祝福星笺</button>
+      </div>
+      <div class="export-preview-label">比例</div>
       <div class="export-preview-presets" id="exportPreviewPresets">
         <button class="export-preview-btn active" type="button" data-export-preset="adaptive">自适应</button>
         <button class="export-preview-btn" type="button" data-export-preset="wallpaper">壁纸</button>
@@ -2705,6 +2961,22 @@
       <div class="export-preview-actions">
         <button class="export-preview-btn primary" id="exportPreviewDownload" type="button">下载</button>
         <button class="export-preview-btn" id="exportPreviewClose" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wish Detail Popup -->
+  <div class="msg-popup-overlay hidden" id="wishDetailOverlay">
+    <div class="msg-popup wish-detail-popup">
+      <div class="msg-popup-icon">🌟</div>
+      <div class="msg-popup-title" id="wishDetailTitle">心愿详情</div>
+      <div class="wish-detail-text" id="wishDetailText"></div>
+      <div class="wish-detail-meta" id="wishDetailMeta"></div>
+      <div class="wish-detail-actions">
+        <button class="achievement-action" id="wishDetailBlessBtn" type="button">祝福一下</button>
+        <button class="achievement-action" id="wishDetailExportBtn" type="button">导出这颗星</button>
+        <button class="achievement-action" id="wishDetailProgressBtn" type="button">更新进度</button>
+        <button class="achievement-action" id="wishDetailCloseBtn" type="button">关闭</button>
       </div>
     </div>
   </div>
@@ -2804,6 +3076,23 @@
     </div>
   </div>
 
+  <!-- Admin Panel -->
+  <div class="admin-panel hidden" id="adminPanel">
+    <div class="admin-header">
+      <span class="admin-title">管理员面板</span>
+      <div class="admin-header-actions">
+        <button class="admin-refresh" id="adminRefreshBtn" type="button">刷新</button>
+        <button class="admin-close" id="adminClose">✕</button>
+      </div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" type="button" data-admin-tab="wishes">公共愿望</button>
+      <button class="admin-tab" type="button" data-admin-tab="messages">漂流瓶</button>
+      <button class="admin-tab" type="button" data-admin-tab="capsules">时光胶囊</button>
+    </div>
+    <div class="admin-body" id="adminBody"></div>
+  </div>
+
   <!-- Growth Tree Panel -->
   <div class="tree-panel" id="treePanel">
     <div class="tree-header">
@@ -2879,6 +3168,7 @@
     <button class="toolbox-item" type="button" data-tool="room">🔗 心愿房间</button>
     <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
     <button class="toolbox-item" type="button" id="toolboxExportBtn">🖼 导出星空</button>
+    <button class="toolbox-item admin-only hidden" type="button" id="adminPanelBtn">🛡 管理员面板</button>
     <button class="toolbox-item" type="button" id="backupExportBtn">📦 备份数据</button>
     <button class="toolbox-item" type="button" id="backupImportBtn">📥 恢复备份</button>
   </div>
@@ -2919,6 +3209,39 @@
       study: { name: '学业', icon: '📚', color: '#a78bfa', constellation: 'star5' },
       travel: { name: '旅行', icon: '✈️', color: '#38bdf8', constellation: 'bird' },
       general: { name: '其他', icon: '🌟', color: '#94a3b8', constellation: 'circle' },
+    };
+
+    const EXPORT_TEMPLATES = {
+      dream: {
+        name: '梦幻海报',
+        title: '我的心愿星空',
+        footer: 'wish upon a star',
+        grad: ['#162348', '#081024', '#030410'],
+        accent: 'rgba(255, 235, 175, 0.95)',
+        sub: 'rgba(200, 220, 245, 0.78)',
+        panel: 'rgba(4, 9, 22, 0.58)',
+        starAlpha: 0.75,
+      },
+      clean: {
+        name: '简洁卡片',
+        title: '心愿星图',
+        footer: 'keep looking up',
+        grad: ['#132036', '#07121f', '#050811'],
+        accent: 'rgba(224, 238, 255, 0.96)',
+        sub: 'rgba(184, 205, 230, 0.72)',
+        panel: 'rgba(8, 13, 24, 0.68)',
+        starAlpha: 0.58,
+      },
+      blessing: {
+        name: '祝福星笺',
+        title: '把祝福交给星星',
+        footer: 'may this wish come true',
+        grad: ['#231c3d', '#11142d', '#060711'],
+        accent: 'rgba(255, 224, 170, 0.96)',
+        sub: 'rgba(238, 210, 246, 0.72)',
+        panel: 'rgba(18, 11, 32, 0.66)',
+        starAlpha: 0.82,
+      },
     };
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -2991,9 +3314,18 @@
     const exportPreviewOverlay = document.getElementById('exportPreviewOverlay');
     const exportPreviewImage = document.getElementById('exportPreviewImage');
     const exportPreviewMeta = document.getElementById('exportPreviewMeta');
+    const exportPreviewTemplates = document.getElementById('exportPreviewTemplates');
     const exportPreviewPresets = document.getElementById('exportPreviewPresets');
     const exportPreviewDownload = document.getElementById('exportPreviewDownload');
     const exportPreviewClose = document.getElementById('exportPreviewClose');
+    const wishDetailOverlay = document.getElementById('wishDetailOverlay');
+    const wishDetailTitle = document.getElementById('wishDetailTitle');
+    const wishDetailText = document.getElementById('wishDetailText');
+    const wishDetailMeta = document.getElementById('wishDetailMeta');
+    const wishDetailBlessBtn = document.getElementById('wishDetailBlessBtn');
+    const wishDetailExportBtn = document.getElementById('wishDetailExportBtn');
+    const wishDetailProgressBtn = document.getElementById('wishDetailProgressBtn');
+    const wishDetailCloseBtn = document.getElementById('wishDetailCloseBtn');
 
     // Wish room
     const roomChip = document.getElementById('roomChip');
@@ -3044,6 +3376,11 @@
     const aiBody = document.getElementById('aiBody');
     const aiInput = document.getElementById('aiInput');
     const aiSendBtn = document.getElementById('aiSendBtn');
+    const adminPanel = document.getElementById('adminPanel');
+    const adminClose = document.getElementById('adminClose');
+    const adminRefreshBtn = document.getElementById('adminRefreshBtn');
+    const adminBody = document.getElementById('adminBody');
+    const adminPanelBtn = document.getElementById('adminPanelBtn');
 
     // Growth tree
     const growthTreeBtn = document.getElementById('growthTreeBtn');
@@ -3094,11 +3431,13 @@
     const WISH_REMINDERS_KEY = 'wish_reminder_states';
     const HIDDEN_WISH_IDS_KEY = 'wish_hidden_ids';
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
+    const BLESSED_WISH_IDS_KEY = 'wish_blessed_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
     const ADMIN_PASSWORD = 'LJXNB';
     let wishReminders = {};
     let hiddenWishIds = new Set();
+    let blessedWishIds = new Set();
     let wishOverrides = {};
     let wishwallMode = 'all';
     let quietMode = false;
@@ -3136,8 +3475,18 @@
     let exportPreviewState = {
       selectedWish: null,
       preset: 'adaptive',
+      template: 'dream',
       dataUrl: '',
       sizeLabel: '',
+    };
+    let activeWishDetail = null;
+    let adminPanelState = {
+      tab: 'wishes',
+      loading: false,
+      error: '',
+      wishes: [],
+      messages: [],
+      capsules: [],
     };
     let skyColors = {
       bgTop: '#0a1020',
@@ -3213,6 +3562,7 @@
       loadWishProgress();
       loadWishReminders();
       loadWishVisibilityState();
+      loadBlessedWishIds();
       loadQuietMode();
       loadRoomState();
       loadWishesFromStorage();
@@ -3316,9 +3666,27 @@
           const cy = rect.top + rect.height / 2 + (Math.random() - 0.5) * 100;
           createLantern(cx, cy, displayNewWish.text, displayNewWish.tag || newWish.tag || 'general');
           if (wishwallPanel.classList.contains('show')) renderWishWall();
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
           if (totalWishes >= 3) { instruction.style.opacity = '0'; instruction.style.transition = 'opacity 1s ease'; }
           treeGrowth += 0.02;
           updateTreeWishes();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wishes' }, (payload) => {
+          const updatedWish = payload.new;
+          const id = getWishId(updatedWish);
+          if (!id) return;
+          const idx = wishMessages.findIndex(w => getWishId(w) === id);
+          if (idx >= 0) {
+            wishMessages[idx] = { ...wishMessages[idx], ...updatedWish };
+          } else if (isWishVisible(updatedWish)) {
+            wishMessages.push(updatedWish);
+          }
+          if (wishwallPanel.classList.contains('show')) renderWishWall();
+          if (activeWishDetail && getWishId(activeWishDetail) === id) {
+            activeWishDetail = wishMessages.find(w => getWishId(w) === id) || updatedWish;
+            renderWishDetail();
+          }
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'wishes' }, (payload) => {
           const oldWish = payload.old;
@@ -3333,17 +3701,21 @@
           saveWishVisibilityState();
           saveWishesToStorage();
           updateTreeWishes();
+          if (activeWishDetail && getWishId(activeWishDetail) === id) closeWishDetail();
           if (wishwallPanel.classList.contains('show')) renderWishWall();
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         }).subscribe();
 
       supabase.channel('messages-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
           if (localInsertIds.has(payload.new.id)) { localInsertIds.delete(payload.new.id); return; }
           if (!payload.new.revealed) { totalUnreadMessages++; lastUnreadCount = totalUnreadMessages; updateBottleBadge(); updateBottlePanel(); }
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
           if (localUpdateIds.has(payload.new.id)) { localUpdateIds.delete(payload.new.id); return; }
           if (payload.new.revealed && !payload.old.revealed) { totalUnreadMessages = Math.max(0, totalUnreadMessages - 1); lastUnreadCount = totalUnreadMessages; updateBottleBadge(); updateBottlePanel(); }
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         }).subscribe();
 
       supabase.channel('capsules-realtime')
@@ -3357,6 +3729,7 @@
           saveTimeCapsulesToStorage();
           updateTimeCapsuleBadge();
           if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
+          if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         }).subscribe();
     }
 
@@ -3646,6 +4019,21 @@
       } catch(e) { /* ignore */ }
     }
 
+    function loadBlessedWishIds() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(BLESSED_WISH_IDS_KEY) || '[]');
+        if (Array.isArray(stored)) blessedWishIds = new Set(stored.map(String));
+      } catch(e) {
+        blessedWishIds = new Set();
+      }
+    }
+
+    function saveBlessedWishIds() {
+      try {
+        localStorage.setItem(BLESSED_WISH_IDS_KEY, JSON.stringify([...blessedWishIds].slice(-1000)));
+      } catch(e) { /* ignore */ }
+    }
+
     function saveWishVisibilityState() {
       try {
         localStorage.setItem(HIDDEN_WISH_IDS_KEY, JSON.stringify([...hiddenWishIds].slice(-500)));
@@ -3660,6 +4048,22 @@
     function isLocalWish(wish) {
       const id = getWishId(wish);
       return !id || id.startsWith('local_') || wish.visibility === 'private';
+    }
+
+    function getWishActionKey(wish) {
+      const id = getWishId(wish);
+      if (id) return id;
+      return getWishProgressKey(wish);
+    }
+
+    function getWishBlessingCount(wish) {
+      const displayWish = getDisplayWish(wish);
+      return Math.max(0, Number(displayWish.blessing_count || displayWish.blessings || 0) || 0);
+    }
+
+    function hasBlessedWish(wish) {
+      const key = getWishActionKey(wish);
+      return !!key && blessedWishIds.has(key);
     }
 
     function isWishVisible(wish) {
@@ -3696,6 +4100,16 @@
       saveWishVisibilityState();
     }
 
+    function updateWishInLocalState(id, values) {
+      const targetId = String(id);
+      const idx = wishMessages.findIndex(w => getWishId(w) === targetId);
+      if (idx >= 0) {
+        wishMessages[idx] = { ...wishMessages[idx], ...values };
+        return wishMessages[idx];
+      }
+      return null;
+    }
+
     function editWish(wish) {
       const displayWish = getDisplayWish(wish);
       const nextText = window.prompt('编辑这条心愿', displayWish.text || '');
@@ -3718,6 +4132,45 @@
       const idx = wishMessages.findIndex(w => w === wish || getWishId(w) === id || getWishProgressKey(w) === key);
       if (idx >= 0) wishMessages.splice(idx, 1);
       if (id) hiddenWishIds.delete(id);
+    }
+
+    async function blessWish(wish) {
+      const key = getWishActionKey(wish);
+      if (!key) return;
+      if (blessedWishIds.has(key)) {
+        alert('这颗星已经收到你的祝福啦。');
+        return;
+      }
+
+      const id = getWishId(wish);
+      if (supabase && id && !isLocalWish(wish)) {
+        const numericId = Number(id);
+        const { data, error } = await supabase.rpc('bless_wish', { wish_id: numericId });
+        if (error) {
+          console.warn('Bless wish failed:', error);
+          alert('祝福没有同步成功。请先在 Supabase SQL Editor 执行最新 schema.sql。');
+          return;
+        }
+        const nextCount = Math.max(1, Number(data || 0));
+        updateWishInLocalState(id, { blessing_count: nextCount });
+      } else {
+        const nextCount = getWishBlessingCount(wish) + 1;
+        if (isLocalWish(wish)) {
+          wish.blessing_count = nextCount;
+        } else {
+          saveWishOverride(wish, { blessing_count: nextCount });
+        }
+      }
+
+      blessedWishIds.add(key);
+      saveBlessedWishIds();
+      saveWishesToStorage();
+      renderWishWall();
+      if (activeWishDetail && getWishActionKey(activeWishDetail) === key) {
+        const fresh = id ? wishMessages.find(w => getWishId(w) === id) : wish;
+        activeWishDetail = fresh || wish;
+        renderWishDetail();
+      }
     }
 
     async function adminDeleteCloudWish(id) {
@@ -3781,6 +4234,82 @@
       saveWishesToStorage();
       updateTreeWishes();
       renderWishWall();
+      if (activeWishDetail && getWishActionKey(activeWishDetail) === getWishActionKey(wish)) {
+        closeWishDetail();
+      }
+    }
+
+    function getWishMetaItems(wish) {
+      const displayWish = getDisplayWish(wish);
+      let tag = displayWish.tag;
+      if (!tag || tag === 'general') tag = detectTag(displayWish.text || '');
+      const cat = CATEGORIES[tag] || CATEGORIES.general;
+      const progress = getWishProgressStep(wish);
+      const reminder = getWishReminderLabel(wish);
+      const blessings = getWishBlessingCount(wish);
+      return [
+        { label: '分类', value: `${cat.icon} ${cat.name}` },
+        { label: '进度', value: progress.label },
+        { label: '创建时间', value: formatTime(displayWish.created_at) },
+        { label: '回访', value: reminder },
+        { label: '祝福', value: `${blessings} 次` },
+        { label: '范围', value: displayWish.visibility === 'private' ? '私密' : (getWishRoomCode(wish) ? `房间 ${getWishRoomCode(wish)}` : '公开') },
+      ];
+    }
+
+    function renderWishDetail() {
+      if (!activeWishDetail) return;
+      const displayWish = getDisplayWish(activeWishDetail);
+      const progress = getWishProgressStep(activeWishDetail);
+      const blessed = hasBlessedWish(activeWishDetail);
+      wishDetailTitle.textContent = progress.id === 'done' ? '已实现的心愿' : '心愿详情';
+      wishDetailText.textContent = displayWish.text || '';
+      wishDetailMeta.innerHTML = getWishMetaItems(activeWishDetail).map(item => `
+        <div class="wish-detail-meta-item">
+          <span class="wish-detail-meta-label">${escapeHTML(item.label)}</span>
+          <span class="wish-detail-meta-value">${escapeHTML(item.value)}</span>
+        </div>
+      `).join('');
+      wishDetailBlessBtn.textContent = blessed ? `已祝福 · ${getWishBlessingCount(activeWishDetail)}` : `祝福一下 · ${getWishBlessingCount(activeWishDetail)}`;
+      wishDetailBlessBtn.disabled = blessed;
+      wishDetailBlessBtn.style.opacity = blessed ? '0.62' : '1';
+      wishDetailProgressBtn.textContent = progress.id === 'done' ? '已实现' : '更新进度';
+    }
+
+    function openWishDetail(wish) {
+      activeWishDetail = wish;
+      renderWishDetail();
+      wishDetailOverlay.classList.remove('hidden');
+      void wishDetailOverlay.offsetWidth;
+      wishDetailOverlay.classList.add('show');
+    }
+
+    function closeWishDetail() {
+      activeWishDetail = null;
+      wishDetailOverlay.classList.remove('show');
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        wishDetailOverlay.classList.add('hidden');
+        wishDetailOverlay.removeEventListener('transitionend', finish);
+      };
+      wishDetailOverlay.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
+    }
+
+    function exportWishDirectly(wish) {
+      exportPreviewState = {
+        selectedWish: wish,
+        preset: exportPreviewState.preset || 'adaptive',
+        template: exportPreviewState.template || 'dream',
+        dataUrl: '',
+        sizeLabel: '',
+      };
+      renderExportPreview();
+      exportPreviewOverlay.classList.remove('hidden');
+      void exportPreviewOverlay.offsetWidth;
+      exportPreviewOverlay.classList.add('show');
     }
 
     function toggleWishPrivacyMode() {
@@ -4095,7 +4624,7 @@
       ctx2.restore();
     }
 
-    function drawExportConstellations(ctx2, outWidth, outHeight) {
+    function drawExportConstellations(ctx2, outWidth, outHeight, template = EXPORT_TEMPLATES.dream) {
       const constellations = getExportConstellations();
       if (constellations.length === 0) return;
 
@@ -4108,7 +4637,7 @@
 
       ctx2.save();
       roundedRectPath(ctx2, panelX, panelY, panelWidth, panelHeight, Math.max(18, outWidth * 0.025));
-      ctx2.fillStyle = 'rgba(4, 9, 22, 0.58)';
+      ctx2.fillStyle = template.panel || 'rgba(4, 9, 22, 0.58)';
       ctx2.fill();
       ctx2.strokeStyle = 'rgba(255, 220, 126, 0.22)';
       ctx2.lineWidth = Math.max(1, outWidth * 0.0014);
@@ -4135,7 +4664,8 @@
       ctx2.restore();
     }
 
-    function createWishSkyExportCanvas(selectedWish, preset = 'adaptive') {
+    function createWishSkyExportCanvas(selectedWish, preset = 'adaptive', templateId = 'dream') {
+      const template = EXPORT_TEMPLATES[templateId] || EXPORT_TEMPLATES.dream;
       const out = document.createElement('canvas');
       const exportSize = getExportCanvasSize(preset);
       out.width = exportSize.width;
@@ -4143,9 +4673,9 @@
       const octx = out.getContext('2d');
       const centerX = out.width / 2;
       const grad = octx.createRadialGradient(centerX, out.height * 0.32, 0, centerX, out.height * 0.44, Math.max(out.width, out.height) * 0.72);
-      grad.addColorStop(0, '#162348');
-      grad.addColorStop(0.5, '#081024');
-      grad.addColorStop(1, '#030410');
+      grad.addColorStop(0, template.grad[0]);
+      grad.addColorStop(0.5, template.grad[1]);
+      grad.addColorStop(1, template.grad[2]);
       octx.fillStyle = grad;
       octx.fillRect(0, 0, out.width, out.height);
       let canvasBounds = null;
@@ -4154,7 +4684,7 @@
         canvasBounds = drawCanvasIntoExport(octx, canvas, out.width, out.height);
         octx.globalAlpha = 1;
       } catch(e) { /* ignore canvas export fallback */ }
-      octx.fillStyle = 'rgba(255,255,255,0.75)';
+      octx.fillStyle = `rgba(255,255,255,${template.starAlpha || 0.75})`;
       const exportStarCount = clampNumber(Math.round((out.width * out.height) / 9000), 120, 260);
       for (let i = 0; i < exportStarCount; i++) {
         const x = Math.random() * out.width;
@@ -4170,15 +4700,15 @@
       const visibleWishMessages = getVisibleWishes();
       const doneWishes = visibleWishMessages.filter(w => getWishProgressId(w) === 'done');
       octx.textAlign = 'center';
-      octx.fillStyle = 'rgba(245, 250, 255, 0.96)';
+      octx.fillStyle = template.accent;
       octx.font = `${Math.max(38, Math.round(out.width * 0.047))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillText('我的心愿星空', centerX, out.height * 0.11);
+      octx.fillText(template.title, centerX, out.height * 0.11);
       octx.font = `${Math.max(22, Math.round(out.width * 0.025))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillStyle = 'rgba(200, 220, 245, 0.78)';
+      octx.fillStyle = template.sub;
       octx.fillText(`${visibleWishMessages.length} 个心愿 · ${doneWishes.length} 个已实现`, centerX, out.height * 0.15);
       if (selectedWish) {
         const displayRecentWish = getDisplayWish(selectedWish);
-        octx.fillStyle = 'rgba(255, 235, 175, 0.95)';
+        octx.fillStyle = template.accent;
         const wishFont = Math.max(28, Math.round(out.width * 0.034));
         const wishLineHeight = Math.max(42, Math.round(wishFont * 1.45));
         octx.font = `${wishFont}px "Microsoft YaHei", "PingFang SC", sans-serif`;
@@ -4189,10 +4719,10 @@
         const completedAt = getWishCompletedAt(selectedWish);
         octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, centerX, out.height * 0.47);
       }
-      drawExportConstellations(octx, out.width, out.height);
+      drawExportConstellations(octx, out.width, out.height, template);
       octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
-      octx.fillText('wish upon a star', centerX, out.height * 0.93);
+      octx.fillText(template.footer, centerX, out.height * 0.93);
       return out;
     }
 
@@ -4212,11 +4742,15 @@
 
     function renderExportPreview() {
       if (!exportPreviewState.selectedWish && exportPreviewState.selectedWish !== null) return;
-      const out = createWishSkyExportCanvas(exportPreviewState.selectedWish, exportPreviewState.preset);
+      const out = createWishSkyExportCanvas(exportPreviewState.selectedWish, exportPreviewState.preset, exportPreviewState.template);
       exportPreviewState.dataUrl = out.toDataURL('image/png');
       exportPreviewState.sizeLabel = `${out.width} × ${out.height}`;
       exportPreviewImage.src = exportPreviewState.dataUrl;
-      exportPreviewMeta.textContent = exportPreviewState.sizeLabel;
+      const template = EXPORT_TEMPLATES[exportPreviewState.template] || EXPORT_TEMPLATES.dream;
+      exportPreviewMeta.textContent = `${template.name} · ${exportPreviewState.sizeLabel}`;
+      exportPreviewTemplates.querySelectorAll('[data-export-template]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.exportTemplate === exportPreviewState.template);
+      });
       exportPreviewPresets.querySelectorAll('[data-export-preset]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.exportPreset === exportPreviewState.preset);
       });
@@ -4225,7 +4759,7 @@
     function downloadExportPreview() {
       if (!exportPreviewState.dataUrl) renderExportPreview();
       const link = document.createElement('a');
-      link.download = `my-wish-sky-${exportPreviewState.preset}.png`;
+      link.download = `my-wish-sky-${exportPreviewState.template}-${exportPreviewState.preset}.png`;
       link.href = exportPreviewState.dataUrl;
       link.click();
     }
@@ -4236,6 +4770,7 @@
       exportPreviewState = {
         selectedWish,
         preset: 'adaptive',
+        template: exportPreviewState.template || 'dream',
         dataUrl: '',
         sizeLabel: '',
       };
@@ -4306,6 +4841,7 @@
         wishProgress,
         wishReminders,
         hiddenWishIds: [...hiddenWishIds],
+        blessedWishIds: [...blessedWishIds],
         wishOverrides,
         timeCapsules: timeCapsules.filter(isCapsuleActive),
         readCapsuleIds: [...readCapsuleIds],
@@ -4353,6 +4889,10 @@
           }
           if (Array.isArray(backup.hiddenWishIds)) {
             backup.hiddenWishIds.forEach(id => hiddenWishIds.add(String(id)));
+          }
+          if (Array.isArray(backup.blessedWishIds)) {
+            backup.blessedWishIds.forEach(id => blessedWishIds.add(String(id)));
+            saveBlessedWishIds();
           }
           if (backup.wishOverrides && typeof backup.wishOverrides === 'object') {
             wishOverrides = { ...wishOverrides, ...backup.wishOverrides };
@@ -4672,6 +5212,8 @@
         card.dataset.progress = progress.id;
         const reminderLabel = getWishReminderLabel(wish);
         const reminderDueClass = isReminderDue(wish) ? ' due' : '';
+        const blessingCount = getWishBlessingCount(wish);
+        const blessedClass = hasBlessedWish(wish) ? ' blessed' : '';
         const adminCloudBadge = adminMode && !isLocalWish(wish) ? '<span class="wish-card-admin">云端</span>' : '';
         const adminDeleteClass = adminMode && !isLocalWish(wish) ? ' admin-delete' : '';
         card.innerHTML = `
@@ -4682,10 +5224,12 @@
           ${adminCloudBadge}
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" aria-label="更新心愿进度：${progress.label}">${progress.label}</button>
           <button class="wish-card-reminder${reminderDueClass}" type="button" aria-label="设置心愿回访">${reminderLabel}</button>
+          <button class="wish-card-bless${blessedClass}" type="button" aria-label="祝福这条心愿">祝福 · ${blessingCount}</button>
           <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
           <button class="wish-card-delete${adminDeleteClass}" type="button" aria-label="删除心愿">×</button>
           <span class="wish-card-time">${time}</span>
         `;
+        card.addEventListener('click', () => openWishDetail(wish));
         const progressBtn = card.querySelector('.wish-card-progress');
         progressBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -4695,6 +5239,10 @@
         reminderBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           advanceWishReminder(wish);
+        });
+        card.querySelector('.wish-card-bless').addEventListener('click', (e) => {
+          e.stopPropagation();
+          blessWish(wish);
         });
         card.querySelector('.wish-card-edit').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -4740,6 +5288,31 @@
     achievementCloseBtn.addEventListener('click', closeWishAchievement);
     achievementExportBtn.addEventListener('click', exportMySky);
     achievementPopupOverlay.addEventListener('click', (e) => { if (e.target === achievementPopupOverlay) closeWishAchievement(); });
+    wishDetailBlessBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeWishDetail) blessWish(activeWishDetail);
+    });
+    wishDetailExportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!activeWishDetail) return;
+      const wish = activeWishDetail;
+      closeWishDetail();
+      setTimeout(() => exportWishDirectly(wish), 120);
+    });
+    wishDetailProgressBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!activeWishDetail) return;
+      advanceWishProgress(activeWishDetail);
+      renderWishDetail();
+    });
+    wishDetailCloseBtn.addEventListener('click', closeWishDetail);
+    wishDetailOverlay.addEventListener('click', (e) => { if (e.target === wishDetailOverlay) closeWishDetail(); });
+    exportPreviewTemplates.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-export-template]');
+      if (!btn) return;
+      exportPreviewState.template = btn.dataset.exportTemplate;
+      renderExportPreview();
+    });
     exportPreviewPresets.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-export-preset]');
       if (!btn) return;
@@ -5447,13 +6020,155 @@
       return pool[Math.floor(Math.random() * pool.length)];
     }
 
+    function getAdminTabData() {
+      if (adminPanelState.tab === 'messages') return adminPanelState.messages;
+      if (adminPanelState.tab === 'capsules') return adminPanelState.capsules;
+      return adminPanelState.wishes;
+    }
+
+    function renderAdminItem(item) {
+      if (adminPanelState.tab === 'messages') {
+        return `
+          <div class="admin-item">
+            <div class="admin-item-text">${escapeHTML(item.text || '')}</div>
+            <div class="admin-item-meta">
+              <span class="admin-pill">${item.revealed ? '已开启' : '未开启'}</span>
+              <span class="admin-pill">${formatTime(item.created_at)}</span>
+              <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+            </div>
+          </div>
+        `;
+      }
+      if (adminPanelState.tab === 'capsules') {
+        const due = item.reveal_date && new Date(item.reveal_date) <= new Date();
+        const status = item.revealed ? '已阅读' : (due ? '已到期' : '封存中');
+        return `
+          <div class="admin-item">
+            <div class="admin-item-text">${escapeHTML(item.text || '')}</div>
+            <div class="admin-item-meta">
+              <span class="admin-pill">${status}</span>
+              <span class="admin-pill">解锁 ${formatDate(item.reveal_date)}</span>
+              <span class="admin-pill">创建 ${formatTime(item.created_at)}</span>
+              <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const displayWish = getDisplayWish(item);
+      let tag = displayWish.tag;
+      if (!tag || tag === 'general') tag = detectTag(displayWish.text || '');
+      const cat = CATEGORIES[tag] || CATEGORIES.general;
+      return `
+        <div class="admin-item">
+          <div class="admin-item-text">${escapeHTML(displayWish.text || '')}</div>
+          <div class="admin-item-meta">
+            <span class="admin-pill">${cat.icon} ${cat.name}</span>
+            <span class="admin-pill">祝福 ${getWishBlessingCount(item)}</span>
+            <span class="admin-pill">${formatTime(displayWish.created_at)}</span>
+            <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAdminPanel() {
+      adminPanel.querySelectorAll('[data-admin-tab]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.adminTab === adminPanelState.tab);
+      });
+      if (adminPanelState.loading) {
+        adminBody.innerHTML = '<div class="wishwall-empty">正在读取云端内容…</div>';
+        return;
+      }
+      if (adminPanelState.error) {
+        adminBody.innerHTML = `<div class="wishwall-empty">${escapeHTML(adminPanelState.error)}</div>`;
+        return;
+      }
+      const rows = getAdminTabData();
+      const tabName = adminPanelState.tab === 'messages' ? '漂流瓶' : (adminPanelState.tab === 'capsules' ? '时光胶囊' : '公共愿望');
+      if (!rows.length) {
+        adminBody.innerHTML = `<div class="wishwall-empty">暂无${tabName}</div>`;
+        return;
+      }
+      adminBody.innerHTML = `
+        <div class="admin-summary">共 ${rows.length} 条${tabName} · 只读查看，不改变原功能状态</div>
+        ${rows.map(renderAdminItem).join('')}
+      `;
+    }
+
+    async function refreshAdminPanel(showLoading = true) {
+      if (!adminMode) return;
+      if (!supabase) {
+        adminPanelState.error = '当前没有连接 Supabase，只能查看本机数据。';
+        adminPanelState.wishes = getVisibleWishes().filter(wish => !isLocalWish(wish));
+        adminPanelState.messages = [];
+        adminPanelState.capsules = timeCapsules.slice().reverse();
+        adminPanelState.loading = false;
+        renderAdminPanel();
+        return;
+      }
+      if (showLoading) {
+        adminPanelState.loading = true;
+        adminPanelState.error = '';
+        renderAdminPanel();
+      }
+      try {
+        const [wishesRes, messagesRes, capsulesRes] = await Promise.all([
+          supabase.from('wishes').select('*').order('created_at', { ascending: false }).limit(120),
+          supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(120),
+          supabase.from('time_capsules').select('*').order('created_at', { ascending: false }).limit(120),
+        ]);
+        const error = wishesRes.error || messagesRes.error || capsulesRes.error;
+        if (error) throw error;
+        adminPanelState.wishes = wishesRes.data || [];
+        adminPanelState.messages = messagesRes.data || [];
+        adminPanelState.capsules = capsulesRes.data || [];
+        adminPanelState.error = '';
+      } catch(e) {
+        console.warn('Admin panel load failed:', e);
+        adminPanelState.error = '管理员面板读取失败，请检查 Supabase 连接和 RLS 策略。';
+      } finally {
+        adminPanelState.loading = false;
+        renderAdminPanel();
+      }
+    }
+
+    function openAdminPanel(tab = adminPanelState.tab || 'wishes') {
+      if (!adminMode) {
+        openAIPanel();
+        addAIMessage('请先在愿望精灵里输入管理员密码。', 'assistant');
+        return;
+      }
+      adminPanelState.tab = tab;
+      adminPanel.classList.remove('hidden');
+      void adminPanel.offsetWidth;
+      adminPanel.classList.add('show');
+      refreshAdminPanel();
+    }
+
+    function closeAdminPanel() {
+      adminPanel.classList.remove('show');
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        adminPanel.classList.add('hidden');
+        adminPanel.removeEventListener('transitionend', finish);
+      };
+      adminPanel.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
+    }
+
     function setAdminMode(enabled) {
       adminMode = !!enabled;
       addAIMessage(adminMode
-        ? '管理员模式已开启。打开愿望墙后，可以删除云端公共愿望。'
+        ? '管理员模式已开启。可以查看公共愿望、漂流瓶和时光胶囊，也可以在愿望墙删除云端公共愿望。'
         : '管理员模式已关闭。',
         'assistant'
       );
+      adminPanelBtn.classList.toggle('hidden', !adminMode);
+      if (adminMode) setTimeout(() => openAdminPanel('wishes'), 180);
+      else closeAdminPanel();
       if (wishwallPanel.classList.contains('show')) renderWishWall();
     }
 
@@ -5467,6 +6182,10 @@
       }
       if (adminMode && text === '退出管理员') {
         setAdminMode(false);
+        return;
+      }
+      if (adminMode && /^(管理员面板|管理面板|后台)$/.test(text)) {
+        openAdminPanel('wishes');
         return;
       }
       addAIMessage(text, 'user');
@@ -5484,6 +6203,21 @@
     });
     aiInput.addEventListener('click', (e) => e.stopPropagation());
     aiPanel.addEventListener('click', (e) => e.stopPropagation());
+    adminClose.addEventListener('click', closeAdminPanel);
+    adminRefreshBtn.addEventListener('click', () => refreshAdminPanel());
+    adminPanelBtn.addEventListener('click', () => {
+      closeToolbox();
+      openAdminPanel('wishes');
+    });
+    adminPanel.querySelectorAll('[data-admin-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        adminPanelState.tab = btn.dataset.adminTab;
+        renderAdminPanel();
+      });
+    });
+    adminPanel.addEventListener('click', (e) => {
+      if (e.target === adminPanel) closeAdminPanel();
+    });
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 8: GROWTH TREE
