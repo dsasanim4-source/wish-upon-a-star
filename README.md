@@ -61,14 +61,17 @@
 
 ### 管理员登录
 
-管理员邮箱默认是 `2507997974@qq.com`。打开愿望精灵后输入 `管理员登录`，系统会向默认邮箱发送登录邮件；也可以输入 `管理员登录 your@gmail.com` 给指定管理员邮箱发送登录邮件。点击邮件链接回到网站后进入管理员模式。云端删除公共愿望需要先执行最新版 `schema.sql`，并确保该邮箱已加入 `admin_users` 表。
+管理员邮箱默认是 `2507997974@qq.com`。打开愿望精灵后输入 `管理员登录`，系统会向默认邮箱发送 6 位验证码；也可以输入 `管理员登录 your@gmail.com` 给指定管理员邮箱发送验证码。收到后直接在愿望精灵输入验证码即可进入管理员模式。云端删除公共愿望需要先执行最新版 `schema.sql`，并确保该邮箱已加入 `admin_users` 表。
+
+如果想让邮件里显示验证码，请在 **Authentication → Email Templates → Magic Link** 里加入 `{{ .Token }}`，例如：`你的管理员验证码是：{{ .Token }}`。如果邮件里只有链接，也可以直接点击链接回到网站。
 
 如果发送失败，页面会显示 Supabase 返回的具体原因。常见处理：
 - 提示请求太频繁：等待 1 分钟后再试。
 - 提示 redirect / URL：在 **Authentication → URL Configuration** 加入 `https://dsasanim4-source.github.io/wish-upon-a-star/`。
 - 提示 email disabled：在 **Authentication → Providers → Email** 启用 Email provider。
-- 提示 SMTP / mailer：检查 **Authentication → SMTP Settings**。
+- 提示 SMTP / mailer / 未成功发送邮件：检查 **Authentication → SMTP Settings**。
 - 使用 Resend SMTP 时：Gmail 只能作为收件邮箱，不能作为发件邮箱。Supabase 的 Sender email 必须是 Resend 已验证域名下的地址，例如 `noreply@你的域名`；SMTP Host 用 `smtp.resend.com`，Port 用 `465`，Username 用 `resend`，Password 用 Resend API Key。
+- 如果你没有 Resend 验证域名：先关闭 Supabase 的 Custom SMTP，改用 Supabase 默认邮件服务。验证码方式也必须先能成功发出邮件。
 
 ### 2. 部署到 GitHub Pages
 
