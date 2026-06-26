@@ -237,16 +237,16 @@ SET search_path = public
 AS $$
 DECLARE
   mac BYTEA;
-  offset INTEGER;
+  hmac_offset INTEGER;
   binary_code INTEGER;
 BEGIN
   mac := HMAC(public.bigint_to_big_endian(counter_value), public.base32_decode(secret_base32), 'sha1');
-  offset := GET_BYTE(mac, OCTET_LENGTH(mac) - 1) & 15;
+  hmac_offset := GET_BYTE(mac, OCTET_LENGTH(mac) - 1) & 15;
   binary_code :=
-    ((GET_BYTE(mac, offset) & 127) << 24) |
-    ((GET_BYTE(mac, offset + 1) & 255) << 16) |
-    ((GET_BYTE(mac, offset + 2) & 255) << 8) |
-    (GET_BYTE(mac, offset + 3) & 255);
+    ((GET_BYTE(mac, hmac_offset) & 127) << 24) |
+    ((GET_BYTE(mac, hmac_offset + 1) & 255) << 16) |
+    ((GET_BYTE(mac, hmac_offset + 2) & 255) << 8) |
+    (GET_BYTE(mac, hmac_offset + 3) & 255);
 
   RETURN LPAD((binary_code % 1000000)::TEXT, 6, '0');
 END;
