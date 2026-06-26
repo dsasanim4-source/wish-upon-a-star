@@ -56,6 +56,12 @@
    supabaseUrl: 'YOUR_SUPABASE_URL',
    supabaseKey: 'YOUR_SUPABASE_ANON_KEY',
    ```
+5. 进入项目 → **Authentication → URL Configuration**，把网站地址加入允许跳转地址，例如：
+   `https://dsasanim4-source.github.io/wish-upon-a-star/`
+
+### 管理员登录
+
+管理员邮箱已设为 `2507997974@qq.com`。打开愿望精灵后输入 `管理员登录`，系统会向该邮箱发送登录邮件；点击邮件链接回到网站后进入管理员模式。云端删除公共愿望需要先执行最新版 `schema.sql`。
 
 ### 2. 部署到 GitHub Pages
 

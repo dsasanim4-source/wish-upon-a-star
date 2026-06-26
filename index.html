@@ -3659,7 +3659,7 @@
     const OWNED_WISH_IDS_KEY = 'wish_owned_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
-    const ADMIN_PASSWORD = 'LJXNB';
+    const ADMIN_EMAIL = '2507997974@qq.com';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let blessedWishIds = new Set();
@@ -3670,6 +3670,7 @@
     let wishPrivacyMode = 'public';
     let activeRoomCode = '';
     let adminMode = false;
+    let adminEmail = '';
     let lastCompletedWish = null;
     let audioCtx = null;
     let lastWishCount = 0;
@@ -3782,6 +3783,107 @@
     /* ═══════════════════════════════════════════════════════════════════════
        DATA LOADING
        ═══════════════════════════════════════════════════════════════════════ */
+    function getAuthRedirectUrl() {
+      return window.location.origin + window.location.pathname;
+    }
+
+    function getSessionEmail(session) {
+      return String(session?.user?.email || '').trim().toLowerCase();
+    }
+
+    function isAdminEmail(email) {
+      return String(email || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    }
+
+    function isAdminLoginCommand(text) {
+      const value = String(text || '').trim().toLowerCase();
+      return value === '管理员登录'
+        || value === '管理登录'
+        || value === '后台登录'
+        || value === 'admin'
+        || value === 'admin login'
+        || isAdminEmail(value);
+    }
+
+    async function requestAdminLogin() {
+      if (!supabase) {
+        addAIMessage('当前没有连接 Supabase，暂时无法进行管理员邮箱验证。', 'assistant');
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      const sessionEmail = getSessionEmail(data?.session);
+      if (isAdminEmail(sessionEmail)) {
+        adminEmail = sessionEmail;
+        setAdminMode(true);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email: ADMIN_EMAIL,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl(),
+        },
+      });
+
+      if (error) {
+        console.warn('Admin login email failed:', error);
+        addAIMessage('管理员登录邮件发送失败，请检查 Supabase Auth 邮箱登录设置。', 'assistant');
+        return;
+      }
+
+      addAIMessage(`我已经把管理员登录邮件发送到 ${ADMIN_EMAIL}。打开邮件里的链接回到网站后，就会进入管理员模式。`, 'assistant');
+    }
+
+    async function syncAdminSession(options = {}) {
+      if (!supabase) return false;
+      const { announce = false, openPanel = false } = options;
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.warn('Admin session check failed:', error);
+        return false;
+      }
+
+      const email = getSessionEmail(data?.session);
+      if (isAdminEmail(email)) {
+        adminEmail = email;
+        setAdminMode(true, { silent: !announce, openPanel });
+        return true;
+      }
+
+      adminEmail = '';
+      if (adminMode) setAdminMode(false, { silent: true });
+      if (email && announce) {
+        addAIMessage('这个邮箱不是管理员邮箱，无法进入管理员模式。', 'assistant');
+      }
+      return false;
+    }
+
+    function setupAdminAuthListener() {
+      if (!supabase) return;
+      supabase.auth.onAuthStateChange((event, session) => {
+        const email = getSessionEmail(session);
+        if (isAdminEmail(email)) {
+          adminEmail = email;
+          const returnedFromAuth = /access_token|refresh_token|code=/.test(window.location.hash + window.location.search);
+          const shouldOpen = returnedFromAuth || (event === 'SIGNED_IN' && !adminMode);
+          setAdminMode(true, { silent: !shouldOpen, openPanel: shouldOpen });
+        } else {
+          adminEmail = '';
+          if (adminMode) setAdminMode(false, { silent: true });
+        }
+      });
+    }
+
+    async function exitAdminMode() {
+      if (supabase) {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.warn('Admin sign out failed:', error);
+      }
+      adminEmail = '';
+      setAdminMode(false);
+    }
+
     async function loadFromSupabase() {
       // Always load local data first
       loadReadCapsuleIds();
@@ -4450,7 +4552,6 @@
       }
 
       const rpcResult = await supabase.rpc('admin_delete_wish', {
-        admin_password: ADMIN_PASSWORD,
         wish_id: numericId,
       });
       if (!rpcResult.error) {
@@ -6447,7 +6548,7 @@
     function openAdminPanel(tab = adminPanelState.tab || 'wishes') {
       if (!adminMode) {
         openAIPanel();
-        addAIMessage('请先在愿望精灵里输入管理员密码。', 'assistant');
+        addAIMessage('请先在愿望精灵里输入“管理员登录”，通过邮箱验证后再进入管理员面板。', 'assistant');
         return;
       }
       adminPanelState.tab = tab;
@@ -6470,16 +6571,19 @@
       setTimeout(finish, 320);
     }
 
-    function setAdminMode(enabled) {
+    function setAdminMode(enabled, options = {}) {
+      const { silent = false, openPanel = !!enabled } = options;
       adminMode = !!enabled;
-      addAIMessage(adminMode
-        ? '管理员模式已开启。可以查看公共愿望、漂流瓶和时光胶囊，也可以在愿望墙删除云端公共愿望。'
-        : '管理员模式已关闭。',
-        'assistant'
-      );
+      if (!silent) {
+        addAIMessage(adminMode
+          ? `管理员模式已开启。已验证邮箱：${adminEmail || ADMIN_EMAIL}。可以查看公共愿望、漂流瓶和时光胶囊，也可以删除云端公共愿望。`
+          : '管理员模式已关闭。',
+          'assistant'
+        );
+      }
       adminPanelBtn.classList.toggle('hidden', !adminMode);
-      if (adminMode) setTimeout(() => openAdminPanel('wishes'), 180);
-      else closeAdminPanel();
+      if (adminMode && openPanel) setTimeout(() => openAdminPanel('wishes'), 180);
+      else if (!adminMode) closeAdminPanel();
       if (wishwallPanel.classList.contains('show')) renderWishWall();
     }
 
@@ -6487,12 +6591,12 @@
       const text = aiInput.value.trim();
       if (!text) return;
       aiInput.value = '';
-      if (text === ADMIN_PASSWORD) {
-        setAdminMode(true);
+      if (isAdminLoginCommand(text)) {
+        requestAdminLogin();
         return;
       }
-      if (adminMode && text === '退出管理员') {
-        setAdminMode(false);
+      if (adminMode && /^(退出管理员|管理员退出|退出后台|退出管理)$/.test(text)) {
+        exitAdminMode();
         return;
       }
       if (adminMode && /^(管理员面板|管理面板|后台)$/.test(text)) {
@@ -7822,6 +7926,9 @@
       }
       const ok = initSupabase();
       if (ok) {
+        const returnedFromAuth = /access_token|refresh_token|code=/.test(window.location.hash + window.location.search);
+        await syncAdminSession({ announce: returnedFromAuth, openPanel: returnedFromAuth });
+        setupAdminAuthListener();
         await loadFromSupabase();
         setupRealtime();
       } else {

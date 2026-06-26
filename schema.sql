@@ -119,29 +119,6 @@ CREATE POLICY "允许任何人写入时光胶囊" ON time_capsules
 CREATE POLICY "允许任何人写入星座" ON constellations
   FOR INSERT WITH CHECK (true);
 
--- 管理员模式删除公开心愿（密码在数据库函数内校验）
-CREATE OR REPLACE FUNCTION admin_delete_wish(admin_password TEXT, wish_id BIGINT)
-RETURNS INTEGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  deleted_count INTEGER;
-BEGIN
-  IF admin_password <> 'LJXNB' THEN
-    RAISE EXCEPTION 'invalid admin password';
-  END IF;
-
-  DELETE FROM wishes WHERE id = wish_id;
-  GET DIAGNOSTICS deleted_count = ROW_COUNT;
-  RETURN deleted_count;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO anon;
-GRANT EXECUTE ON FUNCTION admin_delete_wish(TEXT, BIGINT) TO authenticated;
-
 -- 公开心愿祝福计数（只允许通过函数累加）
 CREATE OR REPLACE FUNCTION bless_wish(wish_id BIGINT)
 RETURNS INTEGER
@@ -174,3 +151,75 @@ CREATE POLICY "允许任何人更新留言" ON messages
 
 CREATE POLICY "允许任何人更新时光胶囊" ON time_capsules
   FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- Admin email login migration
+-- Re-run safe. Admin delete now checks Supabase Auth email.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  email TEXT PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO public.admin_users (email)
+VALUES ('2507997974@qq.com')
+ON CONFLICT (email) DO NOTHING;
+
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.admin_users FROM anon, authenticated;
+
+DROP POLICY IF EXISTS "allow_admin_users_self_read" ON public.admin_users;
+CREATE POLICY "allow_admin_users_self_read" ON public.admin_users
+  FOR SELECT
+  USING (LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', '')));
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.admin_users
+    WHERE LOWER(email) = LOWER(COALESCE(auth.jwt() ->> 'email', ''))
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+DROP POLICY IF EXISTS "allow_admin_delete_wishes" ON public.wishes;
+CREATE POLICY "allow_admin_delete_wishes" ON public.wishes
+  FOR DELETE
+  USING (public.is_admin());
+
+GRANT DELETE ON public.wishes TO authenticated;
+
+DROP FUNCTION IF EXISTS public.admin_delete_wish(TEXT, BIGINT);
+DROP FUNCTION IF EXISTS public.admin_delete_wish(BIGINT);
+
+CREATE OR REPLACE FUNCTION public.admin_delete_wish(wish_id BIGINT)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  DELETE FROM public.wishes WHERE id = wish_id;
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_delete_wish(BIGINT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_delete_wish(BIGINT) TO authenticated;
