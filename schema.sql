@@ -233,14 +233,14 @@ RETURNS TEXT
 LANGUAGE plpgsql
 IMMUTABLE
 STRICT
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   mac BYTEA;
   hmac_offset INTEGER;
   binary_code INTEGER;
 BEGIN
-  mac := HMAC(public.bigint_to_big_endian(counter_value), public.base32_decode(secret_base32), 'sha1');
+  mac := HMAC(public.bigint_to_big_endian(counter_value), public.base32_decode(secret_base32), 'sha1'::TEXT);
   hmac_offset := GET_BYTE(mac, OCTET_LENGTH(mac) - 1) & 15;
   binary_code :=
     ((GET_BYTE(mac, hmac_offset) & 127) << 24) |
@@ -256,7 +256,7 @@ CREATE OR REPLACE FUNCTION public.verify_admin_session(admin_token TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   hash TEXT;
@@ -279,7 +279,7 @@ CREATE OR REPLACE FUNCTION public.verify_admin_code(admin_code TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   normalized TEXT := REGEXP_REPLACE(COALESCE(admin_code, ''), '\D', '', 'g');
@@ -318,7 +318,7 @@ CREATE OR REPLACE FUNCTION public.admin_logout(admin_token TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 BEGIN
   DELETE FROM public.admin_sessions
