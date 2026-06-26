@@ -215,14 +215,19 @@
     flex-wrap: wrap;
     gap: 8px;
     justify-content: center;
-    margin-top: 16px;
-    pointer-events: auto;
+    margin-top: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
     opacity: 0;
     transform: translateY(12px);
     transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .wish-tags.visible {
+    margin-top: 16px;
+    max-height: 150px;
+    pointer-events: auto;
     opacity: 1;
     transform: translateY(0);
   }
@@ -7234,6 +7239,12 @@
       }
     }
 
+    function revealWishTags() {
+      if (!wishTags.classList.contains('visible')) {
+        wishTags.classList.add('visible');
+      }
+    }
+
     // Tag selection
     wishTags.querySelectorAll('.wish-tag').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -7311,10 +7322,11 @@
     wishInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); submitWish(); }
     });
+    wishInput.addEventListener('focus', revealWishTags);
 
     wishSendBtn.addEventListener('click', (e) => { e.stopPropagation(); submitWish(); });
     wishPrivacyBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleWishPrivacyMode(); });
-    wishInput.addEventListener('click', (e) => { e.stopPropagation(); });
+    wishInput.addEventListener('click', (e) => { e.stopPropagation(); revealWishTags(); });
 
     document.addEventListener('mousemove', (e) => {
       targetMouseX = e.clientX;
@@ -7443,7 +7455,6 @@
       wishCountEl.textContent = totalWishes;
       wishCounter.classList.add('visible');
       wishInputArea.classList.add('visible');
-      wishTags.classList.add('visible');
       updateBottleBadge();
       updateTimeCapsuleBadge();
       if (timeCapsules.filter(isCapsuleActive).length > 0) capsuleCounter.classList.add('visible');
