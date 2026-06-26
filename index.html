@@ -104,7 +104,11 @@
     text-align: center;
     pointer-events: auto;
     transform: translate(var(--parallax-x, 0px), var(--parallax-y, 0px));
-    transition: box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    transition:
+      opacity 0.28s ease,
+      visibility 0.28s ease,
+      transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+      box-shadow 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.03) inset,
       0 8px 40px rgba(0, 0, 0, 0.4),
@@ -118,6 +122,13 @@
       0 0 0 1px rgba(255, 255, 255, 0.05) inset,
       0 16px 56px rgba(0, 0, 0, 0.5),
       0 0 120px rgba(80, 140, 220, 0.12);
+  }
+
+  body.constellation-drawing .glass-card {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(var(--parallax-x, 0px), var(--parallax-y, 0px)) scale(0.96);
   }
 
   .glass-card::before {
@@ -6378,6 +6389,7 @@
        ═══════════════════════════════════════════════════════════════════════ */
     function toggleConstellationMode() {
       constellationDrawMode = !constellationDrawMode;
+      document.body.classList.toggle('constellation-drawing', constellationDrawMode);
       if (constellationDrawMode) {
         constellationBtn.classList.add('active');
         constellationToolbar.classList.add('show');
@@ -6386,8 +6398,8 @@
       } else {
         constellationBtn.classList.remove('active');
         constellationToolbar.classList.remove('show');
-        canvas.style.cursor = 'crosshair';
-        document.body.style.cursor = 'crosshair';
+        canvas.style.cursor = '';
+        document.body.style.cursor = '';
         constellationConnectMode = false;
         constellationConnect.classList.remove('active');
         lastDrawnStar = null;
