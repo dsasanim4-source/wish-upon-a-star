@@ -55,6 +55,109 @@ ALTER TABLE time_capsules ADD COLUMN IF NOT EXISTS hidden_at TIMESTAMPTZ;
 ALTER TABLE time_capsules ADD COLUMN IF NOT EXISTS hidden_reason TEXT;
 UPDATE time_capsules SET moderation_status = 'visible' WHERE moderation_status IS NULL;
 
+-- ── 云端内容审核兜底 ────────────────────────────────────
+-- 前端会先做体验友好的拦截；这里负责防止绕过页面直接写入公开数据表。
+CREATE OR REPLACE FUNCTION public.normalize_moderation_text(input_text TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = public
+AS $$
+DECLARE
+  clean TEXT := LOWER(COALESCE(input_text, ''));
+BEGIN
+  clean := TRANSLATE(clean, '０１２３４５６７８９', '0123456789');
+  clean := REPLACE(clean, '0', 'o');
+  clean := REPLACE(clean, '1', 'i');
+  clean := REPLACE(clean, '!', 'i');
+  clean := REPLACE(clean, '！', 'i');
+  clean := REPLACE(clean, '|', 'i');
+  clean := REPLACE(clean, '3', 'e');
+  clean := REPLACE(clean, '4', 'a');
+  clean := REPLACE(clean, '@', 'a');
+  clean := REPLACE(clean, '5', 's');
+  clean := REPLACE(clean, '$', 's');
+  clean := REPLACE(clean, '7', 't');
+  RETURN REGEXP_REPLACE(clean, '[[:space:][:punct:]，。！？、；：“”‘’（）【】《》〈〉「」『』·…￥]+', '', 'g');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.find_blocked_content_reason(input_text TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = public
+AS $$
+DECLARE
+  raw TEXT := LOWER(COALESCE(input_text, ''));
+  compact TEXT := public.normalize_moderation_text(input_text);
+BEGIN
+  IF compact = '' THEN
+    RETURN NULL;
+  END IF;
+
+  IF compact ~ '(.)\1{5,}' OR compact ~ '(.{2,6})\1{3,}' THEN
+    RETURN '重复刷屏';
+  END IF;
+
+  IF compact ~ '(傻[逼屄比b]|煞笔|沙比|shabi|草泥马|艹你|肏|操你|操他|操她|操蛋|我操|卧槽|你妈|他妈|妈的|nmsl|cnm|fuck|shit|bitch|asshole|dick|cunt|fck|wtf)' THEN
+    RETURN '脏话粗口';
+  END IF;
+
+  IF compact ~ '(去死|死全家|滚蛋|滚开|废物|垃圾|弱智|智障|脑残|低能|白痴|蠢货|贱人|贱货|婊|丑逼|舔狗|人渣|混蛋|王八蛋|杂种|畜生|废柴|欠揍|找打|恶心人|不要脸|没教养|活该)' THEN
+    RETURN '侮辱攻击';
+  END IF;
+
+  IF compact ~ '(涉政|政治|政府|政权|党派|党员|共产党|中共|共党|国民党|民进党|主席|总统|总理|人大|政协|两会|选举|投票|罢免|游行|示威|罢工|革命|政变|独裁|专制|民主运动|言论自由|人权|宪法|公安|武警|军队|警察|台独|港独|藏独|疆独|台湾独立|法轮功|天安门|六四|8964|习近平|毛泽东|邓小平|江泽民|胡锦涛|蔡英文|赖清德|特朗普|拜登|普京|泽连斯基)' THEN
+    RETURN '涉政敏感';
+  END IF;
+
+  IF compact ~ '(纳粹|恐怖主义|恐怖分子|isis|圣战|极端组织|种族灭绝|灭族|仇恨|歧视|黑鬼|支那|小日本|地域黑|女权癌)' OR compact ~ '杀光.{0,6}(人|族)' THEN
+    RETURN '仇恨极端';
+  END IF;
+
+  IF compact ~ '(色情|黄色网站|黄片|a片|av女优|porn|sex|约炮|裸聊|卖淫|嫖|强奸|强暴|口交|肛交|阴茎|阴道|鸡巴|自慰|约p)' THEN
+    RETURN '色情低俗';
+  END IF;
+
+  IF compact ~ '(杀人|杀了|弄死|砍死|捅死|打死|炸弹|爆炸|枪支|手枪|毒品|吸毒|贩毒|赌博|博彩|报复社会|自杀|割腕|跳楼|血腥|虐待)' THEN
+    RETURN '暴力违法';
+  END IF;
+
+  IF raw ~ '(https?://|www\.|\.com|\.cn|\.net|\.org|\.vip|\.xyz|\.top)' OR compact ~ '(加微信|加微|vx|qq|二维码|刷单|贷款|返利|兼职|代写|代考|引流|推广|广告)' OR raw ~ '(\+?86)?1[3-9][0-9]{9}|[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}' THEN
+    RETURN '广告引流';
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.enforce_content_moderation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  content_text TEXT;
+  reason TEXT;
+BEGIN
+  IF TG_TABLE_NAME = 'constellations' THEN
+    content_text := NEW.name;
+  ELSE
+    content_text := NEW.text;
+  END IF;
+
+  reason := public.find_blocked_content_reason(content_text);
+  IF reason IS NOT NULL THEN
+    RAISE EXCEPTION 'content rejected by star moderation: %', reason
+      USING ERRCODE = '22023',
+            HINT = '请换成更友善、更适合放进星空的表达。';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
 -- ── 管理员操作日志 ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
   id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -74,6 +177,26 @@ CREATE TABLE IF NOT EXISTS constellations (
   lines_data JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+DROP TRIGGER IF EXISTS enforce_wishes_content_moderation ON public.wishes;
+CREATE TRIGGER enforce_wishes_content_moderation
+  BEFORE INSERT OR UPDATE OF text ON public.wishes
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_content_moderation();
+
+DROP TRIGGER IF EXISTS enforce_messages_content_moderation ON public.messages;
+CREATE TRIGGER enforce_messages_content_moderation
+  BEFORE INSERT OR UPDATE OF text ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_content_moderation();
+
+DROP TRIGGER IF EXISTS enforce_time_capsules_content_moderation ON public.time_capsules;
+CREATE TRIGGER enforce_time_capsules_content_moderation
+  BEFORE INSERT OR UPDATE OF text ON public.time_capsules
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_content_moderation();
+
+DROP TRIGGER IF EXISTS enforce_constellations_content_moderation ON public.constellations;
+CREATE TRIGGER enforce_constellations_content_moderation
+  BEFORE INSERT OR UPDATE OF name ON public.constellations
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_content_moderation();
 
 -- ── 开启实时同步（Realtime） ────────────────────────────
 DO $$
@@ -607,6 +730,9 @@ $$;
 REVOKE ALL ON FUNCTION public.base32_decode(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.bigint_to_big_endian(BIGINT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.totp_code(TEXT, BIGINT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.normalize_moderation_text(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.find_blocked_content_reason(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enforce_content_moderation() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.verify_admin_session(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.verify_admin_code(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_logout(TEXT) FROM PUBLIC;

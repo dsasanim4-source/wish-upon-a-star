@@ -467,6 +467,59 @@
     100% { transform: translateY(-105vh); opacity: 0; }
   }
 
+  .completed-star-tooltip {
+    position: fixed;
+    z-index: 4;
+    max-width: min(260px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 230, 170, 0.22);
+    background: rgba(12, 14, 26, 0.78);
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    color: rgba(235, 244, 255, 0.92);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow:
+      0 12px 34px rgba(0, 0, 0, 0.42),
+      0 0 34px rgba(255, 210, 120, 0.08);
+  }
+
+  .completed-star-tooltip.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .completed-star-tooltip.hidden {
+    display: none;
+  }
+
+  .completed-star-tooltip-title {
+    color: rgba(255, 226, 170, 0.9);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    margin-bottom: 6px;
+  }
+
+  .completed-star-tooltip-text {
+    color: rgba(232, 242, 255, 0.94);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .completed-star-tooltip-time {
+    margin-top: 7px;
+    color: rgba(210, 220, 240, 0.45);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
   /* ── Message Popup ────────────────────── */
   .msg-popup-overlay {
     position: fixed;
@@ -3199,6 +3252,11 @@
 
   <!-- Floating wish messages in background -->
   <div class="floating-wishes" id="floatingWishes"></div>
+  <div class="completed-star-tooltip hidden" id="completedStarTooltip">
+    <div class="completed-star-tooltip-title">愿望已实现</div>
+    <div class="completed-star-tooltip-text" id="completedStarTooltipText"></div>
+    <div class="completed-star-tooltip-time" id="completedStarTooltipTime"></div>
+  </div>
 
   <div class="overlay">
     <div class="glass-card" id="glassCard">
@@ -3658,6 +3716,9 @@
     const wishPrivacyBtn = document.getElementById('wishPrivacyBtn');
     const wishInputArea = document.getElementById('wishInputArea');
     const floatingWishes = document.getElementById('floatingWishes');
+    const completedStarTooltip = document.getElementById('completedStarTooltip');
+    const completedStarTooltipText = document.getElementById('completedStarTooltipText');
+    const completedStarTooltipTime = document.getElementById('completedStarTooltipTime');
     const connectionDot = document.getElementById('connectionDot');
     const wishTags = document.getElementById('wishTags');
     const daynightIndicator = document.getElementById('daynightIndicator');
@@ -3851,6 +3912,8 @@
     let ownedWishIds = new Set();
     let wishOverrides = {};
     let completedWishStarStyles = {};
+    let completedStarHitTargets = [];
+    let completedStarTooltipTimer = null;
     let wishwallMode = 'all';
     let quietMode = false;
     let wishPrivacyMode = 'public';
@@ -4424,26 +4487,26 @@
       const value = raw.trim();
       const compactValue = value.replace(/\s+/g, '');
       if (!compactValue) {
-        return { ok: false, message: `${surface}不能为空。` };
+        return { ok: false, message: `${surface}还没有写内容，先留下一点星光吧。` };
       }
       if (options.title) {
         if (getVisibleCharCount(value) > 7) {
-          return { ok: false, message: '大标题最多 7 个字。' };
+          return { ok: false, message: '这片星空的大标题最多 7 个字，短一点会更亮。' };
         }
         if (!/^[\u3400-\u9fffA-Za-z0-9]+$/.test(compactValue)) {
-          return { ok: false, message: '大标题只能使用中文、英文或数字。' };
+          return { ok: false, message: '大标题只收中文、英文或数字，先别放符号。' };
         }
         if (/^\d+$/.test(compactValue)) {
-          return { ok: false, message: '大标题不能只写数字。' };
+          return { ok: false, message: '大标题不能只写数字，给它一点名字的温度吧。' };
         }
       } else if (options.maxChars && Array.from(value).length > options.maxChars) {
-        return { ok: false, message: `${surface}最多 ${options.maxChars} 个字。` };
+        return { ok: false, message: `${surface}最多 ${options.maxChars} 个字，收短一点更适合放进星空。` };
       }
       const blocked = findBlockedLanguage(value);
       if (blocked) {
         return {
           ok: false,
-          message: `${surface}不符合规则：不能包含${blocked.label}内容。请换成更中性、友善的表达。`,
+          message: `${surface}这句话不适合放进星空：包含${blocked.label}。换一句更温柔、干净的表达吧。`,
         };
       }
       return { ok: true, value: options.compact ? compactValue : value };
@@ -4451,7 +4514,7 @@
 
     function rejectBlockedLanguage(surface, text) {
       const blocked = findBlockedLanguage(text);
-      alert(`${surface}不符合规则：不能包含${blocked ? blocked.label : '敏感或攻击性'}内容。请换成更中性、友善的表达。`);
+      alert(`${surface}这句话不适合放进星空：包含${blocked ? blocked.label : '敏感或攻击性'}。换一句更温柔、干净的表达吧。`);
     }
 
     function applyMainTitle(title) {
@@ -4647,12 +4710,23 @@
         guard++;
       }
 
-      let xRatio = 0.08 + seededUnit(seed + ':x') * 0.84;
-      let yRatio = 0.08 + seededUnit(seed + ':y') * 0.8;
-      if (xRatio > 0.28 && xRatio < 0.72 && yRatio > 0.16 && yRatio < 0.62) {
-        xRatio = xRatio < 0.5
-          ? 0.08 + seededUnit(seed + ':edge-left') * 0.16
-          : 0.76 + seededUnit(seed + ':edge-right') * 0.16;
+      const zone = stableHash(seed + ':zone') % 4;
+      let xRatio;
+      let yRatio;
+      if (zone === 0) {
+        xRatio = 0.06 + seededUnit(seed + ':left-x') * 0.18;
+        yRatio = 0.12 + seededUnit(seed + ':left-y') * 0.74;
+      } else if (zone === 1) {
+        xRatio = 0.76 + seededUnit(seed + ':right-x') * 0.18;
+        yRatio = 0.12 + seededUnit(seed + ':right-y') * 0.74;
+      } else if (zone === 2) {
+        xRatio = 0.14 + seededUnit(seed + ':top-x') * 0.72;
+        yRatio = 0.07 + seededUnit(seed + ':top-y') * 0.17;
+      } else {
+        xRatio = seededUnit(seed + ':bottom-side') < 0.5
+          ? 0.06 + seededUnit(seed + ':bottom-left-x') * 0.22
+          : 0.72 + seededUnit(seed + ':bottom-right-x') * 0.22;
+        yRatio = 0.62 + seededUnit(seed + ':bottom-y') * 0.24;
       }
 
       return {
@@ -8287,19 +8361,130 @@
       });
     }
 
+    function getAvoidRect(el, margin = 18) {
+      if (!el || el.classList?.contains('hidden')) return null;
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) <= 0.03) return null;
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      return {
+        left: Math.max(0, rect.left - margin),
+        top: Math.max(0, rect.top - margin),
+        right: Math.min(W, rect.right + margin),
+        bottom: Math.min(H, rect.bottom + margin),
+      };
+    }
+
+    function getCompletedStarAvoidRects() {
+      return [
+        getAvoidRect(glassCard, 42),
+        getAvoidRect(wishInputArea, 34),
+        getAvoidRect(wishTags, 28),
+        getAvoidRect(wishCounter, 24),
+        getAvoidRect(capsuleCounter, 24),
+        getAvoidRect(instruction, 24),
+        getAvoidRect(connectionDot, 18),
+        getAvoidRect(daynightIndicator, 18),
+        getAvoidRect(roomChip, 18),
+        getAvoidRect(bottleBtn, 22),
+        getAvoidRect(timecapsuleBtn, 22),
+        getAvoidRect(wishwallBtn, 22),
+        getAvoidRect(constellationBtn, 22),
+        getAvoidRect(galaxyBtn, 22),
+        getAvoidRect(aiBtn, 22),
+        getAvoidRect(growthTreeBtn, 22),
+        getAvoidRect(toolboxBtn, 22),
+        toolboxPanel.classList.contains('open') ? getAvoidRect(toolboxPanel, 20) : null,
+        meteorBanner.classList.contains('show') ? getAvoidRect(meteorBanner, 22) : null,
+      ].filter(Boolean);
+    }
+
+    function isSafeCompletedStarPoint(x, y, radius, avoidRects) {
+      const pad = Math.max(18, radius);
+      if (x < pad || x > W - pad || y < pad || y > H - pad) return false;
+      return !avoidRects.some(rect =>
+        x >= rect.left - pad &&
+        x <= rect.right + pad &&
+        y >= rect.top - pad &&
+        y <= rect.bottom + pad
+      );
+    }
+
+    function buildCompletedStarCandidates(style, key) {
+      const seed = String(key || '');
+      const pad = Math.max(34, Math.min(W, H) * 0.045);
+      const candidates = [{ x: style.xRatio * W, y: style.yRatio * H }];
+      for (let i = 0; i < 18; i++) {
+        const side = (stableHash(`${seed}:safe-side:${i}`) + i) % 4;
+        const a = seededUnit(`${seed}:safe-a:${i}`);
+        const b = seededUnit(`${seed}:safe-b:${i}`);
+        if (side === 0) {
+          candidates.push({ x: pad + a * Math.max(48, W * 0.2), y: pad + b * (H - pad * 2) });
+        } else if (side === 1) {
+          candidates.push({ x: W - pad - a * Math.max(48, W * 0.2), y: pad + b * (H - pad * 2) });
+        } else if (side === 2) {
+          candidates.push({ x: pad + a * (W - pad * 2), y: pad + b * Math.max(42, H * 0.18) });
+        } else {
+          const onLeft = seededUnit(`${seed}:safe-bottom-side:${i}`) < 0.5;
+          candidates.push({
+            x: onLeft ? pad + a * Math.max(50, W * 0.24) : W - pad - a * Math.max(50, W * 0.24),
+            y: H * 0.58 + b * Math.max(42, H * 0.28),
+          });
+        }
+      }
+      return candidates;
+    }
+
+    function getSafeCompletedStarPosition(style, key, radius, avoidRects) {
+      const candidates = buildCompletedStarCandidates(style, key);
+      const safe = candidates.find(point => isSafeCompletedStarPoint(point.x, point.y, radius, avoidRects));
+      if (safe) return safe;
+
+      const cornerPad = Math.max(42, radius + 14);
+      const corners = [
+        { x: cornerPad, y: cornerPad },
+        { x: W - cornerPad, y: cornerPad },
+        { x: cornerPad, y: H - cornerPad },
+        { x: W - cornerPad, y: H - cornerPad },
+      ];
+      const start = stableHash(`${key}:corner`) % corners.length;
+      for (let i = 0; i < corners.length; i++) {
+        const point = corners[(start + i) % corners.length];
+        if (isSafeCompletedStarPoint(point.x, point.y, radius, avoidRects)) return point;
+      }
+
+      return {
+        x: Math.max(cornerPad, Math.min(W - cornerPad, style.xRatio * W)),
+        y: Math.max(cornerPad, Math.min(H - cornerPad, style.yRatio * H)),
+      };
+    }
+
     function drawCompletedWishStars() {
       const completedWishes = getVisibleWishes().filter(wish => getWishProgressId(wish) === 'done');
+      completedStarHitTargets = [];
       if (!completedWishes.length) return;
       const usedHues = [];
+      const avoidRects = getCompletedStarAvoidRects();
       completedWishes.forEach((wish, index) => {
         const style = getCompletedWishStarStyle(wish, usedHues);
         if (!style) return;
-        const x = style.xRatio * W;
-        const y = style.yRatio * H;
         const twinkle = 0.82 + Math.sin(time * 0.0038 + style.twinkleOffset) * 0.18;
         const size = style.size * twinkle;
         const hue = Number(style.hue) || COMPLETED_STAR_HUES[index % COMPLETED_STAR_HUES.length];
         const glowRadius = size * 11;
+        const key = getWishProgressKey(wish);
+        const pos = getSafeCompletedStarPosition(style, key, glowRadius * 0.72, avoidRects);
+        const x = pos.x;
+        const y = pos.y;
+        const displayWish = getDisplayWish(wish);
+        completedStarHitTargets.push({
+          x,
+          y,
+          hitRadius: Math.max(26, glowRadius * 0.82),
+          wish,
+          text: displayWish.text || '',
+          completedAt: getWishCompletedAt(wish),
+        });
 
         const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
         glow.addColorStop(0, `hsla(${hue}, 92%, 72%, 0.58)`);
@@ -8338,6 +8523,71 @@
         ctx.fillStyle = `hsla(${hue}, 100%, 88%, ${0.82 + twinkle * 0.12})`;
         ctx.fill();
       });
+    }
+
+    function findCompletedStarAt(x, y) {
+      let best = null;
+      let bestDistance = Infinity;
+      completedStarHitTargets.forEach(target => {
+        const distance = Math.hypot(target.x - x, target.y - y);
+        if (distance <= target.hitRadius && distance < bestDistance) {
+          best = target;
+          bestDistance = distance;
+        }
+      });
+      return best;
+    }
+
+    function positionCompletedStarTooltip(x, y) {
+      const gap = 16;
+      completedStarTooltip.style.left = `${x + gap}px`;
+      completedStarTooltip.style.top = `${y - 20}px`;
+      requestAnimationFrame(() => {
+        const rect = completedStarTooltip.getBoundingClientRect();
+        const left = Math.max(12, Math.min(window.innerWidth - rect.width - 12, x + gap));
+        const top = Math.max(12, Math.min(window.innerHeight - rect.height - 12, y - rect.height - gap));
+        completedStarTooltip.style.left = `${left}px`;
+        completedStarTooltip.style.top = `${top}px`;
+      });
+    }
+
+    function hideCompletedStarTooltip() {
+      if (completedStarTooltipTimer) {
+        clearTimeout(completedStarTooltipTimer);
+        completedStarTooltipTimer = null;
+      }
+      completedStarTooltip.classList.remove('show');
+      setTimeout(() => {
+        if (!completedStarTooltip.classList.contains('show')) {
+          completedStarTooltip.classList.add('hidden');
+        }
+      }, 200);
+    }
+
+    function showCompletedStarTooltip(target, x, y, sticky = false) {
+      if (!target) return false;
+      if (completedStarTooltipTimer) {
+        clearTimeout(completedStarTooltipTimer);
+        completedStarTooltipTimer = null;
+      }
+      completedStarTooltipText.textContent = target.text || '这个心愿已经实现';
+      completedStarTooltipTime.textContent = target.completedAt
+        ? `完成于 ${formatDate(target.completedAt)}`
+        : '这颗愿望星已经点亮';
+      completedStarTooltip.classList.remove('hidden');
+      positionCompletedStarTooltip(x, y);
+      requestAnimationFrame(() => completedStarTooltip.classList.add('show'));
+      if (sticky) {
+        completedStarTooltipTimer = setTimeout(hideCompletedStarTooltip, 3600);
+      }
+      return true;
+    }
+
+    function showCompletedStarTooltipFromPoint(x, y, sticky = false) {
+      const target = findCompletedStarAt(x, y);
+      if (target) return showCompletedStarTooltip(target, x, y, sticky);
+      if (!sticky) hideCompletedStarTooltip();
+      return false;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -8587,7 +8837,6 @@
       ctx.fillRect(0, 0, W, H);
       if (!quietMode) drawNebula();
       drawBgStars();
-      drawCompletedWishStars();
       if (!quietMode) drawCategoryConstellations();
       drawHeartConstellation();
       if (!quietMode) {
@@ -8596,6 +8845,7 @@
       }
       drawLanterns();
       drawDrawnConstellation();
+      drawCompletedWishStars();
       const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, W * 0.35, W * 0.5, H * 0.5, W * 0.75);
       vignette.addColorStop(0, 'transparent');
       vignette.addColorStop(1, skyColors.vignetteColor);
@@ -8753,6 +9003,7 @@
       if (e.target.closest('.room-chip')) return;
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
+      if (showCompletedStarTooltipFromPoint(e.clientX, e.clientY, true)) return;
       handleInteraction(e.clientX, e.clientY);
     });
 
@@ -8783,6 +9034,7 @@
       if (e.target.closest('.wish-tag')) return;
       if (e.target.closest('.meteor-banner')) return;
       if (e.touches.length === 1) {
+        if (showCompletedStarTooltipFromPoint(e.touches[0].clientX, e.touches[0].clientY, true)) return;
         handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, { passive: true });
@@ -8799,6 +9051,7 @@
     document.addEventListener('mousemove', (e) => {
       targetMouseX = e.clientX;
       targetMouseY = e.clientY;
+      showCompletedStarTooltipFromPoint(e.clientX, e.clientY);
     });
 
     document.addEventListener('touchmove', (e) => {

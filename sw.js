@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wish-upon-a-star-v7';
+const CACHE_NAME = 'wish-upon-a-star-v8';
 const APP_SHELL = [
   './',
   './index.html',
