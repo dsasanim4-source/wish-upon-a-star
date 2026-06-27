@@ -1280,7 +1280,8 @@
     background: rgba(245, 210, 120, 0.12);
     color: rgba(255, 230, 160, 0.95);
   }
-  .wish-card-progress:disabled {
+  .wish-card-progress:disabled,
+  .wish-card-reminder:disabled {
     cursor: not-allowed;
     opacity: 0.42;
   }
@@ -4872,8 +4873,12 @@
       return WISH_PROGRESS_STEPS.find(step => step.id === id) || WISH_PROGRESS_STEPS[0];
     }
 
-    function canManageWishProgress(wish) {
+    function canManageWish(wish) {
       return adminMode || isDeviceWish(wish);
+    }
+
+    function canManageWishProgress(wish) {
+      return canManageWish(wish);
     }
 
     function setWishProgress(wish, progressId) {
@@ -4984,8 +4989,12 @@
     }
 
     function advanceWishReminder(wish) {
+      if (!canManageWish(wish)) {
+        alert('只能更改自己写下的心愿回访，管理员可修改全部回访。');
+        return false;
+      }
       const key = getWishProgressKey(wish);
-      if (!key) return;
+      if (!key) return false;
       const current = wishReminders[key];
       if (!current) {
         wishReminders[key] = { dueAt: addDays(7), label: '7天后' };
@@ -4996,6 +5005,7 @@
       }
       saveWishReminders();
       renderWishWall();
+      return true;
     }
 
     function migrateWishReminderKey(fromWish, toWish) {
@@ -6426,6 +6436,7 @@
         const cat = CATEGORIES[tag] || CATEGORIES.general;
         const progress = getWishProgressStep(wish);
         const canManageProgress = canManageWishProgress(wish);
+        const canManageReminder = canManageWish(wish);
         card.dataset.progress = progress.id;
         const reminderLabel = getWishReminderLabel(wish);
         const reminderDueClass = isReminderDue(wish) ? ' due' : '';
@@ -6440,7 +6451,7 @@
           ${displayWish.visibility === 'private' ? '<span class="wish-card-private">私密</span>' : ''}
           ${adminCloudBadge}
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" ${canManageProgress ? '' : 'disabled'} aria-label="${canManageProgress ? `更新心愿进度：${progress.label}` : `只能查看心愿进度：${progress.label}`}">${progress.label}</button>
-          <button class="wish-card-reminder${reminderDueClass}" type="button" aria-label="设置心愿回访">${reminderLabel}</button>
+          <button class="wish-card-reminder${reminderDueClass}" type="button" ${canManageReminder ? '' : 'disabled'} aria-label="${canManageReminder ? '设置心愿回访' : '只能查看心愿回访'}">${reminderLabel}</button>
           <button class="wish-card-bless${blessedClass}" type="button" aria-label="祝福这条心愿">祝福 · ${blessingCount}</button>
           <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
           <button class="wish-card-delete${adminDeleteClass}" type="button" aria-label="删除心愿">×</button>
@@ -6456,6 +6467,7 @@
         const reminderBtn = card.querySelector('.wish-card-reminder');
         reminderBtn.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (!canManageReminder) return;
           advanceWishReminder(wish);
         });
         card.querySelector('.wish-card-bless').addEventListener('click', (e) => {
