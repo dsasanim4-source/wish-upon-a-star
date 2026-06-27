@@ -1728,7 +1728,7 @@
 
   .admin-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     padding: 12px 22px 0;
     flex-shrink: 0;
@@ -1783,22 +1783,51 @@
 
   .admin-item-actions {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: flex-end;
     margin-top: 10px;
   }
 
+  .admin-action,
   .admin-danger {
     min-height: 32px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 120, 120, 0.22);
-    background: rgba(255, 80, 80, 0.07);
-    color: rgba(255, 178, 178, 0.92);
     cursor: pointer;
     font-family: inherit;
     font-size: 12px;
     letter-spacing: 0.08em;
     padding: 0 12px;
     transition: all 0.25s ease;
+  }
+
+  .admin-action {
+    border: 1px solid rgba(120, 180, 240, 0.22);
+    background: rgba(90, 155, 220, 0.08);
+    color: rgba(190, 220, 255, 0.9);
+  }
+
+  .admin-action:hover {
+    border-color: rgba(140, 205, 255, 0.42);
+    background: rgba(90, 155, 220, 0.14);
+    color: rgba(225, 242, 255, 0.98);
+  }
+
+  .admin-action.restore {
+    border-color: rgba(120, 220, 160, 0.24);
+    background: rgba(80, 180, 130, 0.08);
+    color: rgba(205, 245, 220, 0.9);
+  }
+
+  .admin-action.restore:hover {
+    border-color: rgba(130, 230, 170, 0.42);
+    background: rgba(80, 180, 130, 0.14);
+  }
+
+  .admin-danger {
+    border: 1px solid rgba(255, 120, 120, 0.22);
+    background: rgba(255, 80, 80, 0.07);
+    color: rgba(255, 178, 178, 0.92);
   }
 
   .admin-danger:hover {
@@ -1814,6 +1843,11 @@
     color: rgba(180, 210, 245, 0.68);
     font-size: 10px;
     letter-spacing: 0.08em;
+  }
+
+  .admin-pill.hidden-status {
+    background: rgba(245, 160, 95, 0.12);
+    color: rgba(255, 194, 140, 0.9);
   }
 
   .room-chip {
@@ -3094,7 +3128,7 @@
     .wish-detail-meta { grid-template-columns: 1fr; }
     .wish-detail-actions .achievement-action { flex: 1 1 42%; padding-inline: 8px; }
     .admin-header { padding: 16px 16px 12px; }
-    .admin-tabs { padding: 10px 16px 0; gap: 6px; }
+    .admin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 16px 0; gap: 6px; }
     .admin-tab { font-size: 11px; min-height: 36px; }
     .admin-body { padding: 14px 16px 24px; }
     .tree-panel { height: 66vh; max-height: 640px; }
@@ -3393,6 +3427,7 @@
       <button class="admin-tab active" type="button" data-admin-tab="wishes">公共愿望</button>
       <button class="admin-tab" type="button" data-admin-tab="messages">漂流瓶</button>
       <button class="admin-tab" type="button" data-admin-tab="capsules">时光胶囊</button>
+      <button class="admin-tab" type="button" data-admin-tab="logs">操作日志</button>
     </div>
     <div class="admin-body" id="adminBody"></div>
   </div>
@@ -3804,9 +3839,11 @@
       tab: 'wishes',
       loading: false,
       error: '',
+      schemaWarning: '',
       wishes: [],
       messages: [],
       capsules: [],
+      logs: [],
     };
     let skyColors = {
       bgTop: '#0a1020',
@@ -3822,10 +3859,19 @@
     let localInsertIds = new Set();
     let localUpdateIds = new Set();
     const READ_CAPSULE_IDS_KEY = 'wish_read_capsule_ids';
+    const CAPSULE_REPLY_CHAINS_KEY = 'wish_capsule_reply_chains';
     let readCapsuleIds = new Set();
+    let capsuleReplyChains = {};
+    let pendingCapsuleReply = null;
 
     function getCapsuleId(capsule) {
       return capsule && capsule.id !== undefined && capsule.id !== null ? String(capsule.id) : '';
+    }
+
+    function getCapsuleReplyKey(capsule) {
+      const id = getCapsuleId(capsule);
+      if (id) return id;
+      return `${capsule?.created_at || ''}|${String(capsule?.text || '').slice(0, 48)}`;
     }
 
     function loadReadCapsuleIds() {
@@ -3835,6 +3881,39 @@
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) readCapsuleIds = new Set(parsed.map(String));
       } catch(e) { /* ignore */ }
+    }
+
+    function loadCapsuleReplyChains() {
+      try {
+        const stored = localStorage.getItem(CAPSULE_REPLY_CHAINS_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) capsuleReplyChains = parsed;
+      } catch(e) {
+        capsuleReplyChains = {};
+      }
+    }
+
+    function saveCapsuleReplyChains() {
+      try {
+        localStorage.setItem(CAPSULE_REPLY_CHAINS_KEY, JSON.stringify(capsuleReplyChains));
+      } catch(e) { /* ignore */ }
+    }
+
+    function getCapsuleReplyInfo(capsule) {
+      return capsuleReplyChains[getCapsuleReplyKey(capsule)] || null;
+    }
+
+    function rememberCapsuleReply(parentCapsule, childCapsule) {
+      if (!parentCapsule || !childCapsule) return;
+      const childKey = getCapsuleReplyKey(childCapsule);
+      if (!childKey) return;
+      capsuleReplyChains[childKey] = {
+        parentId: getCapsuleReplyKey(parentCapsule),
+        parentDate: parentCapsule.reveal_date || parentCapsule.created_at || '',
+        parentText: getCapsuleDisplayText(parentCapsule).slice(0, 120),
+        repliedAt: new Date().toISOString(),
+      };
+      saveCapsuleReplyChains();
     }
 
     function saveReadCapsuleIds() {
@@ -3855,6 +3934,7 @@
 
     function isCapsuleActive(capsule) {
       if (!capsule || capsule.revealed) return false;
+      if (!isModerationVisible(capsule)) return false;
       const id = getCapsuleId(capsule);
       return !id || !readCapsuleIds.has(id);
     }
@@ -3986,6 +4066,7 @@
     async function loadFromSupabase() {
       // Always load local data first
       loadReadCapsuleIds();
+      loadCapsuleReplyChains();
       loadWishProgress();
       loadWishReminders();
       loadWishVisibilityState();
@@ -4008,7 +4089,7 @@
           .from('wishes').select('*').order('created_at', { ascending: true });
         if (wishesData && wishesData.length > 0) {
           const remoteWishIds = new Set(wishesData.map(w => String(w.id)));
-          wishMessages = wishMessages.filter(w => isLocalWish(w) || remoteWishIds.has(getWishId(w)));
+          wishMessages = wishMessages.filter(w => isLocalWish(w) || (remoteWishIds.has(getWishId(w)) && isModerationVisible(w)));
           // Merge: Supabase wishes take precedence, dedup by id
           const localIds = new Set(wishMessages.map(w => String(w.id)));
           wishesData.forEach(w => {
@@ -4037,7 +4118,7 @@
           const localCapIds = new Set(timeCapsules.map(c => getCapsuleId(c)));
           capsData.forEach(c => {
             const id = getCapsuleId(c);
-            if (!isCapsuleActive(c) || (id && localCapIds.has(id))) return;
+            if (!isModerationVisible(c) || !isCapsuleActive(c) || (id && localCapIds.has(id))) return;
             if (!id || !localCapIds.has(id)) {
               timeCapsules.push(c);
               if (id) localCapIds.add(id);
@@ -4107,11 +4188,16 @@
           const id = getWishId(updatedWish);
           if (!id) return;
           const idx = wishMessages.findIndex(w => getWishId(w) === id);
-          if (idx >= 0) {
+          if (!isModerationVisible(updatedWish)) {
+            if (idx >= 0) wishMessages.splice(idx, 1);
+          } else if (idx >= 0) {
             wishMessages[idx] = { ...wishMessages[idx], ...updatedWish };
           } else if (isWishVisible(updatedWish)) {
             wishMessages.push(updatedWish);
           }
+          totalWishes = getVisibleWishes().length;
+          lastWishCount = totalWishes;
+          wishCountEl.textContent = totalWishes;
           if (wishwallPanel.classList.contains('show')) renderWishWall();
           if (activeWishDetail && getWishId(activeWishDetail) === id) {
             activeWishDetail = wishMessages.find(w => getWishId(w) === id) || updatedWish;
@@ -4141,6 +4227,7 @@
       supabase.channel('messages-realtime')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
           if (localInsertIds.has(payload.new.id)) { localInsertIds.delete(payload.new.id); return; }
+          if (!isModerationVisible(payload.new)) return;
           if (!payload.new.revealed) { totalUnreadMessages++; lastUnreadCount = totalUnreadMessages; updateBottleBadge(); updateBottlePanel(); }
           if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         })
@@ -4155,6 +4242,7 @@
           const newCapsule = payload.new;
           const id = getCapsuleId(newCapsule);
           if (id && localInsertIds.has(id)) { localInsertIds.delete(id); return; }
+          if (!isModerationVisible(newCapsule)) return;
           if (!isCapsuleActive(newCapsule)) return;
           if (id && timeCapsules.some(c => getCapsuleId(c) === id)) return;
           timeCapsules.push(newCapsule);
@@ -4416,6 +4504,12 @@
       return days + '天后';
     }
 
+    function getWishReminderDateLabel(wish) {
+      const reminder = getWishReminder(wish);
+      if (!reminder || !reminder.dueAt) return '';
+      return formatDate(reminder.dueAt);
+    }
+
     function advanceWishReminder(wish) {
       const key = getWishProgressKey(wish);
       if (!key) return;
@@ -4506,6 +4600,14 @@
       return wish && wish.id !== undefined && wish.id !== null ? String(wish.id) : '';
     }
 
+    function getModerationStatus(item) {
+      return String(item?.moderation_status || 'visible').toLowerCase() === 'hidden' ? 'hidden' : 'visible';
+    }
+
+    function isModerationVisible(item) {
+      return getModerationStatus(item) === 'visible';
+    }
+
     function isLocalWish(wish) {
       const id = getWishId(wish);
       return !id || id.startsWith('local_') || wish.visibility === 'private';
@@ -4533,6 +4635,7 @@
     }
 
     function isWishVisible(wish) {
+      if (!isModerationVisible(wish)) return false;
       const id = getWishId(wish);
       if (id && hiddenWishIds.has(id)) return false;
       const roomCode = getWishRoomCode(wish);
@@ -4645,25 +4748,55 @@
     }
 
     async function adminDeleteCloudWish(id) {
+      return adminDeleteCloudContent('wishes', id);
+    }
+
+    async function adminDeleteCloudContent(type, id) {
       const numericId = Number(id);
       if (!Number.isFinite(numericId)) {
-        return { ok: false, message: '这条云端愿望的 ID 无效，无法删除。' };
+        return { ok: false, message: '这条云端内容的 ID 无效，无法删除。' };
       }
 
-      const rpcResult = await supabase.rpc('admin_delete_wish', {
-        wish_id: numericId,
+      const rpcResult = await supabase.rpc('admin_delete_content', {
+        content_type: type,
+        content_id: numericId,
         admin_token: adminSessionToken,
       });
       if (!rpcResult.error) {
         const deletedCount = Number(rpcResult.data || 0);
         if (deletedCount === 0) {
-          console.warn('Admin delete RPC found no matching wish; clearing stale local item:', id);
+          console.warn('Admin delete RPC found no matching content; clearing stale local item:', type, id);
         }
         return { ok: true };
       }
 
+      if (type === 'wishes') {
+        const fallback = await supabase.rpc('admin_delete_wish', {
+          wish_id: numericId,
+          admin_token: adminSessionToken,
+        });
+        if (!fallback.error) return { ok: true };
+      }
+
       console.warn('Admin delete RPC failed:', rpcResult.error);
       return { ok: false, message: '云端删除失败。请确认已执行最新 schema.sql，并重新输入管理员动态密码。' };
+    }
+
+    async function adminSetCloudContentStatus(type, id, nextStatus) {
+      const numericId = Number(id);
+      if (!Number.isFinite(numericId)) {
+        return { ok: false, message: '这条云端内容的 ID 无效，无法修改状态。' };
+      }
+      const { error } = await supabase.rpc('admin_set_content_status', {
+        content_type: type,
+        content_id: numericId,
+        next_status: nextStatus,
+        admin_token: adminSessionToken,
+        reason: nextStatus === 'hidden' ? '管理员审核隐藏' : null,
+      });
+      if (!error) return { ok: true };
+      console.warn('Admin moderation RPC failed:', error);
+      return { ok: false, message: '状态修改失败。请先在 Supabase SQL Editor 执行最新 schema.sql。' };
     }
 
     async function deleteWish(wish) {
@@ -5372,6 +5505,7 @@
         wishOverrides,
         timeCapsules: timeCapsules.filter(isCapsuleActive),
         readCapsuleIds: [...readCapsuleIds],
+        capsuleReplyChains,
         deviceId: localStorage.getItem('wish_device_id'),
         constellations: JSON.parse(localStorage.getItem('constellations') || '[]'),
         quietMode,
@@ -5436,6 +5570,10 @@
           if (Array.isArray(backup.readCapsuleIds)) {
             backup.readCapsuleIds.forEach(id => readCapsuleIds.add(String(id)));
             saveReadCapsuleIds();
+          }
+          if (backup.capsuleReplyChains && typeof backup.capsuleReplyChains === 'object') {
+            capsuleReplyChains = { ...capsuleReplyChains, ...backup.capsuleReplyChains };
+            saveCapsuleReplyChains();
           }
           if (backup.deviceId) localStorage.setItem('wish_device_id', String(backup.deviceId));
           if (Array.isArray(backup.constellations)) {
@@ -5628,9 +5766,15 @@
       const cap = burningCapsule;
       const displayText = cap ? getCapsuleDisplayText(cap) : '';
       const shortText = displayText.length > 34 ? `${displayText.slice(0, 34)}…` : displayText;
+      pendingCapsuleReply = cap ? {
+        ...cap,
+        text: cap.text,
+        reveal_date: cap.reveal_date,
+        created_at: cap.created_at,
+      } : null;
       burnCapsule();
       setTimeout(() => {
-        openTimeCapsulePanel();
+        openTimeCapsulePanel({ keepPendingReply: true });
         timecapsuleInput.value = shortText ? `给未来的回信：\n关于“${shortText}”\n` : '给未来的回信：\n';
         timecapsuleInput.focus();
         const end = timecapsuleInput.value.length;
@@ -5915,7 +6059,8 @@
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 3: TIME CAPSULE
        ═══════════════════════════════════════════════════════════════════════ */
-    function openTimeCapsulePanel() {
+    function openTimeCapsulePanel(options = {}) {
+      if (!options.keepPendingReply) pendingCapsuleReply = null;
       // Set default date to tomorrow in Beijing time (UTC+8)
       const nowBeijing = new Date(Date.now() + 8 * 60 * 60 * 1000);
       const tomorrowBeijing = new Date(nowBeijing);
@@ -6001,6 +6146,8 @@
         const mine = isMyCapsule(cap);
         const displayText = getCapsuleDisplayText(cap);
         const countdownText = formatCapsuleCountdown(cap.reveal_date);
+        const replyInfo = getCapsuleReplyInfo(cap);
+        const replyLabel = replyInfo?.parentDate ? `回信 · 回复 ${formatDate(replyInfo.parentDate)}` : '';
         const card = document.createElement('div');
         card.className = 'timecapsule-capsule';
 
@@ -6015,7 +6162,7 @@
           // My capsule, still waiting
           icon = '⏳';
           const daysLeft = Math.ceil((new Date(cap.reveal_date) - now) / (1000 * 60 * 60 * 24));
-          statusText = '我的胶囊 · ' + daysLeft + '天后解锁';
+          statusText = (replyLabel || '我的胶囊') + ' · ' + daysLeft + '天后解锁';
           cardStyle = '';
         } else if (!mine && isReady) {
           // Someone else's capsule, ready
@@ -6037,6 +6184,7 @@
           <span class="timecapsule-capsule-meta">
             <span class="timecapsule-capsule-date">${formatDate(cap.reveal_date)}</span>
             <span class="timecapsule-capsule-countdown">${countdownText}</span>
+            ${replyLabel ? `<span class="timecapsule-capsule-countdown">${escapeHTML(replyLabel)}</span>` : ''}
           </span>
         `;
 
@@ -6093,16 +6241,20 @@
         if (inserted) {
           localInsertIds.add(inserted.id);
           timeCapsules.push(inserted);
+          rememberCapsuleReply(pendingCapsuleReply, inserted);
         } else {
           // Fallback: add locally if Supabase insert fails
           console.warn('时光胶囊提交失败，使用本地存储:', error);
           capsule.id = 'local_' + Date.now().toString();
           timeCapsules.push(capsule);
+          rememberCapsuleReply(pendingCapsuleReply, capsule);
         }
       } else {
         capsule.id = Date.now().toString();
         timeCapsules.push(capsule);
+        rememberCapsuleReply(pendingCapsuleReply, capsule);
       }
+      pendingCapsuleReply = null;
       // Persist to localStorage
       saveTimeCapsulesToStorage();
       updateTimeCapsuleBadge();
@@ -6599,21 +6751,86 @@
     }
 
     function getAdminTabData() {
+      if (adminPanelState.tab === 'logs') return adminPanelState.logs;
       if (adminPanelState.tab === 'messages') return adminPanelState.messages;
       if (adminPanelState.tab === 'capsules') return adminPanelState.capsules;
       return adminPanelState.wishes;
     }
 
+    function getAdminContentTypeForTab(tab = adminPanelState.tab) {
+      if (tab === 'messages') return 'messages';
+      if (tab === 'capsules') return 'capsules';
+      return 'wishes';
+    }
+
+    function getAdminTabName(tab = adminPanelState.tab) {
+      if (tab === 'messages') return '漂流瓶';
+      if (tab === 'capsules') return '时光胶囊';
+      if (tab === 'logs') return '操作日志';
+      return '公共愿望';
+    }
+
+    function getAdminContentText(type, item) {
+      if (type === 'capsules') return getCapsuleDisplayText(item);
+      return item?.text || '';
+    }
+
+    function getAdminStatusLabel(item) {
+      return getModerationStatus(item) === 'hidden' ? '已隐藏' : '公开';
+    }
+
+    function renderAdminModerationActions(type, item) {
+      const id = escapeHTML(item.id);
+      const hidden = getModerationStatus(item) === 'hidden';
+      const statusButton = hidden
+        ? `<button class="admin-action restore" type="button" data-admin-status-type="${type}" data-admin-status-id="${id}" data-admin-status-next="visible">恢复公开</button>`
+        : `<button class="admin-action" type="button" data-admin-status-type="${type}" data-admin-status-id="${id}" data-admin-status-next="hidden">隐藏</button>`;
+      const deleteLabel = type === 'wishes' ? '永久删除愿望' : '永久删除';
+      return `
+        <div class="admin-item-actions">
+          ${statusButton}
+          <button class="admin-danger" type="button" data-admin-delete-type="${type}" data-admin-delete-id="${id}">${deleteLabel}</button>
+        </div>
+      `;
+    }
+
+    function renderAdminLogItem(item) {
+      const actionMap = { hide: '隐藏', restore: '恢复', delete: '删除' };
+      const typeMap = { wishes: '公共愿望', messages: '漂流瓶', capsules: '时光胶囊', time_capsules: '时光胶囊' };
+      const action = actionMap[item.action] || item.action || '操作';
+      const typeName = typeMap[item.content_type] || item.content_type || '内容';
+      return `
+        <div class="admin-item">
+          <div class="admin-item-text">${escapeHTML(item.content_text || '无内容摘要')}</div>
+          <div class="admin-item-meta">
+            <span class="admin-pill">${escapeHTML(action)}</span>
+            <span class="admin-pill">${escapeHTML(typeName)}</span>
+            <span class="admin-pill">ID ${escapeHTML(item.content_id || '')}</span>
+            <span class="admin-pill">${formatTime(item.created_at)}</span>
+          </div>
+        </div>
+      `;
+    }
+
     function renderAdminItem(item) {
+      if (adminPanelState.tab === 'logs') return renderAdminLogItem(item);
+
+      const type = getAdminContentTypeForTab();
+      const statusClass = getModerationStatus(item) === 'hidden' ? ' hidden-status' : '';
+      const hiddenReason = item.hidden_reason ? `<span class="admin-pill hidden-status">${escapeHTML(item.hidden_reason)}</span>` : '';
+
       if (adminPanelState.tab === 'messages') {
         return `
           <div class="admin-item">
             <div class="admin-item-text">${escapeHTML(item.text || '')}</div>
             <div class="admin-item-meta">
+              <span class="admin-pill${statusClass}">${getAdminStatusLabel(item)}</span>
               <span class="admin-pill">${item.revealed ? '已开启' : '未开启'}</span>
               <span class="admin-pill">${formatTime(item.created_at)}</span>
               <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+              ${hiddenReason}
             </div>
+            ${renderAdminModerationActions(type, item)}
           </div>
         `;
       }
@@ -6622,13 +6839,16 @@
         const status = item.revealed ? '已阅读' : (due ? '已到期' : '封存中');
         return `
           <div class="admin-item">
-            <div class="admin-item-text">${escapeHTML(item.text || '')}</div>
+            <div class="admin-item-text">${escapeHTML(getAdminContentText(type, item))}</div>
             <div class="admin-item-meta">
+              <span class="admin-pill${statusClass}">${getAdminStatusLabel(item)}</span>
               <span class="admin-pill">${status}</span>
               <span class="admin-pill">解锁 ${formatDate(item.reveal_date)}</span>
               <span class="admin-pill">创建 ${formatTime(item.created_at)}</span>
               <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+              ${hiddenReason}
             </div>
+            ${renderAdminModerationActions(type, item)}
           </div>
         `;
       }
@@ -6641,14 +6861,14 @@
         <div class="admin-item">
           <div class="admin-item-text">${escapeHTML(displayWish.text || '')}</div>
           <div class="admin-item-meta">
+            <span class="admin-pill${statusClass}">${getAdminStatusLabel(item)}</span>
             <span class="admin-pill">${cat.icon} ${cat.name}</span>
             <span class="admin-pill">祝福 ${getWishBlessingCount(item)}</span>
             <span class="admin-pill">${formatTime(displayWish.created_at)}</span>
             <span class="admin-pill">ID ${escapeHTML(item.id)}</span>
+            ${hiddenReason}
           </div>
-          <div class="admin-item-actions">
-            <button class="admin-danger" type="button" data-admin-delete-wish="${escapeHTML(item.id)}">删除公共愿望</button>
-          </div>
+          ${renderAdminModerationActions(type, item)}
         </div>
       `;
     }
@@ -6666,15 +6886,19 @@
         return;
       }
       const rows = getAdminTabData();
-      const tabName = adminPanelState.tab === 'messages' ? '漂流瓶' : (adminPanelState.tab === 'capsules' ? '时光胶囊' : '公共愿望');
+      const tabName = getAdminTabName();
       if (!rows.length) {
-        adminBody.innerHTML = `<div class="wishwall-empty">暂无${tabName}</div>`;
+        const warning = adminPanelState.schemaWarning ? `<div class="admin-summary">${escapeHTML(adminPanelState.schemaWarning)}</div>` : '';
+        adminBody.innerHTML = `${warning}<div class="wishwall-empty">暂无${tabName}</div>`;
         return;
       }
+      const hiddenCount = adminPanelState.tab === 'logs' ? 0 : rows.filter(item => getModerationStatus(item) === 'hidden').length;
+      const summary = adminPanelState.tab === 'logs'
+        ? `共 ${rows.length} 条操作记录 · 只记录管理员隐藏、恢复和删除`
+        : `共 ${rows.length} 条${tabName} · ${hiddenCount} 条已隐藏 · 可隐藏、恢复或永久删除`;
       adminBody.innerHTML = `
-        <div class="admin-summary">${adminPanelState.tab === 'wishes'
-          ? `共 ${rows.length} 条${tabName} · 管理员可删除公共愿望`
-          : `共 ${rows.length} 条${tabName} · 只读查看，不改变原功能状态`}</div>
+        ${adminPanelState.schemaWarning ? `<div class="admin-summary">${escapeHTML(adminPanelState.schemaWarning)}</div>` : ''}
+        <div class="admin-summary">${summary}</div>
         ${rows.map(renderAdminItem).join('')}
       `;
     }
@@ -6697,22 +6921,138 @@
       renderAdminPanel();
     }
 
-    async function deleteAdminPanelWish(id) {
-      if (!adminMode) return;
-      if (!supabase) {
-        alert('当前没有连接 Supabase，无法删除云端公共愿望。');
+    function syncAdminContentLocally(type, id, nextStatus, deleted = false) {
+      const idStr = String(id);
+      const list = type === 'messages'
+        ? adminPanelState.messages
+        : (type === 'capsules' ? adminPanelState.capsules : adminPanelState.wishes);
+      const item = list.find(row => String(row.id) === idStr);
+
+      if (deleted) {
+        if (type === 'wishes') removeCloudWishAfterAdminDelete(idStr);
+        if (type === 'messages') {
+          adminPanelState.messages = adminPanelState.messages.filter(row => String(row.id) !== idStr);
+          refreshUnreadCount();
+        }
+        if (type === 'capsules') {
+          adminPanelState.capsules = adminPanelState.capsules.filter(row => String(row.id) !== idStr);
+          timeCapsules = timeCapsules.filter(cap => getCapsuleId(cap) !== idStr);
+          saveTimeCapsulesToStorage();
+          updateTimeCapsuleBadge();
+          if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
+        }
         return;
       }
-      const wish = adminPanelState.wishes.find(item => getWishId(item) === String(id));
-      const displayWish = wish ? getDisplayWish(wish) : null;
-      const text = displayWish && displayWish.text ? `\n\n${displayWish.text}` : '';
-      if (!window.confirm(`管理员模式：确定要从云端永久删除这条公共愿望吗？${text}`)) return;
-      const result = await adminDeleteCloudWish(id);
+
+      if (item) {
+        item.moderation_status = nextStatus;
+        item.hidden_at = nextStatus === 'hidden' ? new Date().toISOString() : null;
+        item.hidden_reason = nextStatus === 'hidden' ? '管理员审核隐藏' : null;
+      }
+
+      if (type === 'wishes') {
+        const idx = wishMessages.findIndex(wish => getWishId(wish) === idStr);
+        if (nextStatus === 'hidden') {
+          if (idx >= 0) wishMessages.splice(idx, 1);
+        } else if (item && idx < 0) {
+          wishMessages.push(item);
+          wishMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        }
+        totalWishes = getVisibleWishes().length;
+        lastWishCount = totalWishes;
+        wishCountEl.textContent = totalWishes;
+        saveWishesToStorage();
+        updateTreeWishes();
+        if (activeWishDetail && getWishId(activeWishDetail) === idStr && nextStatus === 'hidden') closeWishDetail();
+        if (wishwallPanel.classList.contains('show')) renderWishWall();
+      }
+
+      if (type === 'messages') refreshUnreadCount();
+
+      if (type === 'capsules') {
+        const idx = timeCapsules.findIndex(cap => getCapsuleId(cap) === idStr);
+        if (nextStatus === 'hidden') {
+          if (idx >= 0) timeCapsules.splice(idx, 1);
+        } else if (item && idx < 0 && isCapsuleActive(item)) {
+          timeCapsules.push(item);
+          timeCapsules.sort((a, b) => new Date(a.reveal_date) - new Date(b.reveal_date));
+        }
+        saveTimeCapsulesToStorage();
+        updateTimeCapsuleBadge();
+        if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
+      }
+      renderAdminPanel();
+    }
+
+    async function setAdminPanelContentStatus(type, id, nextStatus) {
+      if (!adminMode) return;
+      if (!supabase) {
+        alert('当前没有连接 Supabase，无法修改云端内容。');
+        return;
+      }
+      const list = type === 'messages' ? adminPanelState.messages : (type === 'capsules' ? adminPanelState.capsules : adminPanelState.wishes);
+      const item = list.find(row => String(row.id) === String(id));
+      const text = item ? `\n\n${getAdminContentText(type, item)}` : '';
+      const label = nextStatus === 'hidden' ? '隐藏' : '恢复公开';
+      if (!window.confirm(`管理员模式：确定要${label}这条${getAdminTabName(type === 'messages' ? 'messages' : (type === 'capsules' ? 'capsules' : 'wishes'))}吗？${text}`)) return;
+      const result = await adminSetCloudContentStatus(type, id, nextStatus);
+      if (!result.ok) {
+        alert(result.message || '云端状态修改失败。');
+        return;
+      }
+      syncAdminContentLocally(type, id, nextStatus, false);
+      refreshAdminPanel(false);
+    }
+
+    async function deleteAdminPanelContent(type, id) {
+      if (!adminMode) return;
+      if (!supabase) {
+        alert('当前没有连接 Supabase，无法删除云端内容。');
+        return;
+      }
+      const list = type === 'messages' ? adminPanelState.messages : (type === 'capsules' ? adminPanelState.capsules : adminPanelState.wishes);
+      const item = list.find(row => String(row.id) === String(id));
+      const text = item ? `\n\n${getAdminContentText(type, item)}` : '';
+      if (!window.confirm(`管理员模式：确定要从云端永久删除这条${getAdminTabName(type === 'messages' ? 'messages' : (type === 'capsules' ? 'capsules' : 'wishes'))}吗？${text}`)) return;
+      const result = await adminDeleteCloudContent(type, id);
       if (!result.ok) {
         alert(result.message || '云端删除失败。');
         return;
       }
-      removeCloudWishAfterAdminDelete(id);
+      syncAdminContentLocally(type, id, 'hidden', true);
+      refreshAdminPanel(false);
+    }
+
+    function isMissingAdminRpcError(error) {
+      const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
+      return error?.code === 'PGRST202' || /function .* does not exist|could not find the function/i.test(message);
+    }
+
+    async function fetchAdminContent(type, fallbackTable) {
+      const rpcResult = await supabase.rpc('admin_list_content', {
+        requested_content_type: type,
+        admin_token: adminSessionToken,
+      });
+      if (!rpcResult.error) return rpcResult.data || [];
+      if (!isMissingAdminRpcError(rpcResult.error)) throw rpcResult.error;
+
+      console.warn('Admin list content RPC failed, falling back:', type, rpcResult.error);
+      adminPanelState.schemaWarning = '审核队列和操作日志需要执行最新版 schema.sql；当前只显示兼容读取内容。';
+      const fallback = await supabase.from(fallbackTable).select('*').order('created_at', { ascending: false }).limit(120);
+      if (fallback.error) throw fallback.error;
+      return fallback.data || [];
+    }
+
+    async function fetchAdminLogs() {
+      const { data, error } = await supabase.rpc('admin_list_audit_logs', {
+        admin_token: adminSessionToken,
+        limit_count: 80,
+      });
+      if (!error) return data || [];
+      if (!isMissingAdminRpcError(error)) throw error;
+      console.warn('Admin logs RPC failed:', error);
+      adminPanelState.schemaWarning = '操作日志需要执行最新版 schema.sql 后才会显示。';
+      return [];
     }
 
     async function refreshAdminPanel(showLoading = true) {
@@ -6722,6 +7062,7 @@
         adminPanelState.wishes = getVisibleWishes().filter(wish => !isLocalWish(wish));
         adminPanelState.messages = [];
         adminPanelState.capsules = timeCapsules.slice().reverse();
+        adminPanelState.logs = [];
         adminPanelState.loading = false;
         renderAdminPanel();
         return;
@@ -6732,16 +7073,17 @@
         renderAdminPanel();
       }
       try {
-        const [wishesRes, messagesRes, capsulesRes] = await Promise.all([
-          supabase.from('wishes').select('*').order('created_at', { ascending: false }).limit(120),
-          supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(120),
-          supabase.from('time_capsules').select('*').order('created_at', { ascending: false }).limit(120),
+        adminPanelState.schemaWarning = '';
+        const [wishesData, messagesData, capsulesData, logsData] = await Promise.all([
+          fetchAdminContent('wishes', 'wishes'),
+          fetchAdminContent('messages', 'messages'),
+          fetchAdminContent('capsules', 'time_capsules'),
+          fetchAdminLogs(),
         ]);
-        const error = wishesRes.error || messagesRes.error || capsulesRes.error;
-        if (error) throw error;
-        adminPanelState.wishes = wishesRes.data || [];
-        adminPanelState.messages = messagesRes.data || [];
-        adminPanelState.capsules = capsulesRes.data || [];
+        adminPanelState.wishes = wishesData || [];
+        adminPanelState.messages = messagesData || [];
+        adminPanelState.capsules = capsulesData || [];
+        adminPanelState.logs = logsData || [];
         adminPanelState.error = '';
       } catch(e) {
         console.warn('Admin panel load failed:', e);
@@ -6755,7 +7097,7 @@
     function openAdminPanel(tab = adminPanelState.tab || 'wishes') {
       if (!adminMode) {
         openAIPanel();
-        addAIMessage('请先在愿望精灵里输入“管理员登录”，通过邮箱验证后再进入管理员面板。', 'assistant');
+        addAIMessage('请先在愿望精灵里输入“管理员登录”，通过动态密码验证后再进入管理员面板。', 'assistant');
         return;
       }
       adminPanelState.tab = tab;
@@ -6783,7 +7125,7 @@
       adminMode = !!enabled;
       if (!silent) {
         addAIMessage(adminMode
-          ? '管理员模式已开启。动态密码会话将在约 30 分钟后失效；可以查看公共愿望、漂流瓶和时光胶囊，也可以删除云端公共愿望。'
+          ? '管理员模式已开启。动态密码会话将在约 30 分钟后失效；可以查看公共愿望、漂流瓶、时光胶囊和操作日志，也可以隐藏、恢复或删除云端内容。'
           : '管理员模式已关闭。',
           'assistant'
         );
@@ -6832,10 +7174,19 @@
     adminClose.addEventListener('click', closeAdminPanel);
     adminRefreshBtn.addEventListener('click', () => refreshAdminPanel());
     adminBody.addEventListener('click', (e) => {
-      const deleteBtn = e.target.closest('[data-admin-delete-wish]');
-      if (!deleteBtn) return;
+      const statusBtn = e.target.closest('[data-admin-status-type]');
+      const deleteBtn = e.target.closest('[data-admin-delete-type]');
+      if (!statusBtn && !deleteBtn) return;
       e.stopPropagation();
-      deleteAdminPanelWish(deleteBtn.dataset.adminDeleteWish);
+      if (statusBtn) {
+        setAdminPanelContentStatus(
+          statusBtn.dataset.adminStatusType,
+          statusBtn.dataset.adminStatusId,
+          statusBtn.dataset.adminStatusNext
+        );
+        return;
+      }
+      deleteAdminPanelContent(deleteBtn.dataset.adminDeleteType, deleteBtn.dataset.adminDeleteId);
     });
     adminPanelBtn.addEventListener('click', () => {
       closeToolbox();
@@ -6895,6 +7246,9 @@
       const dueWishes = visibleWishes
         .filter(isReminderDue)
         .sort((a, b) => new Date(getWishReminder(a)?.dueAt || 0) - new Date(getWishReminder(b)?.dueAt || 0));
+      const reminderWishes = visibleWishes
+        .filter(wish => !!getWishReminder(wish)?.dueAt)
+        .sort((a, b) => new Date(getWishReminder(a)?.dueAt || 0) - new Date(getWishReminder(b)?.dueAt || 0));
       const doneWishes = visibleWishes
         .filter(wish => getWishProgressId(wish) === 'done')
         .sort((a, b) => new Date(getWishCompletedAt(b) || getDisplayWish(b).created_at || 0) - new Date(getWishCompletedAt(a) || getDisplayWish(a).created_at || 0));
@@ -6915,6 +7269,7 @@
       return {
         visibleWishes,
         progressCounts,
+        reminderWishes,
         dueWishes,
         doneWishes,
         activeWishes,
@@ -6932,6 +7287,7 @@
       const cat = CATEGORIES[tag] || CATEGORIES.general;
       const progress = getWishProgressStep(wish);
       const reminderLabel = getWishReminderLabel(wish);
+      const reminderDate = getWishReminderDateLabel(wish);
       const time = formatTime(displayWish.created_at);
       return `
         <div class="review-wish">
@@ -6939,7 +7295,7 @@
           <div class="review-wish-meta">
             <span class="review-pill">${cat.icon} ${cat.name}</span>
             <span class="review-pill">${progress.label}</span>
-            <span class="review-pill">${reminderLabel}</span>
+            <span class="review-pill">${reminderDate ? `${reminderDate} · ${reminderLabel}` : reminderLabel}</span>
             <span class="review-pill">${time}</span>
           </div>
         </div>
@@ -6972,6 +7328,7 @@
 
       const topCat = CATEGORIES[stats.topTag] || CATEGORIES.general;
       const dueList = stats.dueWishes.slice(0, 3).map(renderReviewWish).join('');
+      const reminderList = stats.reminderWishes.slice(0, 5).map(renderReviewWish).join('');
       const recentList = stats.recentWishes.slice(0, 3).map(renderReviewWish).join('');
       const doneList = stats.doneWishes.slice(0, 3).map(renderReviewWish).join('');
 
@@ -7000,6 +7357,12 @@
             <div class="review-wish-list">${dueList}</div>
           </div>
         ` : ''}
+        ${stats.reminderWishes.length ? `
+          <div class="review-section">
+            <div class="review-section-title">心愿提醒日历</div>
+            <div class="review-wish-list">${reminderList}</div>
+          </div>
+        ` : ''}
         <div class="review-section">
           <div class="review-section-title">最近许下的心愿</div>
           <div class="review-wish-list">${recentList}</div>
@@ -7012,6 +7375,7 @@
         ` : ''}
         <div class="review-actions">
           <button class="review-action" type="button" data-review-action="all">打开心愿墙</button>
+          <button class="review-action" type="button" data-review-action="reminders">设置提醒</button>
           <button class="review-action" type="button" data-review-action="archive">查看已实现</button>
           <button class="review-action" type="button" data-review-action="export">导出星图</button>
         </div>
@@ -7020,6 +7384,10 @@
 
     function handleWishReviewAction(action) {
       if (action === 'all') {
+        closeTreePanel();
+        setWishwallMode('all');
+        openWishwall();
+      } else if (action === 'reminders') {
         closeTreePanel();
         setWishwallMode('all');
         openWishwall();
