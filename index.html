@@ -3363,7 +3363,7 @@
       <button class="wish-tag" data-tag="wealth">💰 财富</button>
       <button class="wish-tag" data-tag="study">📚 学业</button>
       <button class="wish-tag" data-tag="travel">✈️ 旅行</button>
-      <button class="wish-tag" data-tag="general">🌟 其他</button>
+      <button class="wish-tag" data-tag="general" aria-label="星愿">🌟</button>
     </div>
 
     <div class="wish-counter" id="wishCounter">
@@ -3740,7 +3740,7 @@
       wealth: { name: '财富', icon: '💰', color: '#fbbf24', constellation: 'diamond' },
       study: { name: '学业', icon: '📚', color: '#a78bfa', constellation: 'star5' },
       travel: { name: '旅行', icon: '✈️', color: '#38bdf8', constellation: 'bird' },
-      general: { name: '其他', icon: '🌟', color: '#94a3b8', constellation: 'circle' },
+      general: { name: '星愿', icon: '🌟', color: '#94a3b8', constellation: 'circle' },
     };
 
     const EXPORT_TEMPLATES = {
@@ -8349,8 +8349,8 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Draw category label at centroid
-        if (stars.length >= 3) {
+        // Draw category label at centroid, but keep the default bucket silent.
+        if (stars.length >= 3 && tag !== 'general') {
           const cx = stars.reduce((s, st) => s + st.x, 0) / stars.length;
           const cy = stars.reduce((s, st) => s + st.y, 0) / stars.length;
           ctx.fillStyle = color.replace(')', ',0.3)').replace('rgb', 'rgba');
