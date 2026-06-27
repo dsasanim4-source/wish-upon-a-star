@@ -817,7 +817,8 @@
     transform: scale(0.9);
   }
 
-  .bottle-badge {
+  .bottle-badge,
+  .wishwall-badge {
     position: absolute;
     top: -4px;
     right: -4px;
@@ -836,7 +837,8 @@
     line-height: 1;
   }
 
-  .bottle-badge:empty {
+  .bottle-badge:empty,
+  .wishwall-badge:empty {
     display: none;
   }
 
@@ -1343,6 +1345,23 @@
     background: rgba(160, 120, 240, 0.09);
     color: rgba(220, 205, 255, 0.8);
   }
+  .wish-card-owner,
+  .wish-card-public {
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .wish-card-owner {
+    border: 1px solid rgba(125, 220, 180, 0.24);
+    background: rgba(70, 190, 145, 0.1);
+    color: rgba(175, 245, 215, 0.84);
+  }
+  .wish-card-public {
+    border: 1px solid rgba(150, 180, 220, 0.18);
+    background: rgba(120, 155, 210, 0.07);
+    color: rgba(200, 218, 245, 0.62);
+  }
   .wish-card-admin {
     flex-shrink: 0;
     font-size: 10px;
@@ -1407,6 +1426,9 @@
     border-color: rgba(140, 190, 240, 0.34);
     background: rgba(90, 155, 220, 0.11);
     color: rgba(210, 230, 255, 0.92);
+  }
+  .wishwall-action.secondary {
+    margin-left: auto;
   }
   .wishwall-reminder-summary {
     margin: 4px 20px 0;
@@ -3433,8 +3455,8 @@
       <div class="msg-popup-title">心愿实现啦</div>
       <div class="msg-popup-text" id="achievementPopupText"></div>
       <div class="msg-popup-time" id="achievementPopupTime"></div>
-      <div class="achievement-actions">
-        <button class="achievement-action" id="achievementExportBtn" type="button">导出星空</button>
+        <div class="achievement-actions">
+        <button class="achievement-action" id="achievementExportBtn" type="button">导出这颗星</button>
         <button class="achievement-action" id="achievementCloseBtn" type="button">收好这颗星</button>
       </div>
     </div>
@@ -3546,9 +3568,11 @@
       <button class="wishwall-close" id="wishwallClose">✕</button>
     </div>
     <div class="wishwall-actions">
-      <button class="wishwall-action active" id="wishwallAllBtn" type="button">全部心愿</button>
-      <button class="wishwall-action" id="wishwallArchiveBtn" type="button">已实现星册</button>
-      <button class="wishwall-action" id="wishwallExportBtn" type="button">导出星空</button>
+      <button class="wishwall-action active" id="wishwallAllBtn" type="button">全部</button>
+      <button class="wishwall-action" id="wishwallMineBtn" type="button">我的</button>
+      <button class="wishwall-action" id="wishwallArchiveBtn" type="button">已实现</button>
+      <button class="wishwall-action" id="wishwallDueBtn" type="button">待回访</button>
+      <button class="wishwall-action secondary" id="wishwallExportBtn" type="button">导出星空</button>
     </div>
     <div class="wishwall-body" id="wishwallBody">
       <div class="wishwall-empty">还没有心愿，快来许一个吧 ✨</div>
@@ -3664,7 +3688,10 @@
   </button>
 
   <!-- Wish Wall Button -->
-  <button class="wishwall-btn" id="wishwallBtn" aria-label="心愿墙">🌟</button>
+  <button class="wishwall-btn" id="wishwallBtn" aria-label="心愿墙">
+    🌟
+    <span class="wishwall-badge" id="wishwallBadge"></span>
+  </button>
 
   <!-- Time Capsule Button -->
   <button class="timecapsule-btn" id="timecapsuleBtn" aria-label="时光胶囊">
@@ -3845,12 +3872,15 @@
 
     // Wish wall
     const wishwallBtn = document.getElementById('wishwallBtn');
+    const wishwallBadge = document.getElementById('wishwallBadge');
     const wishwallBackdrop = document.getElementById('wishwallBackdrop');
     const wishwallPanel = document.getElementById('wishwallPanel');
     const wishwallClose = document.getElementById('wishwallClose');
     const wishwallBody = document.getElementById('wishwallBody');
     const wishwallAllBtn = document.getElementById('wishwallAllBtn');
+    const wishwallMineBtn = document.getElementById('wishwallMineBtn');
     const wishwallArchiveBtn = document.getElementById('wishwallArchiveBtn');
+    const wishwallDueBtn = document.getElementById('wishwallDueBtn');
     const wishwallExportBtn = document.getElementById('wishwallExportBtn');
 
     // Achievement popup
@@ -4881,6 +4911,13 @@
       return canManageWish(wish);
     }
 
+    function confirmWishCompletion(wish) {
+      const displayWish = getDisplayWish(wish);
+      const text = String(displayWish.text || '这个心愿').trim();
+      const preview = text.length > 28 ? `${text.slice(0, 28)}…` : text;
+      return window.confirm(`确认把“${preview}”标记为已实现吗？\n完成后会在背景点亮一颗星。`);
+    }
+
     function setWishProgress(wish, progressId) {
       if (!wish || !canManageWishProgress(wish)) return false;
       const key = getWishProgressKey(wish);
@@ -4911,6 +4948,7 @@
       const currentId = getWishProgressId(wish);
       const currentIndex = WISH_PROGRESS_STEPS.findIndex(step => step.id === currentId);
       const next = WISH_PROGRESS_STEPS[(currentIndex + 1) % WISH_PROGRESS_STEPS.length];
+      if (next.id === 'done' && currentId !== 'done' && !confirmWishCompletion(wish)) return false;
       const changed = setWishProgress(wish, next.id);
       if (changed) renderWishWall();
       return changed;
@@ -5004,6 +5042,7 @@
         delete wishReminders[key];
       }
       saveWishReminders();
+      updateWishwallBadge();
       renderWishWall();
       return true;
     }
@@ -5133,6 +5172,14 @@
 
     function getDeviceVisibleWishes() {
       return getVisibleWishes().filter(isDeviceWish);
+    }
+
+    function canExportWish(wish) {
+      return !wish || isDeviceWish(wish);
+    }
+
+    function getExportableWishes() {
+      return getDeviceVisibleWishes();
     }
 
     function applyWishOverride(wish) {
@@ -5346,6 +5393,7 @@
       const progress = getWishProgressStep(activeWishDetail);
       const blessed = hasBlessedWish(activeWishDetail);
       const canManageProgress = canManageWishProgress(activeWishDetail);
+      const canExport = canExportWish(activeWishDetail);
       wishDetailTitle.textContent = progress.id === 'done' ? '已实现的心愿' : '心愿详情';
       wishDetailText.textContent = displayWish.text || '';
       wishDetailMeta.innerHTML = getWishMetaItems(activeWishDetail).map(item => `
@@ -5357,6 +5405,9 @@
       wishDetailBlessBtn.textContent = blessed ? `已祝福 · ${getWishBlessingCount(activeWishDetail)}` : `祝福一下 · ${getWishBlessingCount(activeWishDetail)}`;
       wishDetailBlessBtn.disabled = blessed;
       wishDetailBlessBtn.style.opacity = blessed ? '0.62' : '1';
+      wishDetailExportBtn.textContent = canExport ? '导出这颗星' : '只能导出自己的星';
+      wishDetailExportBtn.disabled = !canExport;
+      wishDetailExportBtn.style.opacity = canExport ? '1' : '0.62';
       wishDetailProgressBtn.textContent = !canManageProgress ? '状态只读' : (progress.id === 'done' ? '调整状态' : '更新进度');
       wishDetailProgressBtn.disabled = !canManageProgress;
       wishDetailProgressBtn.style.opacity = wishDetailProgressBtn.disabled ? '0.62' : '1';
@@ -5386,6 +5437,10 @@
     }
 
     function exportWishDirectly(wish) {
+      if (!canExportWish(wish)) {
+        alert('只能导出自己写下的心愿。');
+        return false;
+      }
       exportPreviewState = {
         selectedWish: wish,
         preset: exportPreviewState.preset || 'adaptive',
@@ -5397,6 +5452,7 @@
       exportPreviewOverlay.classList.remove('hidden');
       void exportPreviewOverlay.offsetWidth;
       exportPreviewOverlay.classList.add('show');
+      return true;
     }
 
     function toggleWishPrivacyMode() {
@@ -5410,6 +5466,10 @@
       if (!wish) return;
       achievementPopupText.textContent = wish.text || '这个心愿已经实现';
       achievementPopupTime.textContent = '完成于 ' + formatDate(getWishCompletedAt(wish) || new Date().toISOString());
+      const canExport = canExportWish(wish);
+      achievementExportBtn.textContent = canExport ? '导出这颗星' : '只能导出自己的星';
+      achievementExportBtn.disabled = !canExport;
+      achievementExportBtn.style.opacity = canExport ? '1' : '0.62';
       achievementBurst.classList.add('show');
       achievementPopupOverlay.classList.remove('hidden');
       void achievementPopupOverlay.offsetWidth;
@@ -5480,8 +5540,11 @@
     }
 
     function chooseWishForExport() {
-      const options = getVisibleWishes().slice().reverse();
-      if (options.length === 0) return Promise.resolve(null);
+      const options = getExportableWishes().slice().reverse();
+      if (options.length === 0) {
+        alert('只能导出自己写下的心愿，先写下一颗自己的星吧。');
+        return Promise.resolve(undefined);
+      }
       if (!exportPickerOverlay || !exportPickerList || !exportPickerCancel) {
         return Promise.resolve(options[0]);
       }
@@ -5914,8 +5977,17 @@
       link.click();
     }
 
-    async function exportMySky() {
-      const selectedWish = await chooseWishForExport();
+    async function exportMySky(preselectedWish) {
+      let selectedWish;
+      if (preselectedWish !== undefined) {
+        if (!canExportWish(preselectedWish)) {
+          alert('只能导出自己写下的心愿。');
+          return;
+        }
+        selectedWish = preselectedWish;
+      } else {
+        selectedWish = await chooseWishForExport();
+      }
       if (selectedWish === undefined) return;
       exportPreviewState = {
         selectedWish,
@@ -6092,6 +6164,7 @@
           wishCountEl.textContent = totalWishes;
           saveWishesToStorage();
           updateTimeCapsuleBadge();
+          updateWishwallBadge();
           updateTreeWishes();
           renderWishWall();
           alert('备份已恢复');
@@ -6393,12 +6466,47 @@
     /* ═══════════════════════════════════════════════════════════════════════
        WISH WALL
        ═══════════════════════════════════════════════════════════════════════ */
+    function getWishwallFilteredWishes() {
+      return wishMessages.filter(wish => {
+        if (!isWishVisible(wish)) return false;
+        if (wishwallMode === 'mine') return isDeviceWish(wish);
+        if (wishwallMode === 'archive') return getWishProgressId(wish) === 'done';
+        if (wishwallMode === 'due') return isReminderDue(wish) && (adminMode || isDeviceWish(wish));
+        return true;
+      });
+    }
+
+    function getWishwallEmptyText() {
+      if (wishwallMode === 'mine') return '这里还没有你自己的心愿，先写下一颗吧 ✨';
+      if (wishwallMode === 'archive') return '还没有实现的心愿，等第一颗星变亮吧 ✨';
+      if (wishwallMode === 'due') return '暂时没有需要回访的心愿';
+      return '还没有心愿，快来许一个吧 ✨';
+    }
+
+    function getActionableDueWishes() {
+      return wishMessages.filter(wish => isWishVisible(wish) && isReminderDue(wish) && (adminMode || isDeviceWish(wish)));
+    }
+
+    function updateWishwallBadge() {
+      const count = getActionableDueWishes().length;
+      if (count > 0) {
+        wishwallBadge.textContent = count > 99 ? '99+' : count;
+        wishwallBadge.style.display = 'flex';
+      } else {
+        wishwallBadge.textContent = '';
+        wishwallBadge.style.display = 'none';
+      }
+    }
+
     function renderWishWall() {
       wishwallBody.innerHTML = '';
       wishwallAllBtn.classList.toggle('active', wishwallMode === 'all');
+      wishwallMineBtn.classList.toggle('active', wishwallMode === 'mine');
       wishwallArchiveBtn.classList.toggle('active', wishwallMode === 'archive');
+      wishwallDueBtn.classList.toggle('active', wishwallMode === 'due');
 
-      const dueWishes = wishMessages.filter(wish => isWishVisible(wish) && isReminderDue(wish));
+      const dueWishes = getActionableDueWishes();
+      updateWishwallBadge();
       if (wishwallMode === 'all' && dueWishes.length > 0) {
         const summary = document.createElement('div');
         summary.className = 'wishwall-reminder-summary';
@@ -6406,18 +6514,12 @@
         wishwallBody.appendChild(summary);
       }
 
-      const visibleWishes = wishMessages.filter(wish => {
-        if (!isWishVisible(wish)) return false;
-        if (wishwallMode === 'archive') return getWishProgressId(wish) === 'done';
-        return true;
-      });
+      const visibleWishes = getWishwallFilteredWishes();
 
       if (visibleWishes.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'wishwall-empty';
-        empty.textContent = wishwallMode === 'archive'
-          ? '还没有实现的心愿，等第一颗星变亮吧 ✨'
-          : '还没有心愿，快来许一个吧 ✨';
+        empty.textContent = getWishwallEmptyText();
         wishwallBody.appendChild(empty);
         return;
       }
@@ -6442,12 +6544,16 @@
         const reminderDueClass = isReminderDue(wish) ? ' due' : '';
         const blessingCount = getWishBlessingCount(wish);
         const blessedClass = hasBlessedWish(wish) ? ' blessed' : '';
+        const ownerBadge = isDeviceWish(wish)
+          ? '<span class="wish-card-owner">我的</span>'
+          : '<span class="wish-card-public">公开</span>';
         const adminCloudBadge = adminMode && !isLocalWish(wish) ? '<span class="wish-card-admin">云端</span>' : '';
         const adminDeleteClass = adminMode && !isLocalWish(wish) ? ' admin-delete' : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(displayWish.text)}</span>
           <span class="wish-card-tag">${cat.icon} ${cat.name}</span>
+          ${ownerBadge}
           ${displayWish.visibility === 'private' ? '<span class="wish-card-private">私密</span>' : ''}
           ${adminCloudBadge}
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" ${canManageProgress ? '' : 'disabled'} aria-label="${canManageProgress ? `更新心愿进度：${progress.label}` : `只能查看心愿进度：${progress.label}`}">${progress.label}</button>
@@ -6513,10 +6619,18 @@
     wishwallBackdrop.addEventListener('click', () => closeWishwall());
     wishwallPanel.addEventListener('click', (e) => e.stopPropagation());
     wishwallAllBtn.addEventListener('click', () => setWishwallMode('all'));
+    wishwallMineBtn.addEventListener('click', () => setWishwallMode('mine'));
     wishwallArchiveBtn.addEventListener('click', () => setWishwallMode('archive'));
-    wishwallExportBtn.addEventListener('click', exportMySky);
+    wishwallDueBtn.addEventListener('click', () => setWishwallMode('due'));
+    wishwallExportBtn.addEventListener('click', () => exportMySky());
     achievementCloseBtn.addEventListener('click', closeWishAchievement);
-    achievementExportBtn.addEventListener('click', exportMySky);
+    achievementExportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wish = lastCompletedWish;
+      if (!wish) return;
+      closeWishAchievement();
+      setTimeout(() => exportMySky(wish), 120);
+    });
     achievementPopupOverlay.addEventListener('click', (e) => { if (e.target === achievementPopupOverlay) closeWishAchievement(); });
     wishDetailBlessBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -6525,6 +6639,10 @@
     wishDetailExportBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!activeWishDetail) return;
+      if (!canExportWish(activeWishDetail)) {
+        alert('只能导出自己写下的心愿。');
+        return;
+      }
       const wish = activeWishDetail;
       closeWishDetail();
       setTimeout(() => exportWishDirectly(wish), 120);
@@ -6565,7 +6683,7 @@
     roomChip.addEventListener('click', (e) => { e.stopPropagation(); openRoomDialog(); });
     quietModeBtn.addEventListener('click', toggleQuietMode);
     customTitleBtn.addEventListener('click', openTitleEditor);
-    toolboxExportBtn.addEventListener('click', exportMySky);
+    toolboxExportBtn.addEventListener('click', () => exportMySky());
     backupExportBtn.addEventListener('click', exportBackupData);
     backupImportBtn.addEventListener('click', () => backupImportInput.click());
     backupImportInput.addEventListener('change', (e) => importBackupData(e.target.files && e.target.files[0]));
@@ -7664,6 +7782,7 @@
       adminPanelBtn.classList.toggle('hidden', !adminMode);
       if (adminMode && openPanel) setTimeout(() => openAdminPanel('wishes'), 180);
       else if (!adminMode) closeAdminPanel();
+      updateWishwallBadge();
       if (wishwallPanel.classList.contains('show')) renderWishWall();
     }
 
@@ -9539,6 +9658,7 @@
       wishInputArea.classList.add('visible');
       updateBottleBadge();
       updateTimeCapsuleBadge();
+      updateWishwallBadge();
       if (timeCapsules.filter(isCapsuleActive).length > 0) capsuleCounter.classList.add('visible');
       const visibleWishes = getVisibleWishes();
       if (visibleWishes.length > 0) {
