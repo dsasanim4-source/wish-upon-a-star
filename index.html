@@ -1500,6 +1500,38 @@
     background: rgba(90, 155, 220, 0.11);
   }
 
+  .title-editor-input {
+    width: 100%;
+    height: 44px;
+    margin: 4px 0 10px;
+    padding: 0 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.045);
+    color: rgba(232, 242, 255, 0.94);
+    outline: none;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .title-editor-input:focus {
+    border-color: rgba(140, 200, 255, 0.36);
+    box-shadow: 0 0 20px rgba(100, 160, 240, 0.1);
+  }
+
+  .title-editor-error {
+    min-height: 18px;
+    margin: 0 0 12px;
+    color: rgba(255, 170, 160, 0.82);
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+  }
+
   .export-preview-popup {
     max-width: min(92vw, 520px);
     padding: 24px 22px 22px;
@@ -3172,7 +3204,7 @@
     <div class="glass-card" id="glassCard">
       <div class="star-icon">✨</div>
       <div class="wish-label">星 愿</div>
-      <h1 class="main-title">星愿回声</h1>
+      <h1 class="main-title" id="mainTitle">星愿回声</h1>
       <div class="divider"></div>
       <p class="sub-text">把愿望交给星星，让未来轻轻回应</p>
     </div>
@@ -3314,6 +3346,20 @@
         <button class="achievement-action" id="wishDetailExportBtn" type="button">导出这颗星</button>
         <button class="achievement-action" id="wishDetailProgressBtn" type="button">更新进度</button>
         <button class="achievement-action" id="wishDetailCloseBtn" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title Editor Popup -->
+  <div class="msg-popup-overlay hidden" id="titleEditorOverlay">
+    <div class="msg-popup">
+      <div class="msg-popup-icon">✍️</div>
+      <div class="msg-popup-title">更换大标题</div>
+      <input class="title-editor-input" id="titleEditorInput" type="text" maxlength="14" autocomplete="off">
+      <div class="title-editor-error" id="titleEditorError"></div>
+      <div class="achievement-actions">
+        <button class="achievement-action" id="titleEditorSaveBtn" type="button">保存</button>
+        <button class="achievement-action" id="titleEditorCancelBtn" type="button">取消</button>
       </div>
     </div>
   </div>
@@ -3506,6 +3552,7 @@
     <button class="toolbox-item" type="button" data-tool="constellation">🔮 协作星座</button>
     <button class="toolbox-item" type="button" data-tool="room">🔗 心愿房间</button>
     <button class="toolbox-item" type="button" id="quietModeBtn">🌙 静谧模式</button>
+    <button class="toolbox-item" type="button" id="customTitleBtn">✍️ 更换标题</button>
     <button class="toolbox-item" type="button" id="toolboxExportBtn">🖼 导出星空</button>
     <button class="toolbox-item admin-only hidden" type="button" id="adminPanelBtn">🛡 管理员面板</button>
     <button class="toolbox-item" type="button" id="backupExportBtn">📦 备份数据</button>
@@ -3605,6 +3652,7 @@
     const capsuleCountEl = document.getElementById('capsuleCount');
     const instruction = document.getElementById('instruction');
     const glassCard = document.getElementById('glassCard');
+    const mainTitle = document.getElementById('mainTitle');
     const wishInput = document.getElementById('wishInput');
     const wishSendBtn = document.getElementById('wishSendBtn');
     const wishPrivacyBtn = document.getElementById('wishPrivacyBtn');
@@ -3678,6 +3726,11 @@
     const wishDetailExportBtn = document.getElementById('wishDetailExportBtn');
     const wishDetailProgressBtn = document.getElementById('wishDetailProgressBtn');
     const wishDetailCloseBtn = document.getElementById('wishDetailCloseBtn');
+    const titleEditorOverlay = document.getElementById('titleEditorOverlay');
+    const titleEditorInput = document.getElementById('titleEditorInput');
+    const titleEditorError = document.getElementById('titleEditorError');
+    const titleEditorSaveBtn = document.getElementById('titleEditorSaveBtn');
+    const titleEditorCancelBtn = document.getElementById('titleEditorCancelBtn');
 
     // Wish room
     const roomChip = document.getElementById('roomChip');
@@ -3688,6 +3741,7 @@
     const toolboxBadge = document.getElementById('toolboxBadge');
     const toolboxPanel = document.getElementById('toolboxPanel');
     const quietModeBtn = document.getElementById('quietModeBtn');
+    const customTitleBtn = document.getElementById('customTitleBtn');
     const toolboxExportBtn = document.getElementById('toolboxExportBtn');
     const backupExportBtn = document.getElementById('backupExportBtn');
     const backupImportBtn = document.getElementById('backupImportBtn');
@@ -3772,7 +3826,11 @@
     let shootingStars = [];
     let nebulaBlobs = [];
     let wishMessages = [];
+    const APP_DEFAULT_TITLE = '星愿回声';
+    const TITLE_STORAGE_KEY = 'wish_custom_main_title';
     const WISH_PROGRESS_KEY = 'wish_progress_states';
+    const COMPLETED_WISH_STARS_KEY = 'wish_completed_star_styles';
+    const COMPLETED_STAR_HUES = [44, 188, 324, 145, 268, 12, 218, 96, 292, 166, 352, 58, 238, 28];
     const WISH_PROGRESS_STEPS = [
       { id: 'new', label: '刚许下' },
       { id: 'doing', label: '正在努力' },
@@ -3792,6 +3850,7 @@
     let blessedWishIds = new Set();
     let ownedWishIds = new Set();
     let wishOverrides = {};
+    let completedWishStarStyles = {};
     let wishwallMode = 'all';
     let quietMode = false;
     let wishPrivacyMode = 'public';
@@ -4068,11 +4127,13 @@
       loadReadCapsuleIds();
       loadCapsuleReplyChains();
       loadWishProgress();
+      loadCompletedWishStars();
       loadWishReminders();
       loadWishVisibilityState();
       loadBlessedWishIds();
       loadOwnedWishIds();
       loadQuietMode();
+      loadCustomTitle();
       loadRoomState();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
@@ -4262,31 +4323,188 @@
       return div.innerHTML;
     }
 
-    const BLOCKED_LANGUAGE_PATTERNS = [
-      /傻[逼屄比]/,
-      /煞笔|沙比/,
-      /草泥马|艹你|肏/,
-      /(?:我|你|他|她)?操(?:你|他|她|我|妈|蛋|死)/,
-      /我操|卧槽|操蛋/,
-      /妈的|他妈|你妈|去死|滚蛋/,
-      /nmsl/,
-      /fuck|shit|bitch|asshole|dick|cunt/,
+    const BLOCKED_LANGUAGE_RULES = [
+      {
+        label: '脏话粗口',
+        patterns: [
+          /傻[逼屄比b]/,
+          /煞笔|沙比|shabi|sha?bi|\bsb\b/,
+          /草泥马|艹你|肏|操你|操他|操她|操蛋|我操|卧槽|你妈|他妈|妈的/,
+          /nmsl|cnm|fuck|shit|bitch|asshole|dick|cunt|fck|wtf/,
+        ],
+      },
+      {
+        label: '侮辱攻击',
+        patterns: [
+          /去死|死全家|滚蛋|滚开|废物|垃圾|弱智|智障|脑残|低能|白痴|蠢货/,
+          /贱人|贱货|婊|丑逼|舔狗|人渣|混蛋|王八蛋|杂种|畜生|废柴/,
+          /欠揍|找打|恶心人|不要脸|没教养|活该/,
+        ],
+      },
+      {
+        label: '涉政敏感',
+        patterns: [
+          /涉政|政治|政府|政权|党派|党员|共产党|中共|共党|国民党|民进党/,
+          /主席|总统|总理|人大|政协|两会|选举|投票|罢免|游行|示威|罢工|革命|政变/,
+          /独裁|专制|民主运动|言论自由|人权|宪法|公安|武警|军队|警察/,
+          /台独|港独|藏独|疆独|台湾独立|法轮功|天安门|六四|8964/,
+          /习近平|毛泽东|邓小平|江泽民|胡锦涛|蔡英文|赖清德|特朗普|拜登|普京|泽连斯基/,
+        ],
+      },
+      {
+        label: '仇恨极端',
+        patterns: [
+          /纳粹|恐怖主义|恐怖分子|isis|圣战|极端组织|种族灭绝|灭族/,
+          /杀光.{0,6}(人|族)|仇恨|歧视|黑鬼|支那|小日本|地域黑|女权癌/,
+        ],
+      },
+      {
+        label: '色情低俗',
+        patterns: [
+          /色情|黄色网站|黄片|a片|av女优|porn|sex|约炮|裸聊|卖淫|嫖/,
+          /强奸|强暴|口交|肛交|阴茎|阴道|鸡巴|\bjb\b|自慰|约p|\byp\b/,
+        ],
+      },
+      {
+        label: '暴力违法',
+        patterns: [
+          /杀人|杀了|弄死|砍死|捅死|打死|炸弹|爆炸|枪支|手枪/,
+          /毒品|吸毒|贩毒|赌博|博彩|报复社会|自杀|割腕|跳楼|血腥|虐待/,
+        ],
+      },
+      {
+        label: '广告引流',
+        patterns: [
+          /https?:\/\/|www\.|\.com|\.cn|\.net|\.org|\.vip|\.xyz|\.top/,
+          /加微信|加微|vx[:：]?|qq[:：]?|二维码|刷单|贷款|返利|兼职|代写|代考|引流|推广|广告/,
+          /(?:\+?86)?1[3-9]\d{9}|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/,
+        ],
+      },
     ];
 
     function normalizeForModeration(text) {
       return String(text || '')
         .toLowerCase()
         .normalize('NFKC')
+        .replace(/[0０]/g, 'o')
+        .replace(/[1１!！|]/g, 'i')
+        .replace(/[3３]/g, 'e')
+        .replace(/[4４@]/g, 'a')
+        .replace(/[5５$]/g, 's')
+        .replace(/[7７]/g, 't')
         .replace(/[\s\-_.。，,，!！?？、'"“”‘’`~@#$%^&*()（）\[\]{}<>《》:：;；|\\/]+/g, '');
     }
 
-    function hasBlockedLanguage(text) {
-      const normalized = normalizeForModeration(text);
-      return BLOCKED_LANGUAGE_PATTERNS.some(pattern => pattern.test(normalized));
+    function getVisibleCharCount(text) {
+      return Array.from(String(text || '').replace(/\s+/g, '')).length;
     }
 
-    function rejectBlockedLanguage(surface) {
-      alert(`${surface}里不能包含脏话或攻击性表达，换一句温柔一点的吧。`);
+    function findBlockedLanguage(text) {
+      const raw = String(text || '').toLowerCase().normalize('NFKC');
+      const compactRaw = raw.replace(/\s+/g, '');
+      const normalized = normalizeForModeration(text);
+      if (!normalized) return null;
+      const repeatedChar = /(.)\1{5,}/.test(normalized);
+      const repeatedPhrase = /(.{2,6})\1{3,}/.test(normalized);
+      if (repeatedChar || repeatedPhrase) return { label: '重复刷屏' };
+      for (const rule of BLOCKED_LANGUAGE_RULES) {
+        if (rule.patterns.some(pattern => pattern.test(normalized) || pattern.test(raw) || pattern.test(compactRaw))) {
+          return rule;
+        }
+      }
+      return null;
+    }
+
+    function hasBlockedLanguage(text) {
+      return !!findBlockedLanguage(text);
+    }
+
+    function validateUserText(surface, text, options = {}) {
+      const raw = String(text || '');
+      const value = raw.trim();
+      const compactValue = value.replace(/\s+/g, '');
+      if (!compactValue) {
+        return { ok: false, message: `${surface}不能为空。` };
+      }
+      if (options.title) {
+        if (getVisibleCharCount(value) > 7) {
+          return { ok: false, message: '大标题最多 7 个字。' };
+        }
+        if (!/^[\u3400-\u9fffA-Za-z0-9]+$/.test(compactValue)) {
+          return { ok: false, message: '大标题只能使用中文、英文或数字。' };
+        }
+        if (/^\d+$/.test(compactValue)) {
+          return { ok: false, message: '大标题不能只写数字。' };
+        }
+      } else if (options.maxChars && Array.from(value).length > options.maxChars) {
+        return { ok: false, message: `${surface}最多 ${options.maxChars} 个字。` };
+      }
+      const blocked = findBlockedLanguage(value);
+      if (blocked) {
+        return {
+          ok: false,
+          message: `${surface}不符合规则：不能包含${blocked.label}内容。请换成更中性、友善的表达。`,
+        };
+      }
+      return { ok: true, value: options.compact ? compactValue : value };
+    }
+
+    function rejectBlockedLanguage(surface, text) {
+      const blocked = findBlockedLanguage(text);
+      alert(`${surface}不符合规则：不能包含${blocked ? blocked.label : '敏感或攻击性'}内容。请换成更中性、友善的表达。`);
+    }
+
+    function applyMainTitle(title) {
+      const nextTitle = String(title || APP_DEFAULT_TITLE).trim() || APP_DEFAULT_TITLE;
+      mainTitle.textContent = nextTitle;
+      document.title = `${nextTitle} ✨`;
+    }
+
+    function loadCustomTitle() {
+      const stored = localStorage.getItem(TITLE_STORAGE_KEY);
+      if (!stored) {
+        applyMainTitle(APP_DEFAULT_TITLE);
+        return;
+      }
+      const validation = validateUserText('大标题', stored, { title: true, compact: true });
+      if (validation.ok) {
+        applyMainTitle(validation.value);
+      } else {
+        localStorage.removeItem(TITLE_STORAGE_KEY);
+        applyMainTitle(APP_DEFAULT_TITLE);
+      }
+    }
+
+    function openTitleEditor() {
+      closeToolbox();
+      titleEditorInput.value = mainTitle.textContent.trim() || APP_DEFAULT_TITLE;
+      titleEditorError.textContent = '';
+      titleEditorOverlay.classList.remove('hidden');
+      void titleEditorOverlay.offsetWidth;
+      titleEditorOverlay.classList.add('show');
+      setTimeout(() => {
+        titleEditorInput.focus();
+        titleEditorInput.select();
+      }, 120);
+    }
+
+    function closeTitleEditor() {
+      titleEditorOverlay.classList.remove('show');
+      titleEditorOverlay.addEventListener('transitionend', function handler() {
+        titleEditorOverlay.classList.add('hidden');
+        titleEditorOverlay.removeEventListener('transitionend', handler);
+      });
+    }
+
+    function submitCustomTitle() {
+      const result = validateUserText('大标题', titleEditorInput.value, { title: true, compact: true });
+      if (!result.ok) {
+        titleEditorError.textContent = result.message;
+        return;
+      }
+      localStorage.setItem(TITLE_STORAGE_KEY, result.value);
+      applyMainTitle(result.value);
+      closeTitleEditor();
     }
 
     function normalizeRoomCode(value) {
@@ -4389,6 +4607,76 @@
       } catch(e) { /* ignore */ }
     }
 
+    function loadCompletedWishStars() {
+      try {
+        const stored = localStorage.getItem(COMPLETED_WISH_STARS_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) completedWishStarStyles = parsed;
+      } catch(e) {
+        completedWishStarStyles = {};
+      }
+    }
+
+    function saveCompletedWishStars() {
+      try {
+        localStorage.setItem(COMPLETED_WISH_STARS_KEY, JSON.stringify(completedWishStarStyles));
+      } catch(e) { /* ignore */ }
+    }
+
+    function stableHash(value) {
+      let hash = 2166136261;
+      const str = String(value || '');
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function seededUnit(seed) {
+      return (stableHash(seed) % 10000) / 10000;
+    }
+
+    function makeCompletedWishStarStyle(key, usedHues = []) {
+      const seed = String(key || Date.now());
+      let hue = COMPLETED_STAR_HUES[Object.keys(completedWishStarStyles).length % COMPLETED_STAR_HUES.length];
+      hue = (hue + Math.round(seededUnit(seed + ':hue') * 22) - 11 + 360) % 360;
+      let guard = 0;
+      while (usedHues.some(existing => Math.abs(((hue - existing + 540) % 360) - 180) < 16) && guard < 18) {
+        hue = (hue + 37) % 360;
+        guard++;
+      }
+
+      let xRatio = 0.08 + seededUnit(seed + ':x') * 0.84;
+      let yRatio = 0.08 + seededUnit(seed + ':y') * 0.8;
+      if (xRatio > 0.28 && xRatio < 0.72 && yRatio > 0.16 && yRatio < 0.62) {
+        xRatio = xRatio < 0.5
+          ? 0.08 + seededUnit(seed + ':edge-left') * 0.16
+          : 0.76 + seededUnit(seed + ':edge-right') * 0.16;
+      }
+
+      return {
+        xRatio: Number(xRatio.toFixed(4)),
+        yRatio: Number(yRatio.toFixed(4)),
+        hue,
+        size: Number((2.2 + seededUnit(seed + ':size') * 2.2).toFixed(2)),
+        twinkleOffset: Number((seededUnit(seed + ':offset') * Math.PI * 2).toFixed(4)),
+        spin: seededUnit(seed + ':spin') > 0.5 ? 1 : -1,
+      };
+    }
+
+    function getCompletedWishStarStyle(wish, usedHues = []) {
+      const key = getWishProgressKey(wish);
+      if (!key) return null;
+      if (!completedWishStarStyles[key]) {
+        completedWishStarStyles[key] = makeCompletedWishStarStyle(key, usedHues);
+        saveCompletedWishStars();
+      }
+      const style = completedWishStarStyles[key];
+      usedHues.push(Number(style.hue) || 0);
+      return style;
+    }
+
     function getWishCompletedAt(wish) {
       const key = getWishProgressKey(wish);
       return key ? wishProgress[key + ':completedAt'] : null;
@@ -4424,6 +4712,7 @@
       wishProgress[key] = progressId;
       if (progressId === 'done' && previousId !== 'done') {
         setWishCompletedAt(wish, new Date().toISOString());
+        getCompletedWishStarStyle(wish, Object.values(completedWishStarStyles).map(style => Number(style.hue) || 0));
         lastCompletedWish = wish;
         showWishAchievement(wish);
       }
@@ -4460,6 +4749,11 @@
         wishOverrides[toKey] = wishOverrides[fromKey];
         delete wishOverrides[fromKey];
         saveWishVisibilityState();
+      }
+      if (completedWishStarStyles[fromKey]) {
+        completedWishStarStyles[toKey] = completedWishStarStyles[fromKey];
+        delete completedWishStarStyles[fromKey];
+        saveCompletedWishStars();
       }
       delete wishProgress[fromKey];
       saveWishProgress();
@@ -4687,8 +4981,12 @@
       const displayWish = getDisplayWish(wish);
       const nextText = window.prompt('编辑这条心愿', displayWish.text || '');
       if (nextText === null) return;
-      const text = nextText.trim();
-      if (!text) return;
+      const validation = validateUserText('心愿', nextText, { maxChars: 50 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
+      const text = validation.value;
       if (isLocalWish(wish)) {
         wish.text = text;
       } else {
@@ -5499,6 +5797,7 @@
         localWishes: wishMessages.filter(isLocalWish),
         wishProgress,
         wishReminders,
+        completedWishStarStyles,
         hiddenWishIds: [...hiddenWishIds],
         blessedWishIds: [...blessedWishIds],
         ownedWishIds: [...ownedWishIds],
@@ -5509,6 +5808,7 @@
         deviceId: localStorage.getItem('wish_device_id'),
         constellations: JSON.parse(localStorage.getItem('constellations') || '[]'),
         quietMode,
+        customTitle: localStorage.getItem(TITLE_STORAGE_KEY) || '',
       };
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -5548,6 +5848,10 @@
             wishReminders = { ...wishReminders, ...backup.wishReminders };
             saveWishReminders();
           }
+          if (backup.completedWishStarStyles && typeof backup.completedWishStarStyles === 'object') {
+            completedWishStarStyles = { ...completedWishStarStyles, ...backup.completedWishStarStyles };
+            saveCompletedWishStars();
+          }
           if (Array.isArray(backup.hiddenWishIds)) {
             backup.hiddenWishIds.forEach(id => hiddenWishIds.add(String(id)));
           }
@@ -5583,6 +5887,13 @@
             quietMode = backup.quietMode;
             localStorage.setItem(QUIET_MODE_KEY, quietMode ? '1' : '0');
             applyQuietMode();
+          }
+          if (typeof backup.customTitle === 'string') {
+            const titleValidation = validateUserText('大标题', backup.customTitle || APP_DEFAULT_TITLE, { title: true, compact: true });
+            if (titleValidation.ok) {
+              localStorage.setItem(TITLE_STORAGE_KEY, titleValidation.value);
+              applyMainTitle(titleValidation.value);
+            }
           }
           totalWishes = getVisibleWishes().length;
           wishCountEl.textContent = totalWishes;
@@ -5859,12 +6170,12 @@
     }
 
     async function submitBottleMessage() {
-      const text = bottleInput.value.trim();
-      if (!text) return;
-      if (hasBlockedLanguage(text)) {
-        rejectBlockedLanguage('漂流瓶');
+      const validation = validateUserText('漂流瓶', bottleInput.value, { maxChars: 200 });
+      if (!validation.ok) {
+        alert(validation.message);
         return;
       }
+      const text = validation.value;
       bottleInput.value = '';
       if (!supabase) return;
       const { data: inserted, error } = await supabase
@@ -6051,10 +6362,21 @@
     });
     roomChip.addEventListener('click', (e) => { e.stopPropagation(); openRoomDialog(); });
     quietModeBtn.addEventListener('click', toggleQuietMode);
+    customTitleBtn.addEventListener('click', openTitleEditor);
     toolboxExportBtn.addEventListener('click', exportMySky);
     backupExportBtn.addEventListener('click', exportBackupData);
     backupImportBtn.addEventListener('click', () => backupImportInput.click());
     backupImportInput.addEventListener('change', (e) => importBackupData(e.target.files && e.target.files[0]));
+    titleEditorSaveBtn.addEventListener('click', submitCustomTitle);
+    titleEditorCancelBtn.addEventListener('click', closeTitleEditor);
+    titleEditorInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitCustomTitle();
+      }
+    });
+    titleEditorInput.addEventListener('input', () => { titleEditorError.textContent = ''; });
+    titleEditorOverlay.addEventListener('click', (e) => { if (e.target === titleEditorOverlay) closeTitleEditor(); });
 
     /* ═══════════════════════════════════════════════════════════════════════
        FEATURE 3: TIME CAPSULE
@@ -6222,9 +6544,14 @@
     }
 
     async function submitTimeCapsule() {
-      const text = timecapsuleInput.value.trim();
+      const validation = validateUserText('时光胶囊', timecapsuleInput.value, { maxChars: 200 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
+      const text = validation.value;
       const date = timecapsuleDate.value;
-      if (!text || !date) return;
+      if (!date) return;
       timecapsuleInput.value = '';
       const deviceId = getDeviceId();
       const packedText = packCapsuleText(text, deviceId);
@@ -7156,6 +7483,11 @@
         openAdminPanel('wishes');
         return;
       }
+      const validation = validateUserText('愿望精灵输入', text, { maxChars: 200 });
+      if (!validation.ok) {
+        addAIMessage(validation.message, 'assistant');
+        return;
+      }
       addAIMessage(text, 'user');
       setTimeout(() => {
         const response = getAIResponse(text);
@@ -7532,8 +7864,14 @@
 
     function saveConstellation() {
       if (drawnStars.length < 2) return;
-      const name = prompt('给你的星座起个名字吧：', '我的星座');
-      if (!name) return;
+      const input = prompt('给你的星座起个名字吧：', '我的星座');
+      if (input === null) return;
+      const validation = validateUserText('星座名称', input, { maxChars: 18 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
+      const name = validation.value;
       const constellation = {
         name,
         stars: [...drawnStars],
@@ -7635,8 +7973,12 @@
       const current = saved[index].name || '我的星座';
       const next = window.prompt('给这个星座换个名字：', current);
       if (next === null) return;
-      const name = next.trim();
-      if (!name) return;
+      const validation = validateUserText('星座名称', next, { maxChars: 18 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
+      const name = validation.value;
       saved[index].name = name;
       localStorage.setItem('constellations', JSON.stringify(saved));
       renderConstellationMgmtList();
@@ -7945,6 +8287,59 @@
       });
     }
 
+    function drawCompletedWishStars() {
+      const completedWishes = getVisibleWishes().filter(wish => getWishProgressId(wish) === 'done');
+      if (!completedWishes.length) return;
+      const usedHues = [];
+      completedWishes.forEach((wish, index) => {
+        const style = getCompletedWishStarStyle(wish, usedHues);
+        if (!style) return;
+        const x = style.xRatio * W;
+        const y = style.yRatio * H;
+        const twinkle = 0.82 + Math.sin(time * 0.0038 + style.twinkleOffset) * 0.18;
+        const size = style.size * twinkle;
+        const hue = Number(style.hue) || COMPLETED_STAR_HUES[index % COMPLETED_STAR_HUES.length];
+        const glowRadius = size * 11;
+
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+        glow.addColorStop(0, `hsla(${hue}, 92%, 72%, 0.58)`);
+        glow.addColorStop(0.42, `hsla(${hue}, 88%, 62%, 0.18)`);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(style.spin * time * 0.0007 + style.twinkleOffset);
+        ctx.strokeStyle = `hsla(${hue}, 96%, 78%, ${0.52 + twinkle * 0.18})`;
+        ctx.lineWidth = Math.max(0.7, size * 0.34);
+        ctx.shadowColor = `hsla(${hue}, 96%, 68%, 0.58)`;
+        ctx.shadowBlur = size * 4;
+        ctx.beginPath();
+        ctx.moveTo(-size * 3.2, 0);
+        ctx.lineTo(size * 3.2, 0);
+        ctx.moveTo(0, -size * 3.2);
+        ctx.lineTo(0, size * 3.2);
+        ctx.stroke();
+        ctx.rotate(Math.PI / 4);
+        ctx.globalAlpha = 0.64;
+        ctx.beginPath();
+        ctx.moveTo(-size * 2.1, 0);
+        ctx.lineTo(size * 2.1, 0);
+        ctx.moveTo(0, -size * 2.1);
+        ctx.lineTo(0, size * 2.1);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.78, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${hue}, 100%, 88%, ${0.82 + twinkle * 0.12})`;
+        ctx.fill();
+      });
+    }
+
     /* ═══════════════════════════════════════════════════════════════════════
        HEART CONSTELLATION
        ═══════════════════════════════════════════════════════════════════════ */
@@ -8192,6 +8587,7 @@
       ctx.fillRect(0, 0, W, H);
       if (!quietMode) drawNebula();
       drawBgStars();
+      drawCompletedWishStars();
       if (!quietMode) drawCategoryConstellations();
       drawHeartConstellation();
       if (!quietMode) {
@@ -8248,12 +8644,12 @@
     }
 
     async function submitWish() {
-      const text = wishInput.value.trim();
-      if (!text) return;
-      if (wishPrivacyMode !== 'private' && hasBlockedLanguage(text)) {
-        rejectBlockedLanguage('公开愿望');
+      const validation = validateUserText('心愿', wishInput.value, { maxChars: 50 });
+      if (!validation.ok) {
+        alert(validation.message);
         return;
       }
+      const text = validation.value;
       wishInput.value = '';
       // Auto-detect tag from text content; fall back to selectedTag if detection is general
       const detectedTag = detectTag(text);
