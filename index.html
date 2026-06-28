@@ -3478,6 +3478,18 @@
 
   /* ── Responsive ───────────────────────── */
   @media (max-width: 640px) {
+    body {
+      min-height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    .overlay {
+      justify-content: flex-start;
+      padding: max(22px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .glass-card { border-radius: 28px; padding: 32px 28px; }
     .glass-card::before { border-radius: 28px; }
     .star-icon { font-size: 22px; margin-bottom: 12px; }
@@ -3491,11 +3503,17 @@
     .msg-popup { padding: 28px 24px 22px; border-radius: 22px; }
     .msg-popup::before { border-radius: 22px; }
     .msg-popup-text { font-size: 15px; }
-    .bottle-panel { max-width: 100%; border-radius: 24px 24px 0 0; }
+    .instruction {
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+    .bottle-panel { max-width: 100%; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); }
     .bottle-panel::before { border-radius: 24px 24px 0 0; }
-    .bottle-btn { bottom: 70px; right: 16px; width: 42px; height: 42px; font-size: 18px; }
-    .wishwall-btn { bottom: 70px; left: 14px; width: 42px; height: 42px; font-size: 17px; }
-    .wishwall-panel { max-height: 55vh; border-radius: 22px 22px 0 0; }
+    .bottle-btn { bottom: calc(54px + env(safe-area-inset-bottom)); right: 16px; width: 42px; height: 42px; font-size: 18px; }
+    .wishwall-btn { bottom: calc(54px + env(safe-area-inset-bottom)); left: 14px; width: 42px; height: 42px; font-size: 17px; }
+    .wishwall-panel { max-height: min(64dvh, 560px); border-radius: 22px 22px 0 0; padding-bottom: env(safe-area-inset-bottom); }
     .bottle-header { padding: 16px 18px 12px; }
     .bottle-body { padding: 16px 18px; }
     .bottle-input-area { gap: 6px; }
@@ -3517,8 +3535,8 @@
     .constellation-mgmt-body { padding: 12px 16px; }
     .constellation-mgmt-title { font-size: 14px; }
     .constellation-toolbar { bottom: 245px; }
-    .toolbox-btn { bottom: 70px; right: 16px; width: 44px; height: 44px; }
-    .toolbox-panel { bottom: 124px; right: 12px; }
+    .toolbox-btn { bottom: calc(54px + env(safe-area-inset-bottom)); right: 16px; width: 44px; height: 44px; }
+    .toolbox-panel { bottom: calc(108px + env(safe-area-inset-bottom)); right: 12px; max-height: calc(100dvh - 148px - env(safe-area-inset-bottom)); overflow-y: auto; }
     .wishwall-actions { padding: 10px 14px 0; }
     .wishwall-reminder-summary { margin: 4px 14px 0; }
     .export-preview-popup { width: 94%; padding: 20px 16px 18px; }
@@ -3538,6 +3556,42 @@
     .review-row { grid-template-columns: 74px minmax(0, 1fr) 28px; }
     .review-action { flex-basis: 100%; }
     .room-chip { top: 62px; left: 12px; min-height: 32px; font-size: 11px; }
+  }
+
+  @media (max-width: 640px) and (max-height: 720px) {
+    .overlay {
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: calc(112px + env(safe-area-inset-bottom));
+    }
+
+    .glass-card {
+      padding: 24px 24px;
+    }
+
+    .star-icon,
+    .wish-label {
+      margin-bottom: 8px;
+    }
+
+    .main-title {
+      font-size: clamp(34px, 11vw, 44px);
+    }
+
+    .divider {
+      margin: 14px auto;
+    }
+
+    .wish-counter {
+      margin-top: 16px;
+    }
+
+    .capsule-counter {
+      margin-top: 14px;
+    }
+
+    .wish-input-area {
+      margin-top: 10px;
+    }
   }
 
   body .bottle-btn,
