@@ -6203,26 +6203,74 @@
       return candidates;
     }
 
-    function getExportSafeStarPosition(style, key, radius, outWidth, outHeight, avoidRects) {
-      const candidates = buildExportStarCandidates(style, key, outWidth, outHeight);
-      const safe = candidates.find(point => isExportStarPointSafe(point.x, point.y, radius, outWidth, outHeight, avoidRects));
-      if (safe) return safe;
-      const pad = Math.max(46, radius + 16);
-      const corners = [
-        { x: pad, y: pad },
-        { x: outWidth - pad, y: pad },
-        { x: pad, y: outHeight - pad },
-        { x: outWidth - pad, y: outHeight - pad },
-      ];
-      const start = stableHash(`${key}:export-corner`) % corners.length;
-      for (let i = 0; i < corners.length; i++) {
-        const point = corners[(start + i) % corners.length];
-        if (isExportStarPointSafe(point.x, point.y, radius, outWidth, outHeight, avoidRects)) return point;
-      }
-      return {
-        x: clampNumber(style.xRatio * outWidth, pad, outWidth - pad),
-        y: clampNumber(style.yRatio * outHeight, pad, outHeight - pad),
+    function buildExportSafeGridCandidates(style, key, radius, outWidth, outHeight, avoidRects) {
+      const pad = Math.max(24, radius);
+      const step = Math.max(radius * 1.65, Math.min(outWidth, outHeight) * 0.038);
+      const originalX = clampNumber(style.xRatio * outWidth, pad, outWidth - pad);
+      const originalY = clampNumber(style.yRatio * outHeight, pad, outHeight - pad);
+      const points = [];
+
+      const pushPoint = (x, y, weight = 0) => {
+        const px = clampNumber(x, pad, outWidth - pad);
+        const py = clampNumber(y, pad, outHeight - pad);
+        if (!isExportStarPointSafe(px, py, radius, outWidth, outHeight, avoidRects)) return;
+        const distance = Math.hypot(px - originalX, py - originalY);
+        const jitter = seededUnit(`${key}:safe-grid:${Math.round(px)}:${Math.round(py)}`) * step;
+        points.push({ x: px, y: py, score: distance + jitter + weight });
       };
+
+      const railInset = Math.max(pad, outWidth * 0.045);
+      for (let i = 0; i < 11; i++) {
+        const y = pad + ((outHeight - pad * 2) * (i + 0.5)) / 11;
+        pushPoint(railInset, y);
+        pushPoint(outWidth - railInset, y);
+      }
+      for (let i = 0; i < 9; i++) {
+        const x = pad + ((outWidth - pad * 2) * (i + 0.5)) / 9;
+        pushPoint(x, outHeight * 0.18, step * 0.4);
+        pushPoint(x, outHeight * 0.82, step * 0.4);
+      }
+      for (let y = pad; y <= outHeight - pad; y += step) {
+        for (let x = pad; x <= outWidth - pad; x += step) {
+          pushPoint(x, y, step);
+        }
+      }
+
+      points.sort((a, b) => a.score - b.score);
+      return points;
+    }
+
+    function getExportSafeStarPosition(style, key, radius, outWidth, outHeight, avoidRects) {
+      const radii = [
+        radius,
+        radius * 0.78,
+        radius * 0.58,
+        Math.max(16, radius * 0.42),
+      ];
+      for (const safeRadius of radii) {
+        const candidates = buildExportStarCandidates(style, key, outWidth, outHeight);
+        const safe = candidates.find(point => isExportStarPointSafe(point.x, point.y, safeRadius, outWidth, outHeight, avoidRects));
+        if (safe) return safe;
+
+        const pad = Math.max(46, safeRadius + 16);
+        const corners = [
+          { x: pad, y: pad },
+          { x: outWidth - pad, y: pad },
+          { x: pad, y: outHeight - pad },
+          { x: outWidth - pad, y: outHeight - pad },
+        ];
+        const start = stableHash(`${key}:export-corner:${Math.round(safeRadius)}`) % corners.length;
+        for (let i = 0; i < corners.length; i++) {
+          const point = corners[(start + i) % corners.length];
+          if (isExportStarPointSafe(point.x, point.y, safeRadius, outWidth, outHeight, avoidRects)) return point;
+        }
+
+        const grid = buildExportSafeGridCandidates(style, key, safeRadius, outWidth, outHeight, avoidRects);
+        if (grid.length > 0) return grid[0];
+      }
+
+      const emergencyPad = Math.max(26, Math.min(outWidth, outHeight) * 0.035);
+      return { x: emergencyPad, y: outHeight - emergencyPad };
     }
 
     function getExportCompletedStarAvoidRects(outWidth, outHeight, options = {}) {
@@ -6254,6 +6302,7 @@
       const completedWishes = getOwnCompletedWishes();
       if (completedWishes.length === 0) return 0;
       const usedHues = [];
+      const dynamicAvoidRects = avoidRects.slice();
       const baseSizeScale = clampNumber(outWidth / 1200, 0.86, 1.32);
       completedWishes.forEach((wish, index) => {
         const style = getCompletedWishStarStyle(wish, usedHues);
@@ -6262,10 +6311,18 @@
         const hue = getCompletedStarHue(style, index);
         const countShrink = completedWishes.length > 36 ? 0.78 : (completedWishes.length > 18 ? 0.88 : 1);
         const size = Math.max(2.8, (Number(style.size) || 3.2) * baseSizeScale * countShrink);
-        const pos = getExportSafeStarPosition(style, key, size * 11, outWidth, outHeight, avoidRects);
+        const starRadius = size * 11;
+        const pos = getExportSafeStarPosition(style, key, starRadius, outWidth, outHeight, dynamicAvoidRects);
         const twinkle = 0.96 + seededUnit(`${key}:export-twinkle`) * 0.18;
         const rotation = (Number(style.spin) || 1) * seededUnit(`${key}:export-rotate`) * Math.PI * 2 + (Number(style.twinkleOffset) || 0);
         drawExportCompletedStarGlyph(ctx2, pos.x, pos.y, size, hue, twinkle, rotation);
+        const reserve = Math.max(18, starRadius * 0.55);
+        dynamicAvoidRects.push({
+          left: pos.x - reserve,
+          top: pos.y - reserve,
+          right: pos.x + reserve,
+          bottom: pos.y + reserve,
+        });
       });
 
       ctx2.save();
@@ -6410,15 +6467,15 @@
       if (!hasCollage) {
         drawExportConstellations(octx, out.width, out.height, template, isYearTemplate ? out.height * 0.63 : null);
       }
+      octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
+      octx.fillText(template.footer, centerX, out.height * 0.93);
       drawOwnCompletedStarsInExport(octx, out.width, out.height, getExportCompletedStarAvoidRects(out.width, out.height, {
         isYearTemplate: isYearTemplate && !hasCollage,
         selectedWish: selectedWish && !hasCollage,
         collageRect,
         hasConstellations: !hasCollage && getExportConstellations().length > 0,
       }));
-      octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
-      octx.fillText(template.footer, centerX, out.height * 0.93);
       return out;
     }
 
