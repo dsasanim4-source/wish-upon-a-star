@@ -7036,15 +7036,36 @@
       exportPreviewPresets.querySelectorAll('[data-export-preset]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.exportPreset === exportPreviewState.preset);
       });
+      exportPreviewDownload.textContent = isNativeImageExportAvailable() ? '保存到相册' : '下载';
+    }
+
+    function isNativeImageExportAvailable() {
+      return !!(window.WishNative && typeof window.WishNative.saveImage === 'function');
     }
 
     function downloadExportPreview() {
       if (!exportPreviewState.dataUrl) renderExportPreview();
-      const link = document.createElement('a');
       const type = Array.isArray(exportPreviewState.selectedWishes) && exportPreviewState.selectedWishes.length ? 'star-photo' : 'wish-sky';
-      link.download = `my-${type}-${exportPreviewState.template}-${exportPreviewState.preset}.png`;
+      const fileName = `星愿回声-${type}-${exportPreviewState.template}-${exportPreviewState.preset}.png`;
+      if (isNativeImageExportAvailable()) {
+        try {
+          const saved = window.WishNative.saveImage(exportPreviewState.dataUrl, fileName);
+          if (saved) {
+            alert('星图已保存到相册。');
+            return;
+          }
+        } catch (e) {
+          console.warn('Native image export failed, falling back to browser download.', e);
+        }
+        alert('保存失败，请稍后再试。');
+        return;
+      }
+      const link = document.createElement('a');
+      link.download = fileName;
       link.href = exportPreviewState.dataUrl;
+      document.body.appendChild(link);
       link.click();
+      link.remove();
     }
 
     async function exportStarPhoto() {
