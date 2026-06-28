@@ -9940,20 +9940,14 @@
     }
 
     function drawCompletedWishStars() {
-      const litWishes = getVisibleWishes().filter(isWishStarLit);
+      const litWishes = getDeviceVisibleWishes().filter(isWishStarLit);
       completedStarHitTargets = [];
       if (!litWishes.length) return;
 
       const avoidRects = getCompletedStarAvoidRects();
       const usedHues = [];
-      const ownCompletedWishes = litWishes.filter(isDeviceWish);
-      const otherCompletedWishes = litWishes.filter(wish => !isDeviceWish(wish));
-      const ownStarItems = buildCompletedStarItems(ownCompletedWishes, avoidRects, usedHues);
-      const otherStarItems = buildCompletedStarItems(otherCompletedWishes, avoidRects, usedHues);
-      const renderTargets = [
-        ...groupCompletedStarItems(ownStarItems, avoidRects, true),
-        ...groupCompletedStarItems(otherStarItems, avoidRects, false),
-      ];
+      const starItems = buildCompletedStarItems(litWishes, avoidRects, usedHues);
+      const renderTargets = groupCompletedStarItems(starItems, avoidRects, true);
 
       renderTargets.forEach(target => {
         if (target.isCluster) {
