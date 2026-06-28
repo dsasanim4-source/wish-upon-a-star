@@ -4018,8 +4018,6 @@
   </div>
   <input type="file" id="backupImportInput" accept="application/json" hidden>
 
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
   (function() {
     /* ═══════════════════════════════════════════════════════════════════════
@@ -4040,6 +4038,31 @@
       // Meteor shower: every 60 minutes
       meteorShowerInterval: 60 * 60 * 1000,
     };
+
+    const PERF = (() => {
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
+      const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches || false;
+      const smallScreen = Math.min(window.innerWidth || 1024, window.innerHeight || 768) <= 760;
+      const nativeApp = !!window.Capacitor?.isNativePlatform?.();
+      const mobile = nativeApp || coarsePointer || smallScreen;
+      const scale = reducedMotion ? 0.35 : (mobile ? 0.58 : 1);
+
+      return {
+        mobile,
+        reducedMotion,
+        maxDpr: mobile ? 1.5 : 2,
+        frameInterval: reducedMotion ? 1000 / 24 : (mobile ? 1000 / 30 : 0),
+        bgStarCount: Math.max(80, Math.round(CONFIG.bgStarCount * scale)),
+        nebulaCount: reducedMotion ? 1 : Math.max(1, Math.round(CONFIG.nebulaCount * (mobile ? 0.66 : 1))),
+        maxLanterns: Math.max(6, Math.round(CONFIG.maxLanterns * (mobile ? 0.75 : 1))),
+        maxParticles: Math.max(60, Math.round(CONFIG.maxParticles * (reducedMotion ? 0.25 : (mobile ? 0.45 : 1)))),
+        heartPoints: Math.max(80, Math.round(CONFIG.heartPoints * (reducedMotion ? 0.55 : (mobile ? 0.72 : 1)))),
+        shootingStarInterval: reducedMotion ? [14000, 24000] : (mobile ? [8000, 18000] : CONFIG.shootingStarInterval),
+        meteorBurstCount: reducedMotion ? 1 : (mobile ? 1 : 3),
+        floatingBurstCount: reducedMotion ? 1 : (mobile ? 3 : 5),
+        particleChance: reducedMotion ? 0.15 : (mobile ? 0.28 : 0.6),
+      };
+    })();
 
     /* ═══════════════════════════════════════════════════════════════════════
        CATEGORY CONFIG
@@ -4344,6 +4367,9 @@
     let completedStarTooltipTimer = null;
     let waitingServiceWorker = null;
     let refreshingForUpdate = false;
+    let animationFrameId = null;
+    let parallaxFrameId = null;
+    let lastDrawTime = 0;
     let wishwallMode = 'all';
     let quietMode = false;
     let wishPrivacyMode = 'public';
@@ -4410,6 +4436,7 @@
        API HELPERS
        ═══════════════════════════════════════════════════════════════════════ */
     let supabase = null;
+    let supabaseSdkPromise = null;
     let localInsertIds = new Set();
     let localUpdateIds = new Set();
     const READ_CAPSULE_IDS_KEY = 'wish_read_capsule_ids';
@@ -4493,12 +4520,35 @@
       return !id || !readCapsuleIds.has(id);
     }
 
+    function runAfterStartup(task, timeout = 1600) {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(task, { timeout });
+      } else {
+        setTimeout(task, PERF.mobile ? 900 : 250);
+      }
+    }
+
+    function loadSupabaseSdk() {
+      if (window.supabase) return Promise.resolve(true);
+      if (supabaseSdkPromise) return supabaseSdkPromise;
+      supabaseSdkPromise = new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+      });
+      return supabaseSdkPromise;
+    }
+
     function initSupabase() {
       if (CONFIG.supabaseUrl.includes('YOUR_')) {
         console.warn('⚠️ 请先配置 Supabase URL 和 Key');
         return false;
       }
       try {
+        if (!window.supabase) return false;
         supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
         return true;
       } catch (e) {
@@ -4809,6 +4859,25 @@
           if (timecapsulePanel.classList.contains('open')) renderTimeCapsules();
           if (adminPanel.classList.contains('show')) refreshAdminPanel(false);
         }).subscribe();
+    }
+
+    async function connectRemoteDataAfterStartup() {
+      const sdkLoaded = await loadSupabaseSdk();
+      const ok = sdkLoaded && initSupabase();
+      if (!ok) {
+        connectionDot.classList.add('offline');
+        return;
+      }
+      try {
+        await syncAdminSession({ announce: false, openPanel: false });
+        await loadFromSupabase();
+        setupRealtime();
+        updateTreeWishes();
+        if (wishwallPanel.classList.contains('show')) renderWishWall();
+      } catch (e) {
+        console.warn('Remote sync after startup failed:', e);
+        connectionDot.classList.add('offline');
+      }
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -8156,7 +8225,7 @@
           clearInterval(burstInterval);
           return;
         }
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < PERF.meteorBurstCount; i++) {
           spawnShootingStar();
         }
       }, 800);
@@ -9606,8 +9675,14 @@
        RESIZE
        ═══════════════════════════════════════════════════════════════════════ */
     function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, PERF.maxDpr);
+      canvas.width = Math.max(1, Math.round(W * dpr));
+      canvas.height = Math.max(1, Math.round(H * dpr));
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       initBgStars();
       initNebula();
       generateHeartPoints();
@@ -9667,7 +9742,7 @@
         sunset: [{ h: 20, s: 45, l: 20 }, { h: 10, s: 40, l: 18 }, { h: 30, s: 35, l: 19 }, { h: 15, s: 38, l: 17 }],
       };
       const colors = colorSets[mode] || colorSets.night;
-      for (let i = 0; i < CONFIG.nebulaCount; i++) {
+      for (let i = 0; i < PERF.nebulaCount; i++) {
         const c = colors[i % colors.length];
         nebulaBlobs.push({
           x: W * (0.2 + Math.random() * 0.6),
@@ -9702,7 +9777,7 @@
        ═══════════════════════════════════════════════════════════════════════ */
     function initBgStars() {
       bgStars = [];
-      for (let i = 0; i < CONFIG.bgStarCount; i++) {
+      for (let i = 0; i < PERF.bgStarCount; i++) {
         bgStars.push({
           x: Math.random() * W,
           y: Math.random() * H,
@@ -10144,8 +10219,8 @@
       const cx = W * 0.5;
       const cy = H * 0.28;
       const scale = Math.min(W, H) * 0.14;
-      for (let i = 0; i < CONFIG.heartPoints; i++) {
-        const t = (i / CONFIG.heartPoints) * Math.PI * 2;
+      for (let i = 0; i < PERF.heartPoints; i++) {
+        const t = (i / PERF.heartPoints) * Math.PI * 2;
         const x = 16 * Math.pow(Math.sin(t), 3);
         const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
         heartPoints.push({
@@ -10199,7 +10274,7 @@
        SHOOTING STARS
        ═══════════════════════════════════════════════════════════════════════ */
     function spawnShootingStar() {
-      if (quietMode) return;
+      if (quietMode || document.hidden) return;
       const angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.35;
       const speed = meteorShowerActive ? 8 + Math.random() * 14 : 6 + Math.random() * 10;
       const len = meteorShowerActive ? 80 + Math.random() * 140 : 60 + Math.random() * 100;
@@ -10245,7 +10320,7 @@
        WISH LANTERNS
        ═══════════════════════════════════════════════════════════════════════ */
     function createLantern(x, y, message, tag) {
-      if (lanterns.length >= CONFIG.maxLanterns) return;
+      if (lanterns.length >= PERF.maxLanterns) return;
       const targetIdx = settledStars.length;
       let tx, ty;
       if (targetIdx < heartPoints.length) {
@@ -10288,7 +10363,7 @@
             l.x += (dx / dist) * speed + wobX;
             l.y += (dy / dist) * speed + wobY;
           }
-          if (Math.random() < 0.6) {
+          if (Math.random() < PERF.particleChance) {
             particles.push({
               x: l.x + (Math.random() - 0.5) * 4,
               y: l.y + (Math.random() - 0.5) * 4,
@@ -10356,7 +10431,7 @@
        PARTICLES
        ═══════════════════════════════════════════════════════════════════════ */
     function drawParticles() {
-      while (particles.length > CONFIG.maxParticles) particles.shift();
+      while (particles.length > PERF.maxParticles) particles.shift();
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
@@ -10404,11 +10479,24 @@
     }
 
     function loop(ts) {
+      if (document.hidden) {
+        animationFrameId = null;
+        return;
+      }
+      if (PERF.frameInterval && lastDrawTime && ts - lastDrawTime < PERF.frameInterval) {
+        animationFrameId = requestAnimationFrame(loop);
+        return;
+      }
+      lastDrawTime = ts;
       time = ts;
       mouseX += (targetMouseX - mouseX) * 0.05;
       mouseY += (targetMouseY - mouseY) * 0.05;
       draw();
-      requestAnimationFrame(loop);
+      animationFrameId = requestAnimationFrame(loop);
+    }
+
+    function startRenderLoop() {
+      if (!animationFrameId) animationFrameId = requestAnimationFrame(loop);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -10610,12 +10698,13 @@
         targetMouseY = e.touches[0].clientY;
       }
     }, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     /* ═══════════════════════════════════════════════════════════════════════
        FLOATING WISH MESSAGES
        ═══════════════════════════════════════════════════════════════════════ */
     function spawnFloatingWish(text) {
-      if (quietMode) return;
+      if (quietMode || document.hidden) return;
       const el = document.createElement('span');
       el.className = 'floating-wish';
       el.textContent = text;
@@ -10628,6 +10717,10 @@
     }
 
     function scheduleFloatingWishes() {
+      if (document.hidden) {
+        setTimeout(scheduleFloatingWishes, 5000);
+        return;
+      }
       const visibleWishes = getVisibleWishes();
       if (visibleWishes.length === 0) return;
       const idx = Math.floor(Math.random() * visibleWishes.length);
@@ -10639,7 +10732,7 @@
     function burstFloatingWishes() {
       const visibleWishes = getVisibleWishes();
       if (visibleWishes.length === 0) return;
-      const count = Math.min(5, visibleWishes.length);
+      const count = Math.min(PERF.floatingBurstCount, visibleWishes.length);
       const shuffled = [...visibleWishes].sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, count);
       selected.forEach((wish, i) => {
@@ -10686,8 +10779,9 @@
        SHOOTING STAR SPAWNER
        ═══════════════════════════════════════════════════════════════════════ */
     function scheduleShootingStar() {
-      const delay = CONFIG.shootingStarInterval[0] +
-        Math.random() * (CONFIG.shootingStarInterval[1] - CONFIG.shootingStarInterval[0]);
+      const interval = PERF.shootingStarInterval;
+      const delay = interval[0] +
+        Math.random() * (interval[1] - interval[0]);
       setTimeout(() => {
         spawnShootingStar();
         scheduleShootingStar();
@@ -10698,11 +10792,34 @@
        PARALLAX ON GLASS CARD
        ═══════════════════════════════════════════════════════════════════════ */
     function updateParallax() {
+      if (document.hidden) {
+        parallaxFrameId = null;
+        return;
+      }
       const dx = (mouseX - W / 2) / W;
       const dy = (mouseY - H / 2) / H;
       glassCard.style.setProperty('--parallax-x', `${dx * 8}px`);
       glassCard.style.setProperty('--parallax-y', `${dy * 8}px`);
-      requestAnimationFrame(() => updateParallax());
+      parallaxFrameId = requestAnimationFrame(updateParallax);
+    }
+
+    function startParallaxLoop() {
+      if (!parallaxFrameId) parallaxFrameId = requestAnimationFrame(updateParallax);
+    }
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        if (parallaxFrameId) cancelAnimationFrame(parallaxFrameId);
+        animationFrameId = null;
+        parallaxFrameId = null;
+        particles.length = 0;
+        shootingStars.length = 0;
+        return;
+      }
+      lastDrawTime = 0;
+      startRenderLoop();
+      startParallaxLoop();
     }
 
     function showUpdateBanner(worker) {
@@ -10781,6 +10898,7 @@
       window.addEventListener('resize', resize);
       // Always load local data first
       loadReadCapsuleIds();
+      loadCapsuleReplyChains();
       loadWishProgress();
       loadCompletedWishStars();
       loadWishReminders();
@@ -10790,6 +10908,7 @@
       loadOwnedWishIds();
       loadDriftedWishBottleIds();
       loadQuietMode();
+      loadCustomTitle();
       loadRoomState();
       loadWishesFromStorage();
       loadTimeCapsulesFromStorage();
@@ -10798,19 +10917,10 @@
         lastWishCount = totalWishes;
         wishCountEl.textContent = totalWishes;
       }
-      const ok = initSupabase();
-      if (ok) {
-        await syncAdminSession({ announce: false, openPanel: false });
-        await loadFromSupabase();
-        setupRealtime();
-      } else {
-        connectionDot.classList.add('offline');
-        connectionDot.textContent = '离线模式';
-      }
       scheduleShootingStar();
       scheduleMeteorShower();
-      updateParallax();
-      requestAnimationFrame(loop);
+      startParallaxLoop();
+      startRenderLoop();
       const initialStars = 8;
       for (let i = 0; i < initialStars && i < heartPoints.length; i++) {
         const idx = Math.floor((i / initialStars) * heartPoints.length);
@@ -10838,6 +10948,9 @@
       setTimeout(() => spawnShootingStar(), 1500);
       updateTreeWishes();
       registerPWA();
+      runAfterStartup(() => {
+        connectRemoteDataAfterStartup();
+      });
     }
 
     init();
