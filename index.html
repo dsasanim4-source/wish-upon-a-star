@@ -1731,6 +1731,39 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .wish-export-hint {
+    color: rgba(190, 210, 235, 0.58);
+    font-size: 12px;
+    line-height: 1.55;
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+
+  .wish-export-bulk-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .wish-export-bulk-btn {
+    min-height: 34px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(220, 232, 250, 0.72);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  .wish-export-bulk-btn:hover {
+    border-color: rgba(140, 200, 255, 0.28);
+    background: rgba(90, 155, 220, 0.1);
+    color: rgba(238, 246, 255, 0.94);
+  }
+
   .wish-export-option {
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.035);
@@ -1953,6 +1986,49 @@
 
   .wish-detail-note.hidden {
     display: none;
+  }
+
+  .soft-note-popup {
+    max-width: min(92vw, 460px);
+  }
+
+  .soft-note-wish {
+    width: 100%;
+    margin-top: 10px;
+    color: rgba(190, 210, 235, 0.6);
+    font-size: 12px;
+    line-height: 1.55;
+    letter-spacing: 0.05em;
+    word-break: break-word;
+  }
+
+  .soft-note-text {
+    width: 100%;
+    margin-top: 14px;
+    padding: 18px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 220, 150, 0.2);
+    background: linear-gradient(135deg, rgba(255, 220, 150, 0.1), rgba(130, 185, 255, 0.055));
+    color: rgba(255, 242, 215, 0.94);
+    font-size: 16px;
+    line-height: 1.75;
+    letter-spacing: 0.06em;
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .soft-note-time {
+    margin-top: 10px;
+    color: rgba(190, 210, 235, 0.46);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .soft-note-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
   }
 
   .wish-detail-actions {
@@ -3657,6 +3733,21 @@
     </div>
   </div>
 
+  <!-- Soft Note Popup -->
+  <div class="msg-popup-overlay hidden" id="softNoteOverlay">
+    <div class="msg-popup soft-note-popup">
+      <div class="msg-popup-icon">□</div>
+      <div class="msg-popup-title">小纸条</div>
+      <div class="soft-note-wish" id="softNoteWish"></div>
+      <div class="soft-note-text" id="softNoteText"></div>
+      <div class="soft-note-time" id="softNoteTime"></div>
+      <div class="soft-note-actions">
+        <button class="achievement-action" id="softNoteEditBtn" type="button">修改纸条</button>
+        <button class="achievement-action" id="softNoteCloseBtn" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Title Editor Popup -->
   <div class="msg-popup-overlay hidden" id="titleEditorOverlay">
     <div class="msg-popup">
@@ -4055,6 +4146,12 @@
     const wishDetailProgressBtn = document.getElementById('wishDetailProgressBtn');
     const wishDetailLocateBtn = document.getElementById('wishDetailLocateBtn');
     const wishDetailCloseBtn = document.getElementById('wishDetailCloseBtn');
+    const softNoteOverlay = document.getElementById('softNoteOverlay');
+    const softNoteWish = document.getElementById('softNoteWish');
+    const softNoteText = document.getElementById('softNoteText');
+    const softNoteTime = document.getElementById('softNoteTime');
+    const softNoteEditBtn = document.getElementById('softNoteEditBtn');
+    const softNoteCloseBtn = document.getElementById('softNoteCloseBtn');
     const titleEditorOverlay = document.getElementById('titleEditorOverlay');
     const titleEditorInput = document.getElementById('titleEditorInput');
     const titleEditorError = document.getElementById('titleEditorError');
@@ -4237,6 +4334,7 @@
       sizeLabel: '',
     };
     let activeWishDetail = null;
+    let activeWishSoftNote = null;
     let adminPanelState = {
       tab: 'wishes',
       loading: false,
@@ -5272,6 +5370,7 @@
         saveWishSoftNote(wish, '');
         renderWishWall();
         renderWishDetail();
+        renderWishSoftNoteView();
         return true;
       }
       const validation = validateUserText('小纸条', value, { maxChars: 80 });
@@ -5282,7 +5381,53 @@
       saveWishSoftNote(wish, validation.value);
       renderWishWall();
       renderWishDetail();
+      renderWishSoftNoteView();
       return true;
+    }
+
+    function renderWishSoftNoteView() {
+      if (!activeWishSoftNote) return;
+      const displayWish = getDisplayWish(activeWishSoftNote);
+      const note = getWishSoftNote(activeWishSoftNote);
+      const canManage = canManageWish(activeWishSoftNote);
+      softNoteWish.textContent = displayWish.text ? `来自心愿：${displayWish.text}` : '来自一颗心愿';
+      softNoteText.textContent = note?.text || '这颗心愿还没有小纸条。';
+      softNoteTime.textContent = note?.updatedAt ? `更新于 ${formatDate(note.updatedAt)}` : '';
+      softNoteEditBtn.textContent = note ? '修改纸条' : '写小纸条';
+      softNoteEditBtn.disabled = !canManage;
+      softNoteEditBtn.style.opacity = canManage ? '1' : '0.62';
+    }
+
+    function openWishSoftNoteView(wish) {
+      if (!wish) return false;
+      const note = getWishSoftNote(wish);
+      if (!note && canManageWish(wish)) {
+        return promptWishSoftNote(wish, 'manual');
+      }
+      if (!note) {
+        alert('这颗心愿还没有小纸条。');
+        return false;
+      }
+      activeWishSoftNote = wish;
+      renderWishSoftNoteView();
+      softNoteOverlay.classList.remove('hidden');
+      void softNoteOverlay.offsetWidth;
+      softNoteOverlay.classList.add('show');
+      return true;
+    }
+
+    function closeWishSoftNoteView() {
+      activeWishSoftNote = null;
+      softNoteOverlay.classList.remove('show');
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        softNoteOverlay.classList.add('hidden');
+        softNoteOverlay.removeEventListener('transitionend', finish);
+      };
+      softNoteOverlay.addEventListener('transitionend', finish);
+      setTimeout(finish, 320);
     }
 
     function addDays(days) {
@@ -5744,7 +5889,7 @@
       wishDetailExportBtn.textContent = canExport ? '导出这颗星' : '只能导出自己的星';
       wishDetailExportBtn.disabled = !canExport;
       wishDetailExportBtn.style.opacity = canExport ? '1' : '0.62';
-      wishDetailNoteBtn.textContent = note ? '改小纸条' : '写小纸条';
+      wishDetailNoteBtn.textContent = note ? '查看纸条' : '写小纸条';
       wishDetailNoteBtn.disabled = !canManage;
       wishDetailNoteBtn.style.opacity = canManage ? '1' : '0.62';
       wishDetailRegretBtn.textContent = progress.id === 'regret' ? '重新开始' : '变成遗憾星';
@@ -5983,13 +6128,26 @@
       }
 
       exportPickerList.innerHTML = '';
-      if (exportPickerTitle) exportPickerTitle.textContent = '选择合影星星';
+      if (exportPickerTitle) exportPickerTitle.textContent = '选择自己的已实现星星';
       exportPickerCancel.textContent = '取消';
 
       return new Promise(resolve => {
         let settled = false;
-        const selectedKeys = new Set(options.slice(0, Math.min(3, options.length)).map(getWishProgressKey));
+        const selectedKeys = new Set();
         const buttons = [];
+        const hint = document.createElement('div');
+        hint.className = 'wish-export-hint';
+        hint.textContent = `只显示你自己的已实现星星，最多选择 9 颗。`;
+        const bulkActions = document.createElement('div');
+        bulkActions.className = 'wish-export-bulk-actions';
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'wish-export-bulk-btn';
+        selectAllBtn.textContent = options.length > 9 ? '选择最近9颗' : '全选';
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'wish-export-bulk-btn';
+        clearBtn.textContent = '清空选择';
         const confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
         confirmBtn.className = 'wish-export-confirm';
@@ -6019,6 +6177,11 @@
           if (e.target === exportPickerOverlay) finish([]);
         };
 
+        exportPickerList.appendChild(hint);
+        bulkActions.appendChild(selectAllBtn);
+        bulkActions.appendChild(clearBtn);
+        exportPickerList.appendChild(bulkActions);
+
         options.forEach((wish, i) => {
           const displayWish = getDisplayWish(wish);
           const fullText = (displayWish.text || '').replace(/\s+/g, ' ').trim() || '未命名心愿';
@@ -6044,6 +6207,20 @@
           exportPickerList.appendChild(button);
         });
 
+        selectAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedKeys.clear();
+          options.slice(0, 9).forEach(wish => {
+            const key = getWishProgressKey(wish);
+            if (key) selectedKeys.add(key);
+          });
+          updateSelectionUI();
+        });
+        clearBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedKeys.clear();
+          updateSelectionUI();
+        });
         confirmBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           if (selectedKeys.size === 0) return;
@@ -7439,7 +7616,7 @@
         if (noteBtn) {
           noteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            promptWishSoftNote(wish, 'manual');
+            openWishSoftNoteView(wish);
           });
         }
         const regretBtn = card.querySelector('.wish-card-regret');
@@ -7526,7 +7703,7 @@
     });
     wishDetailNoteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (activeWishDetail) promptWishSoftNote(activeWishDetail, 'manual');
+      if (activeWishDetail) openWishSoftNoteView(activeWishDetail);
     });
     wishDetailRegretBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -7545,6 +7722,12 @@
     });
     wishDetailCloseBtn.addEventListener('click', closeWishDetail);
     wishDetailOverlay.addEventListener('click', (e) => { if (e.target === wishDetailOverlay) closeWishDetail(); });
+    softNoteEditBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeWishSoftNote) promptWishSoftNote(activeWishSoftNote, 'manual');
+    });
+    softNoteCloseBtn.addEventListener('click', closeWishSoftNoteView);
+    softNoteOverlay.addEventListener('click', (e) => { if (e.target === softNoteOverlay) closeWishSoftNoteView(); });
     exportPreviewTemplates.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-export-template]');
       if (!btn) return;
