@@ -1371,6 +1371,7 @@
     background: rgba(255, 170, 70, 0.1);
     color: rgba(255, 225, 170, 0.88);
   }
+  .wish-card-drift,
   .wish-card-edit,
   .wish-card-delete {
     flex-shrink: 0;
@@ -1385,6 +1386,20 @@
     font-size: 12px;
     line-height: 1;
     transition: all 0.25s ease;
+  }
+  .wish-card-drift:hover {
+    border-color: rgba(95, 220, 210, 0.34);
+    color: rgba(205, 255, 248, 0.96);
+    background: rgba(70, 190, 180, 0.1);
+  }
+  .wish-card-drift.drifted {
+    border-color: rgba(120, 220, 170, 0.24);
+    color: rgba(190, 245, 220, 0.82);
+    background: rgba(80, 180, 130, 0.08);
+  }
+  .wish-card-drift:disabled {
+    cursor: default;
+    opacity: 0.58;
   }
   .wish-card-edit:hover {
     border-color: rgba(140, 190, 240, 0.32);
@@ -1487,6 +1502,52 @@
 
   .achievement-burst.show {
     opacity: 1;
+  }
+
+  .achievement-burst::before,
+  .achievement-burst::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    width: 18vmin;
+    height: 18vmin;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.25);
+  }
+
+  .achievement-burst::before {
+    border: 1px solid rgba(255, 230, 150, 0.5);
+    box-shadow: 0 0 34px rgba(255, 205, 110, 0.24), inset 0 0 28px rgba(255, 230, 170, 0.18);
+  }
+
+  .achievement-burst::after {
+    background:
+      radial-gradient(circle, rgba(255, 248, 210, 0.72), transparent 18%),
+      conic-gradient(from 18deg, transparent, rgba(255, 235, 150, 0.44), transparent, rgba(130, 215, 255, 0.32), transparent);
+    filter: blur(0.2px);
+  }
+
+  .achievement-burst.show::before {
+    animation: achievement-ring 1.25s ease-out forwards;
+  }
+
+  .achievement-burst.show::after {
+    animation: achievement-core 0.9s ease-out forwards;
+  }
+
+  @keyframes achievement-ring {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+    20% { opacity: 0.85; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(3.8); }
+  }
+
+  @keyframes achievement-core {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25) rotate(0deg); }
+    35% { opacity: 0.72; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9) rotate(120deg); }
   }
 
   .bottle-btn,
@@ -1655,6 +1716,29 @@
   .wish-export-option:hover {
     border-color: rgba(140, 200, 255, 0.32);
     background: rgba(90, 155, 220, 0.11);
+  }
+
+  .wish-export-option.selected {
+    border-color: rgba(255, 220, 126, 0.38);
+    background: rgba(255, 210, 90, 0.12);
+    color: rgba(255, 238, 190, 0.96);
+  }
+
+  .wish-export-confirm {
+    min-height: 40px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 220, 126, 0.3);
+    background: rgba(255, 210, 90, 0.12);
+    color: rgba(255, 232, 170, 0.95);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+
+  .wish-export-confirm:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
   }
 
   .title-editor-input {
@@ -3466,7 +3550,7 @@
   <div class="msg-popup-overlay hidden" id="exportPickerOverlay">
     <div class="msg-popup">
       <div class="msg-popup-icon">🖼</div>
-      <div class="msg-popup-title">选择导出心愿</div>
+      <div class="msg-popup-title" id="exportPickerTitle">选择导出心愿</div>
       <div class="wish-export-picker-list" id="exportPickerList"></div>
       <button class="msg-popup-dismiss" id="exportPickerCancel" type="button">取消</button>
     </div>
@@ -3572,7 +3656,8 @@
       <button class="wishwall-action" id="wishwallMineBtn" type="button">我的</button>
       <button class="wishwall-action" id="wishwallArchiveBtn" type="button">已实现</button>
       <button class="wishwall-action" id="wishwallDueBtn" type="button">待回访</button>
-      <button class="wishwall-action secondary" id="wishwallExportBtn" type="button">导出星空</button>
+      <button class="wishwall-action secondary" id="wishwallCollageBtn" type="button">星星合影</button>
+      <button class="wishwall-action" id="wishwallExportBtn" type="button">导出星空</button>
     </div>
     <div class="wishwall-body" id="wishwallBody">
       <div class="wishwall-empty">还没有心愿，快来许一个吧 ✨</div>
@@ -3881,6 +3966,7 @@
     const wishwallMineBtn = document.getElementById('wishwallMineBtn');
     const wishwallArchiveBtn = document.getElementById('wishwallArchiveBtn');
     const wishwallDueBtn = document.getElementById('wishwallDueBtn');
+    const wishwallCollageBtn = document.getElementById('wishwallCollageBtn');
     const wishwallExportBtn = document.getElementById('wishwallExportBtn');
 
     // Achievement popup
@@ -3891,6 +3977,7 @@
     const achievementExportBtn = document.getElementById('achievementExportBtn');
     const achievementCloseBtn = document.getElementById('achievementCloseBtn');
     const exportPickerOverlay = document.getElementById('exportPickerOverlay');
+    const exportPickerTitle = document.getElementById('exportPickerTitle');
     const exportPickerList = document.getElementById('exportPickerList');
     const exportPickerCancel = document.getElementById('exportPickerCancel');
     const exportPreviewOverlay = document.getElementById('exportPreviewOverlay');
@@ -4028,12 +4115,14 @@
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const BLESSED_WISH_IDS_KEY = 'wish_blessed_ids';
     const OWNED_WISH_IDS_KEY = 'wish_owned_ids';
+    const DRIFTED_WISH_BOTTLES_KEY = 'wish_drifted_bottle_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
     let wishReminders = {};
     let hiddenWishIds = new Set();
     let blessedWishIds = new Set();
     let ownedWishIds = new Set();
+    let driftedWishBottleIds = new Set();
     let wishOverrides = {};
     let completedWishStarStyles = {};
     let completedStarHitTargets = [];
@@ -4077,6 +4166,7 @@
     let dayNightMode = 'night';
     let exportPreviewState = {
       selectedWish: null,
+      selectedWishes: null,
       preset: 'adaptive',
       template: 'dream',
       dataUrl: '',
@@ -4321,6 +4411,7 @@
       loadWishVisibilityState();
       loadBlessedWishIds();
       loadOwnedWishIds();
+      loadDriftedWishBottleIds();
       loadQuietMode();
       loadCustomTitle();
       loadRoomState();
@@ -5097,6 +5188,21 @@
       } catch(e) { /* ignore */ }
     }
 
+    function loadDriftedWishBottleIds() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(DRIFTED_WISH_BOTTLES_KEY) || '[]');
+        if (Array.isArray(stored)) driftedWishBottleIds = new Set(stored.map(String));
+      } catch(e) {
+        driftedWishBottleIds = new Set();
+      }
+    }
+
+    function saveDriftedWishBottleIds() {
+      try {
+        localStorage.setItem(DRIFTED_WISH_BOTTLES_KEY, JSON.stringify([...driftedWishBottleIds].slice(-1000)));
+      } catch(e) { /* ignore */ }
+    }
+
     function markWishOwned(wishOrId) {
       const id = typeof wishOrId === 'object' ? getWishId(wishOrId) : String(wishOrId || '');
       if (!id) return;
@@ -5109,6 +5215,22 @@
       if (!id) return;
       ownedWishIds.delete(id);
       saveOwnedWishIds();
+    }
+
+    function getWishLocalActionKey(wish) {
+      return getWishActionKey(wish) || getWishProgressKey(wish);
+    }
+
+    function isWishDriftedToBottle(wish) {
+      const key = getWishLocalActionKey(wish);
+      return !!key && driftedWishBottleIds.has(key);
+    }
+
+    function markWishDriftedToBottle(wish) {
+      const key = getWishLocalActionKey(wish);
+      if (!key) return;
+      driftedWishBottleIds.add(key);
+      saveDriftedWishBottleIds();
     }
 
     function saveWishVisibilityState() {
@@ -5443,6 +5565,7 @@
       }
       exportPreviewState = {
         selectedWish: wish,
+        selectedWishes: null,
         preset: exportPreviewState.preset || 'adaptive',
         template: exportPreviewState.template || 'dream',
         dataUrl: '',
@@ -5474,7 +5597,7 @@
       achievementPopupOverlay.classList.remove('hidden');
       void achievementPopupOverlay.offsetWidth;
       achievementPopupOverlay.classList.add('show');
-      spawnAchievementStars();
+      spawnAchievementStars(wish);
       setTimeout(() => achievementBurst.classList.remove('show'), 1200);
     }
 
@@ -5486,19 +5609,54 @@
       });
     }
 
-    function spawnAchievementStars() {
+    function spawnAchievementStars(wish = null) {
       const cx = W * 0.5;
       const cy = H * 0.42;
-      for (let i = 0; i < 18; i++) {
+      const style = wish ? getCompletedWishStarStyle(wish) : null;
+      const baseHue = getCompletedStarHue(style, Math.floor(Math.random() * COMPLETED_STAR_HUES.length));
+      for (let ring = 0; ring < 3; ring++) {
+        const count = 22 + ring * 10;
+        const speed = 1.4 + ring * 0.8;
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count + Math.random() * 0.12;
+          particles.push({
+            x: cx + Math.cos(angle) * (10 + ring * 12),
+            y: cy + Math.sin(angle) * (8 + ring * 9),
+            vx: Math.cos(angle) * (speed + Math.random() * 0.8),
+            vy: Math.sin(angle) * (speed * 0.72 + Math.random() * 0.5) - 0.55,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.012 + ring * 0.002,
+            r: 1.1 + Math.random() * (2.2 + ring * 0.35),
+            hue: (baseHue + ring * 34 + Math.random() * 24 - 12 + 360) % 360,
+            alpha: 0.78,
+          });
+        }
+      }
+      for (let i = 0; i < 34; i++) {
         particles.push({
           x: cx + (Math.random() - 0.5) * 160,
           y: cy + (Math.random() - 0.5) * 90,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: -Math.random() * 1.4 - 0.2,
+          vx: (Math.random() - 0.5) * 1.8,
+          vy: -Math.random() * 2.2 - 0.25,
           life: 1,
           decay: 0.015 + Math.random() * 0.015,
           r: 1.2 + Math.random() * 2.2,
+          hue: (baseHue + 58 + Math.random() * 80) % 360,
+          alpha: 0.72,
         });
+      }
+      shootingStars.push({
+        x: cx - Math.min(W * 0.38, 320),
+        y: cy - Math.min(H * 0.16, 120),
+        vx: 9 + Math.random() * 3,
+        vy: 3 + Math.random() * 1.5,
+        life: 1,
+        decay: 0.018,
+        len: 120,
+      });
+      if (wish && !quietMode) {
+        const text = (getDisplayWish(wish).text || '心愿').trim();
+        spawnFloatingWish(`实现啦：${text.slice(0, 14)}${text.length > 14 ? '…' : ''}`);
       }
     }
 
@@ -5550,6 +5708,8 @@
       }
 
       exportPickerList.innerHTML = '';
+      if (exportPickerTitle) exportPickerTitle.textContent = '选择导出心愿';
+      exportPickerCancel.textContent = '取消';
 
       return new Promise(resolve => {
         let settled = false;
@@ -5582,6 +5742,94 @@
           });
           exportPickerList.appendChild(button);
         });
+
+        exportPickerCancel.addEventListener('click', onCancel);
+        exportPickerOverlay.addEventListener('click', onOverlayClick);
+        exportPickerOverlay.classList.remove('hidden');
+        void exportPickerOverlay.offsetWidth;
+        exportPickerOverlay.classList.add('show');
+      });
+    }
+
+    function chooseWishesForStarPhoto() {
+      const options = getOwnCompletedWishes().slice().reverse();
+      if (options.length === 0) {
+        alert('星星合影只会使用自己已经实现的心愿，先完成一颗自己的星吧。');
+        return Promise.resolve([]);
+      }
+      if (!exportPickerOverlay || !exportPickerList || !exportPickerCancel) {
+        return Promise.resolve(options.slice(0, Math.min(5, options.length)));
+      }
+
+      exportPickerList.innerHTML = '';
+      if (exportPickerTitle) exportPickerTitle.textContent = '选择合影星星';
+      exportPickerCancel.textContent = '取消';
+
+      return new Promise(resolve => {
+        let settled = false;
+        const selectedKeys = new Set(options.slice(0, Math.min(3, options.length)).map(getWishProgressKey));
+        const buttons = [];
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'wish-export-confirm';
+
+        const updateSelectionUI = () => {
+          buttons.forEach(({ button, wish }) => {
+            button.classList.toggle('selected', selectedKeys.has(getWishProgressKey(wish)));
+          });
+          const count = selectedKeys.size;
+          confirmBtn.disabled = count === 0;
+          confirmBtn.textContent = count > 0 ? `生成合影 · ${count} 颗` : '至少选择一颗';
+        };
+
+        const finish = (wishes) => {
+          if (settled) return;
+          settled = true;
+          exportPickerCancel.removeEventListener('click', onCancel);
+          exportPickerOverlay.removeEventListener('click', onOverlayClick);
+          hideExportPickerOverlay();
+          resolve(Array.isArray(wishes) ? wishes : []);
+        };
+        const onCancel = (e) => {
+          e.stopPropagation();
+          finish([]);
+        };
+        const onOverlayClick = (e) => {
+          if (e.target === exportPickerOverlay) finish([]);
+        };
+
+        options.forEach((wish, i) => {
+          const displayWish = getDisplayWish(wish);
+          const fullText = (displayWish.text || '').replace(/\s+/g, ' ').trim() || '未命名心愿';
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'wish-export-option';
+          const completedAt = getWishCompletedAt(wish);
+          const suffix = completedAt ? ` · ${formatDate(completedAt)}` : '';
+          button.textContent = `${i + 1}. ${fullText.slice(0, 42)}${fullText.length > 42 ? '…' : ''}${suffix}`;
+          button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const key = getWishProgressKey(wish);
+            if (selectedKeys.has(key)) {
+              selectedKeys.delete(key);
+            } else if (selectedKeys.size >= 9) {
+              alert('一次合影最多选择 9 颗星星。');
+            } else {
+              selectedKeys.add(key);
+            }
+            updateSelectionUI();
+          });
+          buttons.push({ button, wish });
+          exportPickerList.appendChild(button);
+        });
+
+        confirmBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (selectedKeys.size === 0) return;
+          finish(options.filter(wish => selectedKeys.has(getWishProgressKey(wish))).slice(0, 9));
+        });
+        exportPickerList.appendChild(confirmBtn);
+        updateSelectionUI();
 
         exportPickerCancel.addEventListener('click', onCancel);
         exportPickerOverlay.addEventListener('click', onOverlayClick);
@@ -5878,9 +6126,232 @@
       ctx2.restore();
     }
 
-    function createWishSkyExportCanvas(selectedWish, preset = 'adaptive', templateId = 'dream') {
+    function getOwnCompletedWishes() {
+      return getDeviceVisibleWishes().filter(wish => getWishProgressId(wish) === 'done');
+    }
+
+    function drawExportCompletedStarGlyph(ctx2, x, y, size, hue, twinkle = 1, rotation = 0) {
+      const glowRadius = size * 11;
+      const glow = ctx2.createRadialGradient(x, y, 0, x, y, glowRadius);
+      glow.addColorStop(0, `hsla(${hue}, 92%, 74%, 0.66)`);
+      glow.addColorStop(0.38, `hsla(${hue}, 88%, 62%, 0.22)`);
+      glow.addColorStop(1, 'transparent');
+      ctx2.fillStyle = glow;
+      ctx2.beginPath();
+      ctx2.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx2.fill();
+
+      ctx2.save();
+      ctx2.translate(x, y);
+      ctx2.rotate(rotation);
+      ctx2.strokeStyle = `hsla(${hue}, 96%, 80%, ${0.62 + twinkle * 0.16})`;
+      ctx2.lineWidth = Math.max(0.9, size * 0.32);
+      ctx2.shadowColor = `hsla(${hue}, 96%, 68%, 0.72)`;
+      ctx2.shadowBlur = size * 4.8;
+      ctx2.lineCap = 'round';
+      ctx2.beginPath();
+      ctx2.moveTo(-size * 3.2, 0);
+      ctx2.lineTo(size * 3.2, 0);
+      ctx2.moveTo(0, -size * 3.2);
+      ctx2.lineTo(0, size * 3.2);
+      ctx2.stroke();
+      ctx2.rotate(Math.PI / 4);
+      ctx2.globalAlpha = 0.68;
+      ctx2.beginPath();
+      ctx2.moveTo(-size * 2.1, 0);
+      ctx2.lineTo(size * 2.1, 0);
+      ctx2.moveTo(0, -size * 2.1);
+      ctx2.lineTo(0, size * 2.1);
+      ctx2.stroke();
+      ctx2.restore();
+
+      ctx2.beginPath();
+      ctx2.arc(x, y, size * 0.82, 0, Math.PI * 2);
+      ctx2.fillStyle = `hsla(${hue}, 100%, 90%, ${0.86 + twinkle * 0.12})`;
+      ctx2.fill();
+    }
+
+    function isExportStarPointSafe(x, y, radius, outWidth, outHeight, avoidRects) {
+      const pad = Math.max(24, radius);
+      if (x < pad || x > outWidth - pad || y < pad || y > outHeight - pad) return false;
+      return !avoidRects.some(rect =>
+        x >= rect.left - pad &&
+        x <= rect.right + pad &&
+        y >= rect.top - pad &&
+        y <= rect.bottom + pad
+      );
+    }
+
+    function buildExportStarCandidates(style, key, outWidth, outHeight) {
+      const seed = String(key || '');
+      const pad = Math.max(42, Math.min(outWidth, outHeight) * 0.045);
+      const candidates = [{ x: style.xRatio * outWidth, y: style.yRatio * outHeight }];
+      for (let i = 0; i < 24; i++) {
+        const side = (stableHash(`${seed}:export-side:${i}`) + i) % 4;
+        const a = seededUnit(`${seed}:export-a:${i}`);
+        const b = seededUnit(`${seed}:export-b:${i}`);
+        if (side === 0) {
+          candidates.push({ x: pad + a * Math.max(80, outWidth * 0.22), y: pad + b * (outHeight - pad * 2) });
+        } else if (side === 1) {
+          candidates.push({ x: outWidth - pad - a * Math.max(80, outWidth * 0.22), y: pad + b * (outHeight - pad * 2) });
+        } else if (side === 2) {
+          candidates.push({ x: pad + a * (outWidth - pad * 2), y: pad + b * Math.max(72, outHeight * 0.18) });
+        } else {
+          candidates.push({ x: pad + a * (outWidth - pad * 2), y: outHeight * 0.68 + b * Math.max(72, outHeight * 0.16) });
+        }
+      }
+      return candidates;
+    }
+
+    function getExportSafeStarPosition(style, key, radius, outWidth, outHeight, avoidRects) {
+      const candidates = buildExportStarCandidates(style, key, outWidth, outHeight);
+      const safe = candidates.find(point => isExportStarPointSafe(point.x, point.y, radius, outWidth, outHeight, avoidRects));
+      if (safe) return safe;
+      const pad = Math.max(46, radius + 16);
+      const corners = [
+        { x: pad, y: pad },
+        { x: outWidth - pad, y: pad },
+        { x: pad, y: outHeight - pad },
+        { x: outWidth - pad, y: outHeight - pad },
+      ];
+      const start = stableHash(`${key}:export-corner`) % corners.length;
+      for (let i = 0; i < corners.length; i++) {
+        const point = corners[(start + i) % corners.length];
+        if (isExportStarPointSafe(point.x, point.y, radius, outWidth, outHeight, avoidRects)) return point;
+      }
+      return {
+        x: clampNumber(style.xRatio * outWidth, pad, outWidth - pad),
+        y: clampNumber(style.yRatio * outHeight, pad, outHeight - pad),
+      };
+    }
+
+    function getExportCompletedStarAvoidRects(outWidth, outHeight, options = {}) {
+      const rects = [
+        { left: outWidth * 0.06, top: 0, right: outWidth * 0.94, bottom: outHeight * 0.16 },
+        { left: outWidth * 0.54, top: outHeight * 0.84, right: outWidth * 0.94, bottom: outHeight * 0.9 },
+        { left: outWidth * 0.14, top: outHeight * 0.895, right: outWidth * 0.86, bottom: outHeight },
+      ];
+      if (options.isYearTemplate) {
+        rects.push({ left: outWidth * 0.08, top: outHeight * 0.13, right: outWidth * 0.92, bottom: outHeight * 0.33 });
+      }
+      if (options.selectedWish) {
+        rects.push({
+          left: outWidth * 0.1,
+          top: outHeight * (options.isYearTemplate ? 0.31 : 0.2),
+          right: outWidth * 0.9,
+          bottom: outHeight * (options.isYearTemplate ? 0.55 : 0.52),
+        });
+      }
+      if (options.collageRect) rects.push(options.collageRect);
+      if (options.hasConstellations) {
+        const y = options.isYearTemplate ? outHeight * 0.6 : outHeight * 0.56;
+        rects.push({ left: outWidth * 0.05, top: y, right: outWidth * 0.95, bottom: outHeight * 0.86 });
+      }
+      return rects;
+    }
+
+    function drawOwnCompletedStarsInExport(ctx2, outWidth, outHeight, avoidRects = []) {
+      const completedWishes = getOwnCompletedWishes();
+      if (completedWishes.length === 0) return 0;
+      const usedHues = [];
+      const baseSizeScale = clampNumber(outWidth / 1200, 0.86, 1.32);
+      completedWishes.forEach((wish, index) => {
+        const style = getCompletedWishStarStyle(wish, usedHues);
+        if (!style) return;
+        const key = getWishProgressKey(wish);
+        const hue = getCompletedStarHue(style, index);
+        const countShrink = completedWishes.length > 36 ? 0.78 : (completedWishes.length > 18 ? 0.88 : 1);
+        const size = Math.max(2.8, (Number(style.size) || 3.2) * baseSizeScale * countShrink);
+        const pos = getExportSafeStarPosition(style, key, size * 11, outWidth, outHeight, avoidRects);
+        const twinkle = 0.96 + seededUnit(`${key}:export-twinkle`) * 0.18;
+        const rotation = (Number(style.spin) || 1) * seededUnit(`${key}:export-rotate`) * Math.PI * 2 + (Number(style.twinkleOffset) || 0);
+        drawExportCompletedStarGlyph(ctx2, pos.x, pos.y, size, hue, twinkle, rotation);
+      });
+
+      ctx2.save();
+      ctx2.textAlign = 'right';
+      ctx2.fillStyle = 'rgba(220, 232, 250, 0.48)';
+      ctx2.font = `${Math.max(13, Math.round(outWidth * 0.014))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      ctx2.fillText(`我的已完成星星 · ${completedWishes.length} 颗`, outWidth * 0.92, outHeight * 0.875);
+      ctx2.restore();
+      return completedWishes.length;
+    }
+
+    function getExportStarPhotoRect(outWidth, outHeight) {
+      const panelWidth = Math.min(outWidth * 0.82, 980);
+      const panelHeight = clampNumber(outHeight * 0.39, 350, 620);
+      return {
+        left: (outWidth - panelWidth) / 2,
+        top: outHeight * 0.23,
+        right: (outWidth + panelWidth) / 2,
+        bottom: outHeight * 0.23 + panelHeight,
+        width: panelWidth,
+        height: panelHeight,
+      };
+    }
+
+    function drawExportStarPhoto(ctx2, outWidth, outHeight, wishes, template = EXPORT_TEMPLATES.blessing) {
+      const selected = Array.isArray(wishes) ? wishes.filter(canExportWish).slice(0, 9) : [];
+      if (selected.length === 0) return null;
+      const rect = getExportStarPhotoRect(outWidth, outHeight);
+      const padding = Math.max(24, outWidth * 0.032);
+      const headerHeight = Math.max(52, rect.height * 0.16);
+
+      ctx2.save();
+      roundedRectPath(ctx2, rect.left, rect.top, rect.width, rect.height, Math.max(18, outWidth * 0.022));
+      ctx2.fillStyle = template.panel || 'rgba(18, 11, 32, 0.66)';
+      ctx2.fill();
+      ctx2.strokeStyle = 'rgba(255, 220, 150, 0.2)';
+      ctx2.lineWidth = Math.max(1, outWidth * 0.0013);
+      ctx2.stroke();
+
+      ctx2.textAlign = 'left';
+      ctx2.fillStyle = 'rgba(255, 238, 188, 0.96)';
+      ctx2.font = `${Math.max(26, Math.round(outWidth * 0.032))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      ctx2.fillText('星愿合影', rect.left + padding, rect.top + padding + 16);
+      ctx2.fillStyle = 'rgba(215, 226, 246, 0.58)';
+      ctx2.font = `${Math.max(13, Math.round(outWidth * 0.015))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+      ctx2.fillText(`选中了 ${selected.length} 颗自己的已完成星星`, rect.left + padding, rect.top + padding + 44);
+
+      const cols = selected.length <= 2 ? selected.length : 3;
+      const rows = Math.ceil(selected.length / cols);
+      const gap = Math.max(14, outWidth * 0.018);
+      const gridTop = rect.top + padding + headerHeight;
+      const cellWidth = (rect.width - padding * 2 - gap * (cols - 1)) / cols;
+      const cellHeight = (rect.bottom - padding - gridTop - gap * (rows - 1)) / rows;
+      selected.forEach((wish, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = rect.left + padding + col * (cellWidth + gap);
+        const y = gridTop + row * (cellHeight + gap);
+        const key = getWishProgressKey(wish);
+        const style = getCompletedWishStarStyle(wish);
+        const hue = getCompletedStarHue(style, index);
+        const starX = x + Math.min(cellWidth * 0.18, 54);
+        const starY = y + Math.min(cellHeight * 0.45, 72);
+        drawExportCompletedStarGlyph(ctx2, starX, starY, Math.max(4.2, outWidth * 0.0052), hue, 1.06, seededUnit(`${key}:photo`) * Math.PI * 2);
+
+        ctx2.textAlign = 'left';
+        ctx2.fillStyle = 'rgba(236, 244, 255, 0.9)';
+        ctx2.font = `${Math.max(15, Math.round(outWidth * 0.017))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+        const textX = starX + Math.max(30, cellWidth * 0.12);
+        drawWrappedText(ctx2, getDisplayWish(wish).text || '未命名心愿', textX, y + Math.max(32, cellHeight * 0.3), cellWidth - (textX - x) - 8, Math.max(22, outWidth * 0.022), 2);
+        ctx2.fillStyle = 'rgba(210, 222, 244, 0.52)';
+        ctx2.font = `${Math.max(11, Math.round(outWidth * 0.013))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+        const completedAt = getWishCompletedAt(wish);
+        ctx2.fillText(completedAt ? `实现于 ${formatDate(completedAt)}` : '已经实现', textX, y + cellHeight - Math.max(14, outWidth * 0.014));
+      });
+      ctx2.restore();
+      return rect;
+    }
+
+    function createWishSkyExportCanvas(selectedWish, preset = 'adaptive', templateId = 'dream', selectedWishes = null) {
       const template = EXPORT_TEMPLATES[templateId] || EXPORT_TEMPLATES.dream;
       const isYearTemplate = template.summary === true;
+      const collageWishes = Array.isArray(selectedWishes)
+        ? selectedWishes.filter(wish => canExportWish(wish) && getWishProgressId(wish) === 'done').slice(0, 9)
+        : [];
+      const hasCollage = collageWishes.length > 0;
       const out = document.createElement('canvas');
       const exportSize = getExportCanvasSize(preset);
       out.width = exportSize.width;
@@ -5915,11 +6386,15 @@
       octx.textAlign = 'center';
       octx.fillStyle = template.accent;
       octx.font = `${Math.max(38, Math.round(out.width * 0.047))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
-      octx.fillText(template.title, centerX, out.height * (isYearTemplate ? 0.09 : 0.11));
-      if (isYearTemplate) {
+      octx.fillText(hasCollage ? '我的星愿合影' : template.title, centerX, out.height * (isYearTemplate ? 0.09 : 0.11));
+      if (isYearTemplate && !hasCollage) {
         drawExportYearSummary(octx, out.width, out.height, template);
       }
-      if (selectedWish) {
+      let collageRect = null;
+      if (hasCollage) {
+        collageRect = drawExportStarPhoto(octx, out.width, out.height, collageWishes, template);
+      }
+      if (selectedWish && !hasCollage) {
         const displayRecentWish = getDisplayWish(selectedWish);
         octx.fillStyle = template.accent;
         const wishFont = Math.max(28, Math.round(out.width * 0.034));
@@ -5932,7 +6407,15 @@
         const completedAt = getWishCompletedAt(selectedWish);
         octx.fillText(completedAt ? `${progress} · ${formatDate(completedAt)}` : progress, centerX, out.height * (isYearTemplate ? 0.52 : 0.47));
       }
-      drawExportConstellations(octx, out.width, out.height, template, isYearTemplate ? out.height * 0.63 : null);
+      if (!hasCollage) {
+        drawExportConstellations(octx, out.width, out.height, template, isYearTemplate ? out.height * 0.63 : null);
+      }
+      drawOwnCompletedStarsInExport(octx, out.width, out.height, getExportCompletedStarAvoidRects(out.width, out.height, {
+        isYearTemplate: isYearTemplate && !hasCollage,
+        selectedWish: selectedWish && !hasCollage,
+        collageRect,
+        hasConstellations: !hasCollage && getExportConstellations().length > 0,
+      }));
       octx.font = `${Math.max(18, Math.round(out.width * 0.019))}px "Microsoft YaHei", "PingFang SC", sans-serif`;
       octx.fillStyle = 'rgba(220, 230, 245, 0.52)';
       octx.fillText(template.footer, centerX, out.height * 0.93);
@@ -5954,13 +6437,21 @@
     }
 
     function renderExportPreview() {
-      if (!exportPreviewState.selectedWish && exportPreviewState.selectedWish !== null) return;
-      const out = createWishSkyExportCanvas(exportPreviewState.selectedWish, exportPreviewState.preset, exportPreviewState.template);
+      const selectedWishes = Array.isArray(exportPreviewState.selectedWishes) ? exportPreviewState.selectedWishes : null;
+      if (exportPreviewState.selectedWish === undefined && !selectedWishes) return;
+      const out = createWishSkyExportCanvas(exportPreviewState.selectedWish, exportPreviewState.preset, exportPreviewState.template, selectedWishes);
       exportPreviewState.dataUrl = out.toDataURL('image/png');
       exportPreviewState.sizeLabel = `${out.width} × ${out.height}`;
       exportPreviewImage.src = exportPreviewState.dataUrl;
       const template = EXPORT_TEMPLATES[exportPreviewState.template] || EXPORT_TEMPLATES.dream;
-      exportPreviewMeta.textContent = `${template.name} · ${exportPreviewState.sizeLabel}`;
+      const completedCount = getOwnCompletedWishes().length;
+      const collageCount = selectedWishes ? selectedWishes.length : 0;
+      exportPreviewMeta.textContent = [
+        collageCount ? '星愿合影' : template.name,
+        exportPreviewState.sizeLabel,
+        `含 ${completedCount} 颗已完成星`,
+        collageCount ? `合影 ${collageCount} 颗` : '',
+      ].filter(Boolean).join(' · ');
       exportPreviewTemplates.querySelectorAll('[data-export-template]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.exportTemplate === exportPreviewState.template);
       });
@@ -5972,9 +6463,27 @@
     function downloadExportPreview() {
       if (!exportPreviewState.dataUrl) renderExportPreview();
       const link = document.createElement('a');
-      link.download = `my-wish-sky-${exportPreviewState.template}-${exportPreviewState.preset}.png`;
+      const type = Array.isArray(exportPreviewState.selectedWishes) && exportPreviewState.selectedWishes.length ? 'star-photo' : 'wish-sky';
+      link.download = `my-${type}-${exportPreviewState.template}-${exportPreviewState.preset}.png`;
       link.href = exportPreviewState.dataUrl;
       link.click();
+    }
+
+    async function exportStarPhoto() {
+      const selectedWishes = await chooseWishesForStarPhoto();
+      if (!selectedWishes || selectedWishes.length === 0) return;
+      exportPreviewState = {
+        selectedWish: null,
+        selectedWishes,
+        preset: 'adaptive',
+        template: 'blessing',
+        dataUrl: '',
+        sizeLabel: '',
+      };
+      renderExportPreview();
+      exportPreviewOverlay.classList.remove('hidden');
+      void exportPreviewOverlay.offsetWidth;
+      exportPreviewOverlay.classList.add('show');
     }
 
     async function exportMySky(preselectedWish) {
@@ -5991,6 +6500,7 @@
       if (selectedWish === undefined) return;
       exportPreviewState = {
         selectedWish,
+        selectedWishes: null,
         preset: 'adaptive',
         template: exportPreviewState.template || 'dream',
         dataUrl: '',
@@ -6066,6 +6576,7 @@
         hiddenWishIds: [...hiddenWishIds],
         blessedWishIds: [...blessedWishIds],
         ownedWishIds: [...ownedWishIds],
+        driftedWishBottleIds: [...driftedWishBottleIds],
         wishOverrides,
         timeCapsules: timeCapsules.filter(isCapsuleActive),
         readCapsuleIds: [...readCapsuleIds],
@@ -6127,6 +6638,10 @@
           if (Array.isArray(backup.ownedWishIds)) {
             backup.ownedWishIds.forEach(id => ownedWishIds.add(String(id)));
             saveOwnedWishIds();
+          }
+          if (Array.isArray(backup.driftedWishBottleIds)) {
+            backup.driftedWishBottleIds.forEach(id => driftedWishBottleIds.add(String(id)));
+            saveDriftedWishBottleIds();
           }
           if (backup.wishOverrides && typeof backup.wishOverrides === 'object') {
             wishOverrides = { ...wishOverrides, ...backup.wishOverrides };
@@ -6245,9 +6760,14 @@
     function showMessagePopup(message) {
       if (!message) return;
       if (popupTimer) clearTimeout(popupTimer);
-      msgPopupTitle.textContent = '💌 漂流瓶 · 回声星已点亮';
+      const text = String(message.text || '');
+      const isWishBottle = /^匿名心愿[:：]/.test(text);
+      msgPopupTitle.textContent = isWishBottle ? '💌 匿名心愿漂流瓶' : '💌 漂流瓶 · 回声星已点亮';
       msgPopupText.textContent = message.text;
-      msgPopupTime.textContent = `${formatTime(message.created_at)} · 打开后即消散`;
+      msgPopupTime.textContent = isWishBottle
+        ? `${formatTime(message.created_at)} · 只能送祝福，不能改内容`
+        : `${formatTime(message.created_at)} · 打开后即消散`;
+      msgPopupDismiss.textContent = isWishBottle ? '祝福这颗星 ✨' : '我知道了 ✨';
       msgPopupOverlay.classList.remove('hidden');
       void msgPopupOverlay.offsetWidth;
       msgPopupOverlay.classList.add('show');
@@ -6454,6 +6974,43 @@
       updateBottlePanel();
     }
 
+    async function driftWishToBottle(wish) {
+      if (!isDeviceWish(wish)) {
+        alert('只能把自己写下的心愿放进漂流瓶。');
+        return;
+      }
+      if (isWishDriftedToBottle(wish)) {
+        alert('这颗心愿已经漂流过了。');
+        return;
+      }
+      const displayWish = getDisplayWish(wish);
+      const validation = validateUserText('心愿漂流瓶', displayWish.text || '', { maxChars: 50 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return;
+      }
+      if (!supabase) {
+        alert('漂流瓶需要连接云端，等左上角显示已连接后再试。');
+        return;
+      }
+      const text = `匿名心愿：${validation.value}`;
+      const { data: inserted, error } = await supabase
+        .from('messages').insert({ text, revealed: false }).select().single();
+      if (error || !inserted) {
+        console.warn('心愿漂流失败:', error);
+        alert('这颗心愿暂时没能放进漂流瓶，请稍后再试。');
+        return;
+      }
+      localInsertIds.add(inserted.id);
+      markWishDriftedToBottle(wish);
+      totalUnreadMessages++;
+      lastUnreadCount = totalUnreadMessages;
+      updateBottleBadge();
+      updateBottlePanel();
+      renderWishWall();
+      alert('这颗心愿已经匿名放进漂流瓶。别人只能打开并送祝福，不能修改内容。');
+    }
+
     bottleBtn.addEventListener('click', (e) => { e.stopPropagation(); openBottlePanel(); });
     bottleClose.addEventListener('click', () => closeBottlePanel());
     bottleBackdrop.addEventListener('click', () => closeBottlePanel());
@@ -6549,6 +7106,11 @@
           : '<span class="wish-card-public">公开</span>';
         const adminCloudBadge = adminMode && !isLocalWish(wish) ? '<span class="wish-card-admin">云端</span>' : '';
         const adminDeleteClass = adminMode && !isLocalWish(wish) ? ' admin-delete' : '';
+        const canDriftWish = isDeviceWish(wish);
+        const drifted = canDriftWish && isWishDriftedToBottle(wish);
+        const driftButton = canDriftWish
+          ? `<button class="wish-card-drift${drifted ? ' drifted' : ''}" type="button" ${drifted ? 'disabled' : ''} aria-label="${drifted ? '这颗心愿已放进漂流瓶' : '匿名放进漂流瓶'}" title="${drifted ? '已漂流' : '匿名放进漂流瓶'}">${drifted ? '✓' : '🫧'}</button>`
+          : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(displayWish.text)}</span>
@@ -6559,6 +7121,7 @@
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" ${canManageProgress ? '' : 'disabled'} aria-label="${canManageProgress ? `更新心愿进度：${progress.label}` : `只能查看心愿进度：${progress.label}`}">${progress.label}</button>
           <button class="wish-card-reminder${reminderDueClass}" type="button" ${canManageReminder ? '' : 'disabled'} aria-label="${canManageReminder ? '设置心愿回访' : '只能查看心愿回访'}">${reminderLabel}</button>
           <button class="wish-card-bless${blessedClass}" type="button" aria-label="祝福这条心愿">祝福 · ${blessingCount}</button>
+          ${driftButton}
           <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
           <button class="wish-card-delete${adminDeleteClass}" type="button" aria-label="删除心愿">×</button>
           <span class="wish-card-time">${time}</span>
@@ -6580,6 +7143,13 @@
           e.stopPropagation();
           blessWish(wish);
         });
+        const driftBtn = card.querySelector('.wish-card-drift');
+        if (driftBtn) {
+          driftBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!driftBtn.disabled) driftWishToBottle(wish);
+          });
+        }
         card.querySelector('.wish-card-edit').addEventListener('click', (e) => {
           e.stopPropagation();
           editWish(wish);
@@ -6622,6 +7192,7 @@
     wishwallMineBtn.addEventListener('click', () => setWishwallMode('mine'));
     wishwallArchiveBtn.addEventListener('click', () => setWishwallMode('archive'));
     wishwallDueBtn.addEventListener('click', () => setWishwallMode('due'));
+    wishwallCollageBtn.addEventListener('click', () => exportStarPhoto());
     wishwallExportBtn.addEventListener('click', () => exportMySky());
     achievementCloseBtn.addEventListener('click', closeWishAchievement);
     achievementExportBtn.addEventListener('click', (e) => {
@@ -9238,7 +9809,11 @@
         if (p.life <= 0) { particles.splice(i, 1); continue; }
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(140, 200, 240, ${p.life * 0.6})`;
+        if (Number.isFinite(p.hue)) {
+          ctx.fillStyle = `hsla(${p.hue}, 88%, 74%, ${p.life * (p.alpha || 0.6)})`;
+        } else {
+          ctx.fillStyle = `rgba(140, 200, 240, ${p.life * 0.6})`;
+        }
         ctx.fill();
       }
     }
@@ -9616,10 +10191,12 @@
       // Always load local data first
       loadReadCapsuleIds();
       loadWishProgress();
+      loadCompletedWishStars();
       loadWishReminders();
       loadWishVisibilityState();
       loadBlessedWishIds();
       loadOwnedWishIds();
+      loadDriftedWishBottleIds();
       loadQuietMode();
       loadRoomState();
       loadWishesFromStorage();
