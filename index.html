@@ -1249,8 +1249,14 @@
     background: rgba(245, 210, 120, 0.06);
     box-shadow: 0 0 24px rgba(245, 210, 120, 0.08);
   }
+  .wish-card[data-progress="regret"] {
+    border-color: rgba(190, 170, 235, 0.2);
+    background: rgba(160, 135, 220, 0.055);
+    box-shadow: 0 0 22px rgba(145, 120, 220, 0.07);
+  }
   .wish-card-star { font-size: 16px; flex-shrink: 0; opacity: 0.6; }
-  .wish-card[data-progress="done"] .wish-card-star {
+  .wish-card[data-progress="done"] .wish-card-star,
+  .wish-card[data-progress="regret"] .wish-card-star {
     opacity: 1;
     text-shadow: 0 0 14px rgba(255, 225, 140, 0.85);
   }
@@ -1281,6 +1287,11 @@
     border-color: rgba(245, 210, 120, 0.35);
     background: rgba(245, 210, 120, 0.12);
     color: rgba(255, 230, 160, 0.95);
+  }
+  .wish-card-progress[data-progress="regret"] {
+    border-color: rgba(185, 165, 240, 0.34);
+    background: rgba(145, 120, 220, 0.12);
+    color: rgba(226, 214, 255, 0.94);
   }
   .wish-card-progress:disabled,
   .wish-card-reminder:disabled {
@@ -1372,6 +1383,8 @@
     color: rgba(255, 225, 170, 0.88);
   }
   .wish-card-drift,
+  .wish-card-note,
+  .wish-card-regret,
   .wish-card-edit,
   .wish-card-delete {
     flex-shrink: 0;
@@ -1400,6 +1413,26 @@
   .wish-card-drift:disabled {
     cursor: default;
     opacity: 0.58;
+  }
+  .wish-card-note:hover {
+    border-color: rgba(255, 220, 150, 0.34);
+    color: rgba(255, 238, 190, 0.96);
+    background: rgba(220, 170, 80, 0.1);
+  }
+  .wish-card-note.has-note {
+    border-color: rgba(255, 220, 150, 0.24);
+    color: rgba(255, 232, 180, 0.9);
+    background: rgba(220, 170, 80, 0.08);
+  }
+  .wish-card-regret:hover {
+    border-color: rgba(185, 165, 240, 0.34);
+    color: rgba(232, 220, 255, 0.96);
+    background: rgba(145, 120, 220, 0.11);
+  }
+  .wish-card-regret.is-regret {
+    border-color: rgba(120, 220, 170, 0.24);
+    color: rgba(200, 245, 220, 0.88);
+    background: rgba(80, 180, 130, 0.08);
   }
   .wish-card-edit:hover {
     border-color: rgba(140, 190, 240, 0.32);
@@ -1901,6 +1934,25 @@
     font-size: 12px;
     line-height: 1.45;
     word-break: break-word;
+  }
+
+  .wish-detail-note {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 220, 150, 0.16);
+    background: rgba(255, 210, 120, 0.07);
+    color: rgba(255, 238, 205, 0.88);
+    font-size: 13px;
+    line-height: 1.6;
+    letter-spacing: 0.05em;
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .wish-detail-note.hidden {
+    display: none;
   }
 
   .wish-detail-actions {
@@ -3441,7 +3493,7 @@
   <!-- Floating wish messages in background -->
   <div class="floating-wishes" id="floatingWishes"></div>
   <div class="completed-star-tooltip hidden" id="completedStarTooltip">
-    <div class="completed-star-tooltip-title">愿望已实现</div>
+    <div class="completed-star-tooltip-title" id="completedStarTooltipTitle">愿望已实现</div>
     <div class="completed-star-tooltip-text" id="completedStarTooltipText"></div>
     <div class="completed-star-tooltip-time" id="completedStarTooltipTime"></div>
   </div>
@@ -3591,10 +3643,13 @@
       <div class="msg-popup-icon">🌟</div>
       <div class="msg-popup-title" id="wishDetailTitle">心愿详情</div>
       <div class="wish-detail-text" id="wishDetailText"></div>
+      <div class="wish-detail-note hidden" id="wishDetailNote"></div>
       <div class="wish-detail-meta" id="wishDetailMeta"></div>
       <div class="wish-detail-actions">
         <button class="achievement-action" id="wishDetailBlessBtn" type="button">祝福一下</button>
         <button class="achievement-action" id="wishDetailExportBtn" type="button">导出这颗星</button>
+        <button class="achievement-action" id="wishDetailNoteBtn" type="button">写小纸条</button>
+        <button class="achievement-action" id="wishDetailRegretBtn" type="button">变成遗憾星</button>
         <button class="achievement-action" id="wishDetailProgressBtn" type="button">更新进度</button>
         <button class="achievement-action" id="wishDetailLocateBtn" type="button">找到这颗星</button>
         <button class="achievement-action" id="wishDetailCloseBtn" type="button">关闭</button>
@@ -3917,6 +3972,7 @@
     const wishInputArea = document.getElementById('wishInputArea');
     const floatingWishes = document.getElementById('floatingWishes');
     const completedStarTooltip = document.getElementById('completedStarTooltip');
+    const completedStarTooltipTitle = document.getElementById('completedStarTooltipTitle');
     const completedStarTooltipText = document.getElementById('completedStarTooltipText');
     const completedStarTooltipTime = document.getElementById('completedStarTooltipTime');
     const updateBanner = document.getElementById('updateBanner');
@@ -3990,9 +4046,12 @@
     const wishDetailOverlay = document.getElementById('wishDetailOverlay');
     const wishDetailTitle = document.getElementById('wishDetailTitle');
     const wishDetailText = document.getElementById('wishDetailText');
+    const wishDetailNote = document.getElementById('wishDetailNote');
     const wishDetailMeta = document.getElementById('wishDetailMeta');
     const wishDetailBlessBtn = document.getElementById('wishDetailBlessBtn');
     const wishDetailExportBtn = document.getElementById('wishDetailExportBtn');
+    const wishDetailNoteBtn = document.getElementById('wishDetailNoteBtn');
+    const wishDetailRegretBtn = document.getElementById('wishDetailRegretBtn');
     const wishDetailProgressBtn = document.getElementById('wishDetailProgressBtn');
     const wishDetailLocateBtn = document.getElementById('wishDetailLocateBtn');
     const wishDetailCloseBtn = document.getElementById('wishDetailCloseBtn');
@@ -4108,9 +4167,12 @@
       { id: 'doing', label: '正在努力' },
       { id: 'close', label: '快实现了' },
       { id: 'done', label: '实现啦' },
+      { id: 'regret', label: '遗憾星' },
     ];
+    const WISH_PROGRESS_CYCLE_IDS = ['new', 'doing', 'close', 'done'];
     let wishProgress = {};
     const WISH_REMINDERS_KEY = 'wish_reminder_states';
+    const WISH_SOFT_NOTES_KEY = 'wish_soft_notes';
     const HIDDEN_WISH_IDS_KEY = 'wish_hidden_ids';
     const WISH_OVERRIDES_KEY = 'wish_local_overrides';
     const BLESSED_WISH_IDS_KEY = 'wish_blessed_ids';
@@ -4118,7 +4180,9 @@
     const DRIFTED_WISH_BOTTLES_KEY = 'wish_drifted_bottle_ids';
     const QUIET_MODE_KEY = 'wish_quiet_mode';
     const ROOM_STATE_KEY = 'wish_active_room';
+    const GENTLE_LOOKBACK_KEY = 'wish_gentle_lookback_date';
     let wishReminders = {};
+    let wishSoftNotes = {};
     let hiddenWishIds = new Set();
     let blessedWishIds = new Set();
     let ownedWishIds = new Set();
@@ -4408,6 +4472,7 @@
       loadWishProgress();
       loadCompletedWishStars();
       loadWishReminders();
+      loadWishSoftNotes();
       loadWishVisibilityState();
       loadBlessedWishIds();
       loadOwnedWishIds();
@@ -4981,6 +5046,24 @@
       saveWishProgress();
     }
 
+    function getWishRegretAt(wish) {
+      const key = getWishProgressKey(wish);
+      return key ? wishProgress[key + ':regretAt'] : null;
+    }
+
+    function setWishRegretAt(wish, ts) {
+      const key = getWishProgressKey(wish);
+      if (!key) return;
+      if (ts) wishProgress[key + ':regretAt'] = ts;
+      else delete wishProgress[key + ':regretAt'];
+      saveWishProgress();
+    }
+
+    function isWishStarLit(wish) {
+      const id = getWishProgressId(wish);
+      return id === 'done' || id === 'regret';
+    }
+
     function getWishProgressId(wish) {
       if (!wish) return 'new';
       const key = getWishProgressKey(wish);
@@ -5018,12 +5101,22 @@
       wishProgress[key] = progressId;
       if (progressId === 'done' && previousId !== 'done') {
         setWishCompletedAt(wish, new Date().toISOString());
+        setWishRegretAt(wish, null);
         getCompletedWishStarStyle(wish, Object.values(completedWishStarStyles).map(style => Number(style.hue) || 0));
         lastCompletedWish = wish;
         showWishAchievement(wish);
+        setTimeout(() => promptWishSoftNote(wish, 'done'), 420);
       }
       if (progressId !== 'done' && previousId === 'done') {
         setWishCompletedAt(wish, null);
+      }
+      if (progressId === 'regret' && previousId !== 'regret') {
+        setWishRegretAt(wish, new Date().toISOString());
+        setWishCompletedAt(wish, null);
+        getCompletedWishStarStyle(wish, Object.values(completedWishStarStyles).map(style => Number(style.hue) || 0));
+      }
+      if (progressId !== 'regret' && previousId === 'regret') {
+        setWishRegretAt(wish, null);
       }
       saveWishProgress();
       saveWishesToStorage();
@@ -5037,11 +5130,41 @@
         return false;
       }
       const currentId = getWishProgressId(wish);
-      const currentIndex = WISH_PROGRESS_STEPS.findIndex(step => step.id === currentId);
-      const next = WISH_PROGRESS_STEPS[(currentIndex + 1) % WISH_PROGRESS_STEPS.length];
+      const currentIndex = WISH_PROGRESS_CYCLE_IDS.indexOf(currentId);
+      const nextId = currentIndex >= 0
+        ? WISH_PROGRESS_CYCLE_IDS[(currentIndex + 1) % WISH_PROGRESS_CYCLE_IDS.length]
+        : 'new';
+      const next = WISH_PROGRESS_STEPS.find(step => step.id === nextId) || WISH_PROGRESS_STEPS[0];
       if (next.id === 'done' && currentId !== 'done' && !confirmWishCompletion(wish)) return false;
       const changed = setWishProgress(wish, next.id);
       if (changed) renderWishWall();
+      return changed;
+    }
+
+    function toggleWishRegret(wish) {
+      if (!canManageWishProgress(wish)) {
+        alert('只能整理自己写下的心愿状态，管理员可整理全部状态。');
+        return false;
+      }
+      const currentId = getWishProgressId(wish);
+      if (currentId === 'regret') {
+        const changed = setWishProgress(wish, 'new');
+        if (changed) {
+          renderWishWall();
+          renderWishDetail();
+        }
+        return changed;
+      }
+      const displayWish = getDisplayWish(wish);
+      const text = String(displayWish.text || '这条心愿').trim();
+      const preview = text.length > 28 ? `${text.slice(0, 28)}…` : text;
+      if (!window.confirm(`把“${preview}”变成遗憾星吗？\n\n它不是失败，只是纪念那时你认真想要过。`)) return false;
+      const changed = setWishProgress(wish, 'regret');
+      if (changed) {
+        promptWishSoftNote(wish, 'review');
+        renderWishWall();
+        renderWishDetail();
+      }
       return changed;
     }
 
@@ -5057,7 +5180,16 @@
         wishProgress[toKey + ':completedAt'] = wishProgress[fromKey + ':completedAt'];
         delete wishProgress[fromKey + ':completedAt'];
       }
+      if (wishProgress[fromKey + ':regretAt']) {
+        wishProgress[toKey + ':regretAt'] = wishProgress[fromKey + ':regretAt'];
+        delete wishProgress[fromKey + ':regretAt'];
+      }
       migrateWishReminderKey(fromWish, toWish);
+      if (wishSoftNotes[fromKey]) {
+        wishSoftNotes[toKey] = wishSoftNotes[fromKey];
+        delete wishSoftNotes[fromKey];
+        saveWishSoftNotes();
+      }
       if (wishOverrides[fromKey]) {
         wishOverrides[toKey] = wishOverrides[fromKey];
         delete wishOverrides[fromKey];
@@ -5084,6 +5216,73 @@
       try {
         localStorage.setItem(WISH_REMINDERS_KEY, JSON.stringify(wishReminders));
       } catch(e) { /* ignore */ }
+    }
+
+    function loadWishSoftNotes() {
+      try {
+        const stored = localStorage.getItem(WISH_SOFT_NOTES_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) wishSoftNotes = parsed;
+      } catch(e) {
+        wishSoftNotes = {};
+      }
+    }
+
+    function saveWishSoftNotes() {
+      try {
+        localStorage.setItem(WISH_SOFT_NOTES_KEY, JSON.stringify(wishSoftNotes));
+      } catch(e) { /* ignore */ }
+    }
+
+    function getWishSoftNote(wish) {
+      const key = getWishProgressKey(wish);
+      const note = key ? wishSoftNotes[key] : null;
+      return note && typeof note.text === 'string' ? note : null;
+    }
+
+    function saveWishSoftNote(wish, text) {
+      const key = getWishProgressKey(wish);
+      if (!key) return false;
+      const value = String(text || '').trim();
+      if (!value) {
+        delete wishSoftNotes[key];
+      } else {
+        wishSoftNotes[key] = { text: value, updatedAt: new Date().toISOString() };
+      }
+      saveWishSoftNotes();
+      return true;
+    }
+
+    function promptWishSoftNote(wish, reason = 'manual') {
+      if (!wish || !canManageWish(wish)) {
+        alert('只能给自己写下的心愿贴小纸条，管理员可整理全部心愿。');
+        return false;
+      }
+      const current = getWishSoftNote(wish)?.text || '';
+      const displayWish = getDisplayWish(wish);
+      const promptText = reason === 'review'
+        ? '今天回头看了这颗星，给它留一张小纸条吧。留空可以清除纸条。'
+        : reason === 'done'
+          ? '这颗星亮起来了，给当时的自己留一张小纸条吧。留空可以跳过。'
+          : '给这颗心愿贴一张小纸条。留空可以清除纸条。';
+      const next = window.prompt(`${promptText}\n\n${displayWish.text || ''}`, current);
+      if (next === null) return false;
+      const value = next.trim();
+      if (!value) {
+        saveWishSoftNote(wish, '');
+        renderWishWall();
+        renderWishDetail();
+        return true;
+      }
+      const validation = validateUserText('小纸条', value, { maxChars: 80 });
+      if (!validation.ok) {
+        alert(validation.message);
+        return false;
+      }
+      saveWishSoftNote(wish, validation.value);
+      renderWishWall();
+      renderWishDetail();
+      return true;
     }
 
     function addDays(days) {
@@ -5125,6 +5324,7 @@
       const key = getWishProgressKey(wish);
       if (!key) return false;
       const current = wishReminders[key];
+      const shouldAskNote = !!current || isReminderDue(wish);
       if (!current) {
         wishReminders[key] = { dueAt: addDays(7), label: '7天后' };
       } else if (current.label === '7天后') {
@@ -5135,6 +5335,7 @@
       saveWishReminders();
       updateWishwallBadge();
       renderWishWall();
+      if (shouldAskNote) setTimeout(() => promptWishSoftNote(wish, 'review'), 80);
       return true;
     }
 
@@ -5499,10 +5700,12 @@
       const progress = getWishProgressStep(wish);
       const reminder = getWishReminderLabel(wish);
       const blessings = getWishBlessingCount(wish);
+      const regretAt = getWishRegretAt(wish);
       return [
         { label: '分类', value: `${cat.icon} ${cat.name}` },
         { label: '进度', value: progress.label },
         { label: '创建时间', value: formatTime(displayWish.created_at) },
+        ...(regretAt ? [{ label: '变成星光', value: formatDate(regretAt) }] : []),
         { label: '回访', value: reminder },
         { label: '祝福', value: `${blessings} 次` },
         { label: '范围', value: displayWish.visibility === 'private' ? '私密' : (getWishRoomCode(wish) ? `房间 ${getWishRoomCode(wish)}` : '公开') },
@@ -5515,9 +5718,20 @@
       const progress = getWishProgressStep(activeWishDetail);
       const blessed = hasBlessedWish(activeWishDetail);
       const canManageProgress = canManageWishProgress(activeWishDetail);
+      const canManage = canManageWish(activeWishDetail);
       const canExport = canExportWish(activeWishDetail);
-      wishDetailTitle.textContent = progress.id === 'done' ? '已实现的心愿' : '心愿详情';
+      wishDetailTitle.textContent = progress.id === 'done'
+        ? '已实现的心愿'
+        : (progress.id === 'regret' ? '遗憾也发光' : '心愿详情');
       wishDetailText.textContent = displayWish.text || '';
+      const note = getWishSoftNote(activeWishDetail);
+      if (note && note.text) {
+        wishDetailNote.textContent = `小纸条：${note.text}`;
+        wishDetailNote.classList.remove('hidden');
+      } else {
+        wishDetailNote.textContent = '';
+        wishDetailNote.classList.add('hidden');
+      }
       wishDetailMeta.innerHTML = getWishMetaItems(activeWishDetail).map(item => `
         <div class="wish-detail-meta-item">
           <span class="wish-detail-meta-label">${escapeHTML(item.label)}</span>
@@ -5530,10 +5744,17 @@
       wishDetailExportBtn.textContent = canExport ? '导出这颗星' : '只能导出自己的星';
       wishDetailExportBtn.disabled = !canExport;
       wishDetailExportBtn.style.opacity = canExport ? '1' : '0.62';
+      wishDetailNoteBtn.textContent = note ? '改小纸条' : '写小纸条';
+      wishDetailNoteBtn.disabled = !canManage;
+      wishDetailNoteBtn.style.opacity = canManage ? '1' : '0.62';
+      wishDetailRegretBtn.textContent = progress.id === 'regret' ? '重新开始' : '变成遗憾星';
+      wishDetailRegretBtn.disabled = !canManageProgress || progress.id === 'done';
+      wishDetailRegretBtn.style.display = progress.id === 'done' ? 'none' : '';
+      wishDetailRegretBtn.style.opacity = wishDetailRegretBtn.disabled ? '0.62' : '1';
       wishDetailProgressBtn.textContent = !canManageProgress ? '状态只读' : (progress.id === 'done' ? '调整状态' : '更新进度');
       wishDetailProgressBtn.disabled = !canManageProgress;
       wishDetailProgressBtn.style.opacity = wishDetailProgressBtn.disabled ? '0.62' : '1';
-      wishDetailLocateBtn.style.display = progress.id === 'done' ? '' : 'none';
+      wishDetailLocateBtn.style.display = isWishStarLit(activeWishDetail) ? '' : 'none';
     }
 
     function openWishDetail(wish) {
@@ -6629,6 +6850,7 @@
         localWishes: wishMessages.filter(isLocalWish),
         wishProgress,
         wishReminders,
+        wishSoftNotes,
         completedWishStarStyles,
         hiddenWishIds: [...hiddenWishIds],
         blessedWishIds: [...blessedWishIds],
@@ -6680,6 +6902,10 @@
           if (backup.wishReminders && typeof backup.wishReminders === 'object') {
             wishReminders = { ...wishReminders, ...backup.wishReminders };
             saveWishReminders();
+          }
+          if (backup.wishSoftNotes && typeof backup.wishSoftNotes === 'object') {
+            wishSoftNotes = { ...wishSoftNotes, ...backup.wishSoftNotes };
+            saveWishSoftNotes();
           }
           if (backup.completedWishStarStyles && typeof backup.completedWishStarStyles === 'object') {
             completedWishStarStyles = { ...completedWishStarStyles, ...backup.completedWishStarStyles };
@@ -7143,7 +7369,6 @@
         const displayWish = getDisplayWish(wish);
         const card = document.createElement('div');
         card.className = 'wish-card';
-        const star = stars[i % stars.length];
         const time = formatTime(displayWish.created_at);
         let tag = displayWish.tag;
         if (!tag || tag === 'general') {
@@ -7151,6 +7376,7 @@
         }
         const cat = CATEGORIES[tag] || CATEGORIES.general;
         const progress = getWishProgressStep(wish);
+        const star = progress.id === 'regret' ? '🌙' : stars[i % stars.length];
         const canManageProgress = canManageWishProgress(wish);
         const canManageReminder = canManageWish(wish);
         card.dataset.progress = progress.id;
@@ -7168,6 +7394,13 @@
         const driftButton = canDriftWish
           ? `<button class="wish-card-drift${drifted ? ' drifted' : ''}" type="button" ${drifted ? 'disabled' : ''} aria-label="${drifted ? '这颗心愿已放进漂流瓶' : '匿名放进漂流瓶'}" title="${drifted ? '已漂流' : '匿名放进漂流瓶'}">${drifted ? '✓' : '🫧'}</button>`
           : '';
+        const softNote = getWishSoftNote(wish);
+        const noteButton = canManageReminder
+          ? `<button class="wish-card-note${softNote ? ' has-note' : ''}" type="button" aria-label="${softNote ? '查看或修改小纸条' : '写小纸条'}" title="${softNote ? '小纸条' : '写小纸条'}">${softNote ? '▣' : '□'}</button>`
+          : '';
+        const regretButton = canManageProgress && progress.id !== 'done'
+          ? `<button class="wish-card-regret${progress.id === 'regret' ? ' is-regret' : ''}" type="button" aria-label="${progress.id === 'regret' ? '让遗憾星重新开始' : '变成遗憾星'}" title="${progress.id === 'regret' ? '重新开始' : '变成遗憾星'}">${progress.id === 'regret' ? '↺' : '☾'}</button>`
+          : '';
         card.innerHTML = `
           <span class="wish-card-star">${star}</span>
           <span class="wish-card-text">${escapeHTML(displayWish.text)}</span>
@@ -7178,6 +7411,8 @@
           <button class="wish-card-progress" type="button" data-progress="${progress.id}" ${canManageProgress ? '' : 'disabled'} aria-label="${canManageProgress ? `更新心愿进度：${progress.label}` : `只能查看心愿进度：${progress.label}`}">${progress.label}</button>
           <button class="wish-card-reminder${reminderDueClass}" type="button" ${canManageReminder ? '' : 'disabled'} aria-label="${canManageReminder ? '设置心愿回访' : '只能查看心愿回访'}">${reminderLabel}</button>
           <button class="wish-card-bless${blessedClass}" type="button" aria-label="祝福这条心愿">祝福 · ${blessingCount}</button>
+          ${noteButton}
+          ${regretButton}
           ${driftButton}
           <button class="wish-card-edit" type="button" aria-label="编辑心愿">✎</button>
           <button class="wish-card-delete${adminDeleteClass}" type="button" aria-label="删除心愿">×</button>
@@ -7200,6 +7435,20 @@
           e.stopPropagation();
           blessWish(wish);
         });
+        const noteBtn = card.querySelector('.wish-card-note');
+        if (noteBtn) {
+          noteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            promptWishSoftNote(wish, 'manual');
+          });
+        }
+        const regretBtn = card.querySelector('.wish-card-regret');
+        if (regretBtn) {
+          regretBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleWishRegret(wish);
+          });
+        }
         const driftBtn = card.querySelector('.wish-card-drift');
         if (driftBtn) {
           driftBtn.addEventListener('click', (e) => {
@@ -7274,6 +7523,14 @@
       const wish = activeWishDetail;
       closeWishDetail();
       setTimeout(() => exportWishDirectly(wish), 120);
+    });
+    wishDetailNoteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeWishDetail) promptWishSoftNote(activeWishDetail, 'manual');
+    });
+    wishDetailRegretBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeWishDetail) toggleWishRegret(activeWishDetail);
     });
     wishDetailProgressBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -8535,7 +8792,7 @@
       const doneWishes = visibleWishes
         .filter(wish => getWishProgressId(wish) === 'done')
         .sort((a, b) => new Date(getWishCompletedAt(b) || getDisplayWish(b).created_at || 0) - new Date(getWishCompletedAt(a) || getDisplayWish(a).created_at || 0));
-      const activeWishes = visibleWishes.filter(wish => getWishProgressId(wish) !== 'done');
+      const activeWishes = visibleWishes.filter(wish => !isWishStarLit(wish));
       const recentWishes = [...visibleWishes]
         .sort((a, b) => new Date(getDisplayWish(b).created_at || 0) - new Date(getDisplayWish(a).created_at || 0));
       const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'general';
@@ -9386,7 +9643,11 @@
         const style = getCompletedWishStarStyle(wish, usedHues);
         if (!style) return null;
         const key = getWishProgressKey(wish);
-        const hue = getCompletedStarHue(style, index);
+        const progressId = getWishProgressId(wish);
+        const isRegret = progressId === 'regret';
+        const hue = isRegret
+          ? (258 + Math.round(seededUnit(key + ':regret-hue') * 26))
+          : getCompletedStarHue(style, index);
         const baseSize = Number(style.size) || 3.2;
         const glowRadius = baseSize * 11;
         const pos = getSafeCompletedStarPosition(style, key, glowRadius * 0.82, avoidRects);
@@ -9395,7 +9656,11 @@
           key,
           wish,
           text: displayWish.text || '',
+          note: getWishSoftNote(wish)?.text || '',
+          progressId,
+          isRegret,
           completedAt: getWishCompletedAt(wish),
+          regretAt: getWishRegretAt(wish),
           x: pos.x,
           y: pos.y,
           hue,
@@ -9436,7 +9701,7 @@
           yRatio: averageY / Math.max(1, H),
         }, clusterKey, clusterRadius, avoidRects);
         const latestTime = group
-          .map(item => Date.parse(item.completedAt))
+          .map(item => Date.parse(item.completedAt || item.regretAt))
           .filter(Number.isFinite)
           .sort((a, b) => b - a)[0];
 
@@ -9448,12 +9713,13 @@
           y: pos.y,
           hitRadius: clusterRadius,
           hue: group[0].hue,
+          isRegret: group.every(item => item.isRegret),
           baseSize: Math.min(5.8, 3.2 + Math.sqrt(group.length) * 0.58),
           glowRadius: clusterRadius,
           spin: group[0].spin,
           twinkleOffset: group[0].twinkleOffset,
           completedAt: latestTime ? new Date(latestTime).toISOString() : '',
-          text: group.map(item => item.text).filter(Boolean).slice(0, 3).join(' / '),
+          text: group.map(item => item.note || item.text).filter(Boolean).slice(0, 3).join(' / '),
         });
       });
       return targets;
@@ -9491,14 +9757,14 @@
     }
 
     function drawCompletedWishStars() {
-      const completedWishes = getVisibleWishes().filter(wish => getWishProgressId(wish) === 'done');
+      const litWishes = getVisibleWishes().filter(isWishStarLit);
       completedStarHitTargets = [];
-      if (!completedWishes.length) return;
+      if (!litWishes.length) return;
 
       const avoidRects = getCompletedStarAvoidRects();
       const usedHues = [];
-      const ownCompletedWishes = completedWishes.filter(isDeviceWish);
-      const otherCompletedWishes = completedWishes.filter(wish => !isDeviceWish(wish));
+      const ownCompletedWishes = litWishes.filter(isDeviceWish);
+      const otherCompletedWishes = litWishes.filter(wish => !isDeviceWish(wish));
       const ownStarItems = buildCompletedStarItems(ownCompletedWishes, avoidRects, usedHues);
       const otherStarItems = buildCompletedStarItems(otherCompletedWishes, avoidRects, usedHues);
       const renderTargets = [
@@ -9581,13 +9847,15 @@
       }
       if (target.isCluster) {
         const count = target.count || target.items?.length || 0;
+        completedStarTooltipTitle.textContent = target.isRegret ? '遗憾也发光' : '一片星光';
         completedStarTooltipText.textContent = target.text || '这片星光里有已经实现的愿望';
-        completedStarTooltipTime.textContent = `这一片有 ${count} 个已实现愿望`;
+        completedStarTooltipTime.textContent = `这一片有 ${count} 个被认真留下的心愿`;
       } else {
-        completedStarTooltipText.textContent = target.text || '这个心愿已经实现';
-        completedStarTooltipTime.textContent = target.completedAt
-          ? `完成于 ${formatDate(target.completedAt)}`
-          : '这颗愿望星已经点亮';
+        completedStarTooltipTitle.textContent = target.isRegret ? '遗憾也发光' : '愿望已实现';
+        completedStarTooltipText.textContent = target.note || target.text || '这个心愿已经被星光接住';
+        completedStarTooltipTime.textContent = target.isRegret
+          ? (target.regretAt ? `纪念于 ${formatDate(target.regretAt)}` : '它不是失败，只是纪念认真想要过')
+          : (target.completedAt ? `完成于 ${formatDate(target.completedAt)}` : '这颗愿望星已经点亮');
       }
       completedStarTooltip.classList.remove('hidden');
       positionCompletedStarTooltip(x, y);
@@ -9624,7 +9892,7 @@
     }
 
     function locateCompletedWishStar(wish) {
-      if (!wish || getWishProgressId(wish) !== 'done') return;
+      if (!wish || !isWishStarLit(wish)) return;
       closeWishDetail();
       setTimeout(() => {
         const target = findCompletedStarTargetForWish(wish);
@@ -10148,6 +10416,41 @@
       });
     }
 
+    function getLocalDayStamp(date = new Date()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function scheduleGentleLookback() {
+      if (quietMode) return;
+      const today = getLocalDayStamp();
+      if (localStorage.getItem(GENTLE_LOOKBACK_KEY) === today) return;
+      const now = Date.now();
+      const ownWishes = getDeviceVisibleWishes().filter(wish => {
+        const displayWish = getDisplayWish(wish);
+        return displayWish && displayWish.text && !hasBlockedLanguage(displayWish.text);
+      });
+      if (ownWishes.length === 0) return;
+      const older = ownWishes.filter(wish => {
+        const created = Date.parse(getDisplayWish(wish).created_at);
+        return Number.isFinite(created) && now - created > 3 * 86400000;
+      });
+      const pool = older.length ? older : ownWishes;
+      const wish = pool[Math.floor(Math.random() * pool.length)];
+      const displayWish = getDisplayWish(wish);
+      const text = String(displayWish.text || '').trim();
+      if (!text) return;
+      const prefix = getWishProgressId(wish) === 'regret'
+        ? '原来那时候的我，也认真想要过：'
+        : '温柔回头看：那时的我，在期待这个：';
+      setTimeout(() => {
+        spawnFloatingWish(`${prefix}${text.slice(0, 18)}${text.length > 18 ? '…' : ''}`);
+        localStorage.setItem(GENTLE_LOOKBACK_KEY, today);
+      }, 4200 + Math.random() * 1800);
+    }
+
     /* ═══════════════════════════════════════════════════════════════════════
        SHOOTING STAR SPAWNER
        ═══════════════════════════════════════════════════════════════════════ */
@@ -10250,6 +10553,7 @@
       loadWishProgress();
       loadCompletedWishStars();
       loadWishReminders();
+      loadWishSoftNotes();
       loadWishVisibilityState();
       loadBlessedWishIds();
       loadOwnedWishIds();
@@ -10298,6 +10602,7 @@
       if (visibleWishes.length > 0) {
         setTimeout(burstFloatingWishes, 1500);
         setTimeout(() => scheduleFloatingWishes(), 1500 + Math.min(5, visibleWishes.length) * 400 + 1000);
+        scheduleGentleLookback();
       }
       setTimeout(() => spawnShootingStar(), 1500);
       updateTreeWishes();
