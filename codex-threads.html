@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codex 星轨档案 | 星愿回声</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #050712;
+      --panel: rgba(12, 18, 36, 0.74);
+      --panel-strong: rgba(16, 24, 48, 0.9);
+      --line: rgba(150, 190, 255, 0.18);
+      --line-bright: rgba(170, 215, 255, 0.44);
+      --text: rgba(232, 240, 255, 0.92);
+      --muted: rgba(198, 210, 235, 0.62);
+      --faint: rgba(198, 210, 235, 0.42);
+      --blue: #8cc8ff;
+      --violet: #c7a6ff;
+      --gold: #ffd88a;
+      --pink: #ff9fbf;
+      --green: #97e6c7;
+      --shadow: rgba(0, 0, 0, 0.42);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+      color-scheme: dark;
+    }
+
+    html {
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(118, 98, 255, 0.28), transparent 28%),
+        radial-gradient(circle at 82% 10%, rgba(61, 189, 207, 0.2), transparent 30%),
+        radial-gradient(circle at 58% 88%, rgba(255, 159, 191, 0.16), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    #sky {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(to bottom, rgba(5, 7, 18, 0.08), rgba(5, 7, 18, 0.92));
+    }
+
+    a { color: inherit; }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 13px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 56px);
+      line-height: 1.08;
+      letter-spacing: 0;
+      color: #fff;
+      text-shadow: 0 0 34px rgba(140, 200, 255, 0.34);
+    }
+
+    .subtitle {
+      max-width: 680px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      text-decoration: none;
+      color: rgba(232, 240, 255, 0.84);
+      white-space: nowrap;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .back-link:hover {
+      border-color: var(--line-bright);
+      background: rgba(255, 255, 255, 0.09);
+      transform: translateY(-1px);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .stat {
+      min-height: 98px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035));
+      box-shadow: 0 18px 54px var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .stat-label {
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      margin-top: 8px;
+      color: #fff;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 180px;
+      gap: 10px;
+      margin: 20px 0 14px;
+    }
+
+    .search,
+    .select {
+      width: 100%;
+      min-height: 46px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(8, 13, 28, 0.76);
+      color: var(--text);
+      outline: none;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+    }
+
+    .search:focus,
+    .select:focus {
+      border-color: var(--line-bright);
+      box-shadow: 0 0 0 4px rgba(140, 200, 255, 0.12);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      min-height: 34px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: rgba(232, 240, 255, 0.76);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .chip.active {
+      border-color: rgba(140, 200, 255, 0.62);
+      color: #06101f;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .thread-list {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .thread-card,
+    .detail-panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .thread-card {
+      padding: 16px;
+      text-align: left;
+      color: inherit;
+      width: 100%;
+      min-width: 0;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .thread-card:hover,
+    .thread-card.active {
+      border-color: var(--line-bright);
+      background: rgba(17, 28, 57, 0.82);
+      transform: translateY(-1px);
+    }
+
+    .thread-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      padding: 3px 9px;
+      border: 1px solid rgba(140, 200, 255, 0.2);
+      border-radius: 999px;
+      color: var(--blue);
+      background: rgba(140, 200, 255, 0.08);
+    }
+
+    .thread-title {
+      margin: 0;
+      color: #fff;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .thread-excerpt {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .detail-panel {
+      position: sticky;
+      top: 16px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .detail-head {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(140, 200, 255, 0.1), rgba(199, 166, 255, 0.06));
+    }
+
+    .detail-title {
+      margin: 0;
+      color: #fff;
+      font-size: 20px;
+      line-height: 1.5;
+    }
+
+    .detail-sub {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .detail-body {
+      max-height: calc(100vh - 220px);
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .detail-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .detail-body::-webkit-scrollbar-thumb {
+      background: rgba(140, 200, 255, 0.24);
+      border-radius: 999px;
+    }
+
+    .source {
+      margin: 0 0 12px;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.6;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+
+    .transcript {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: rgba(232, 240, 255, 0.82);
+      font-size: 13px;
+      line-height: 1.75;
+      font-family: "Consolas", "SFMono-Regular", "Microsoft YaHei", monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      padding: 38px 18px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .footer {
+      margin-top: 26px;
+      color: var(--faint);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-panel {
+        position: static;
+      }
+
+      .detail-body {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 18px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <p class="eyebrow">Codex Archive</p>
+        <h1>Codex 星轨档案</h1>
+        <p class="subtitle">从 Obsidian 的 Codex 线程笔记生成，按已发布的星愿站点风格整理为可搜索、可筛选、可展开的公开档案。敏感 token 已在生成时脱敏。</p>
+      </div>
+      <a class="back-link" href="./index.html">回到星愿回声</a>
+    </header>
+
+    <section class="dashboard" aria-label="档案统计">
+      <div class="stat">
+        <div class="stat-label">源笔记</div>
+        <div class="stat-value" id="statFiles">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">去重线程</div>
+        <div class="stat-value" id="statThreads">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">项目分类</div>
+        <div class="stat-value" id="statCategories">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">消息总数</div>
+        <div class="stat-value" id="statMessages">0</div>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="档案筛选">
+      <input class="search" id="searchInput" type="search" placeholder="搜索标题、摘要、全文内容">
+      <select class="select" id="sortSelect">
+        <option value="newest">最新在前</option>
+        <option value="oldest">最早在前</option>
+        <option value="messages">消息最多</option>
+        <option value="title">标题排序</option>
+      </select>
+    </section>
+
+    <div class="chips" id="categoryChips" aria-label="项目分类"></div>
+
+    <section class="content-grid">
+      <div>
+        <div class="thread-list" id="threadList"></div>
+      </div>
+      <aside class="detail-panel" id="detailPanel">
+        <div class="detail-head">
+          <h2 class="detail-title" id="detailTitle">选择一条星轨</h2>
+          <p class="detail-sub" id="detailMeta">左侧选择线程后，这里会显示脱敏后的笔记全文。</p>
+        </div>
+        <div class="detail-body">
+          <p class="source" id="detailSource">内容来自本地 Obsidian 笔记导出。</p>
+          <pre class="transcript" id="detailContent">星轨已经准备好。可以先用搜索框找关键词，也可以按项目分类筛选。</pre>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <div id="generatedAt">生成时间读取中</div>
+      <div>公开页面只包含脱敏后的 Codex 线程内容；如需更新，请重新同步 Obsidian 后再生成数据并发布。</div>
+    </footer>
+  </main>
+
+  <script src="./codex-threads-data.js"></script>
+  <script>
+    (function () {
+      const payload = window.CODEX_THREADS_DATA || { threads: [], totalFiles: 0, uniqueThreads: 0 };
+      const state = {
+        query: "",
+        category: "全部",
+        sort: "newest",
+        selectedId: payload.threads[0]?.id || ""
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const escapeHTML = (value) => String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+      function formatDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value || "未知时间").slice(0, 16);
+        return date.toLocaleString("zh-CN", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      function summarizeStats() {
+        const categories = new Set(payload.threads.map((thread) => thread.category));
+        const messages = payload.threads.reduce((sum, thread) => sum + Number(thread.messages || 0), 0);
+        $("#statFiles").textContent = payload.totalFiles || 0;
+        $("#statThreads").textContent = payload.uniqueThreads || payload.threads.length;
+        $("#statCategories").textContent = categories.size;
+        $("#statMessages").textContent = messages;
+        $("#generatedAt").textContent = `生成于 ${formatDate(payload.generatedAt)} | 来源 ${payload.sourceRoot || "Obsidian threads"}`;
+      }
+
+      function getCategories() {
+        return ["全部", ...Array.from(new Set(payload.threads.map((thread) => thread.category))).sort((a, b) => a.localeCompare(b, "zh-CN"))];
+      }
+
+      function renderChips() {
+        $("#categoryChips").innerHTML = getCategories().map((category) => {
+          const active = category === state.category ? " active" : "";
+          const count = category === "全部"
+            ? payload.threads.length
+            : payload.threads.filter((thread) => thread.category === category).length;
+          return `<button class="chip${active}" type="button" data-category="${escapeHTML(category)}">${escapeHTML(category)} ${count}</button>`;
+        }).join("");
+      }
+
+      function getFilteredThreads() {
+        const query = state.query.trim().toLowerCase();
+        let threads = payload.threads.filter((thread) => {
+          if (state.category !== "全部" && thread.category !== state.category) return false;
+          if (!query) return true;
+          const haystack = `${thread.title} ${thread.category} ${thread.excerpt} ${thread.content}`.toLowerCase();
+          return haystack.includes(query);
+        });
+
+        threads = threads.slice();
+        if (state.sort === "oldest") {
+          threads.sort((a, b) => new Date(a.created) - new Date(b.created));
+        } else if (state.sort === "messages") {
+          threads.sort((a, b) => Number(b.messages || 0) - Number(a.messages || 0));
+        } else if (state.sort === "title") {
+          threads.sort((a, b) => a.title.localeCompare(b.title, "zh-CN"));
+        } else {
+          threads.sort((a, b) => new Date(b.created) - new Date(a.created));
+        }
+        return threads;
+      }
+
+      function renderList() {
+        const threads = getFilteredThreads();
+        const list = $("#threadList");
+        if (!threads.length) {
+          list.innerHTML = '<div class="empty">没有找到匹配的线程。</div>';
+          return;
+        }
+
+        if (!threads.some((thread) => thread.id === state.selectedId)) {
+          state.selectedId = threads[0].id;
+        }
+
+        list.innerHTML = threads.map((thread) => {
+          const active = thread.id === state.selectedId ? " active" : "";
+          return `
+            <button class="thread-card${active}" type="button" data-id="${escapeHTML(thread.id)}">
+              <div class="thread-meta">
+                <span class="badge">${escapeHTML(thread.category)}</span>
+                <span>${formatDate(thread.created)}</span>
+                <span>${Number(thread.messages || 0)} 条消息</span>
+              </div>
+              <h2 class="thread-title">${escapeHTML(thread.title)}</h2>
+              <p class="thread-excerpt">${escapeHTML(thread.excerpt || "这条线程没有摘要。")}</p>
+            </button>
+          `;
+        }).join("");
+        renderDetail();
+      }
+
+      function renderDetail() {
+        const thread = payload.threads.find((item) => item.id === state.selectedId);
+        if (!thread) return;
+        $("#detailTitle").textContent = thread.title;
+        $("#detailMeta").textContent = `${thread.category} | ${formatDate(thread.created)} | ${Number(thread.messages || 0)} 条消息 | ${Number(thread.contentLength || 0)} 字符`;
+        $("#detailSource").textContent = `来源：${thread.sourcePath || "Obsidian threads"}`;
+        $("#detailContent").textContent = thread.content || "这条线程没有可显示内容。";
+      }
+
+      function bindEvents() {
+        $("#searchInput").addEventListener("input", (event) => {
+          state.query = event.target.value;
+          renderList();
+        });
+        $("#sortSelect").addEventListener("change", (event) => {
+          state.sort = event.target.value;
+          renderList();
+        });
+        $("#categoryChips").addEventListener("click", (event) => {
+          const button = event.target.closest("[data-category]");
+          if (!button) return;
+          state.category = button.dataset.category;
+          renderChips();
+          renderList();
+        });
+        $("#threadList").addEventListener("click", (event) => {
+          const button = event.target.closest("[data-id]");
+          if (!button) return;
+          state.selectedId = button.dataset.id;
+          renderList();
+          if (window.innerWidth < 980) {
+            $("#detailPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+      }
+
+      function initSky() {
+        const canvas = $("#sky");
+        const ctx = canvas.getContext("2d");
+        let stars = [];
+
+        function resize() {
+          const ratio = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(window.innerWidth * ratio);
+          canvas.height = Math.floor(window.innerHeight * ratio);
+          canvas.style.width = `${window.innerWidth}px`;
+          canvas.style.height = `${window.innerHeight}px`;
+          ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+          const count = Math.min(180, Math.max(70, Math.floor((window.innerWidth * window.innerHeight) / 7000)));
+          stars = Array.from({ length: count }, (_, index) => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: 0.6 + Math.random() * 1.8,
+            hue: 190 + (index % 7) * 18 + Math.random() * 18,
+            phase: Math.random() * Math.PI * 2,
+            drift: 0.04 + Math.random() * 0.08
+          }));
+        }
+
+        function draw(time) {
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          stars.forEach((star) => {
+            const alpha = 0.34 + Math.sin(time * 0.0012 + star.phase) * 0.26;
+            star.y += star.drift;
+            if (star.y > window.innerHeight + 12) star.y = -12;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${star.hue}, 92%, 78%, ${Math.max(0.12, alpha)})`;
+            ctx.shadowBlur = star.r * 8;
+            ctx.shadowColor = `hsla(${star.hue}, 92%, 70%, 0.58)`;
+            ctx.fill();
+          });
+          ctx.shadowBlur = 0;
+          requestAnimationFrame(draw);
+        }
+
+        resize();
+        requestAnimationFrame(draw);
+        window.addEventListener("resize", resize);
+      }
+
+      summarizeStats();
+      renderChips();
+      renderList();
+      bindEvents();
+      initSky();
+    })();
+  </script>
+</body>
+</html>

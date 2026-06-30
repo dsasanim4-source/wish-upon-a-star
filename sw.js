@@ -2,6 +2,8 @@ const CACHE_NAME = 'wish-upon-a-star-v17';
 const APP_SHELL = [
   './',
   './index.html',
+  './codex-threads.html',
+  './codex-threads-data.js',
   './manifest.webmanifest',
   './icons/wish-star.svg',
   './icons/wish-star-192.png',
